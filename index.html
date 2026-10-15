@@ -3099,7 +3099,7 @@
     document.getElementById("modalVariantsNote").textContent = ui.variantsNote;
     const ownIdeas = act.aiIdeas && (act.aiIdeas[currentLang] || act.aiIdeas.ko);
     document.getElementById("modalVariantsList").innerHTML = ownIdeas
-      ? ownIdeas.split("\n").filter(Boolean).map(t => `<li style="margin-bottom:6px;">${escapeHtml(t)}</li>`).join("")
+      ? ownIdeas.split(/\n|\s+\|\s+/).map(t => t.trim()).filter(Boolean).map(t => `<li style="margin-bottom:6px;">${escapeHtml(t)}</li>`).join("")
       : getVariantIdeas().map(v => `<li style="margin-bottom:6px;"><strong style="color:var(--text-primary);">${escapeHtml(v.label)}</strong><br>${escapeHtml(v.text)}</li>`).join("");
 
     const evPanel = document.getElementById("modalEvidencePanel");
@@ -3107,7 +3107,7 @@
       evPanel.style.display = "block";
       document.getElementById("modalEvidenceTitle").textContent = ui.evidenceTitle;
       document.getElementById("modalEvidenceNote").textContent = ui.evidenceNote(act.confidence || "-");
-      document.getElementById("modalEvidenceList").textContent = act.evidence;
+      document.getElementById("modalEvidenceList").textContent = act.evidence.split(/\n|\s+\|\s+/).map(t => t.trim()).filter(Boolean).join("\n");
     } else {
       evPanel.style.display = "none";
     }
