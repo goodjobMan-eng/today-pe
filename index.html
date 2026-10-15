@@ -884,13 +884,12 @@
         type="text"
         id="searchInput"
         class="search-input"
-        placeholder="활동명, 규칙·유의사항·발전팁 본문 내용, 준비물, 상황(예: 학기초, 비오는날, 무탈락) 통합 검색"
+        placeholder="활동명·활동 내용 검색 (예: 학기초, 비오는날, 킨볼, 피구)"
         oninput="onSearchInput()"
-        onkeyup="onSearchInput()"
         oncompositionend="onSearchInput()"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();recordSearchQuery(this.value);onSearchInput();}"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();recordSearchQuery(this.value);clearTimeout(_searchTimer);resetPageAndRender();}"
       />
-      <button type="button" class="btn-propose" id="btnSearchExec" style="height:44px; padding:0 18px;" onclick="recordSearchQuery(document.getElementById('searchInput').value);onSearchInput();">검색</button>
+      <button type="button" class="btn-propose" id="btnSearchExec" style="height:44px; padding:0 18px;" onclick="recordSearchQuery(document.getElementById('searchInput').value);clearTimeout(_searchTimer);resetPageAndRender();">검색</button>
       <button type="button" class="btn-reset" id="btnResetText" onclick="resetFilters()">초기화</button>
     </div>
 
@@ -1338,7 +1337,7 @@
     ko: {
       siteTitle: "오늘 체육 뭐 하지?",
       adminBtn: "관리자",
-      searchPlaceholder: "활동명, 준비물(예: 럭비공, 킨볼, 짐볼, 플라잉디스크, 줄넘기), 상황 키워드(예: 학기초 놀이, 비오는날) 검색",
+      searchPlaceholder: "활동명·활동 내용 검색 (예: 학기초, 비오는날, 킨볼, 피구)",
       resetBtn: "초기화",
       popularLabel: "추천 검색어",
       lblCountry: "국가별 수업",
@@ -1366,6 +1365,9 @@
       metaGrade: "대상",
       aiCardSummary: (dur, sess) => `AI 분석 적정시간 <strong>평균 ${dur}분</strong> (${sess})`,
       aiCardFit: (fit) => `적합도 <strong>${fit}</strong>/5.0`,
+      aiNoData: "자료 없음",
+      aiCardNoData: `AI 분석 적정시간 <strong>후기 자료 없음</strong>`,
+      aiGradeNoData: "후기가 쌓이면 학년군별 적합도가 표시됩니다.",
       btnRecommend: (likes) => `추천 ${likes}`,
       btnViewDetail: "상세 및 후기 보기",
       btnLoadMore: (rem, total) => `더 보기 (+36건 · 남은 수업 ${rem.toLocaleString()}건 / 전체 ${total.toLocaleString()}건)`,
@@ -1398,7 +1400,7 @@
     en: {
       siteTitle: "What to Teach in PE Today?",
       adminBtn: "Admin",
-      searchPlaceholder: "Search game title, equipment (e.g., rugby ball, Kin-Ball, flying disc, jump rope), or scenario...",
+      searchPlaceholder: "Search title or activity description (e.g., rainy day, Kin-Ball, dodgeball)",
       resetBtn: "Reset",
       popularLabel: "Popular Searches",
       lblCountry: "Country",
@@ -1426,6 +1428,9 @@
       metaGrade: "Grade",
       aiCardSummary: (dur, sess) => `AI Optimal Time: <strong>Avg ${dur}m</strong> (${sess})`,
       aiCardFit: (fit) => `Dev Fit <strong>${fit}</strong>/5.0`,
+      aiNoData: "No data",
+      aiCardNoData: `AI Optimal Time: <strong>No reviews yet</strong>`,
+      aiGradeNoData: "Grade suitability will appear once reviews are added.",
       btnRecommend: (likes) => `Recommend ${likes}`,
       btnViewDetail: "View Details & Reviews",
       btnLoadMore: (rem, total) => `Load More (+36 · ${rem.toLocaleString()} remaining of ${total.toLocaleString()})`,
@@ -1458,7 +1463,7 @@
     ja: {
       siteTitle: "今日の体育、何する？",
       adminBtn: "管理者",
-      searchPlaceholder: "活動名、用具（例：ラグビーボール、キンボール、フライングディスク、なわとび）、場面キーワードを検索",
+      searchPlaceholder: "活動名・活動内容で検索（例：雨の日、キンボール、ドッジボール）",
       resetBtn: "リセット",
       popularLabel: "人気検索ワード",
       lblCountry: "国別フィルター",
@@ -1486,6 +1491,9 @@
       metaGrade: "対象",
       aiCardSummary: (dur, sess) => `AI分析 適正時間 <strong>平均 ${dur}分</strong> (${sess})`,
       aiCardFit: (fit) => `適合度 <strong>${fit}</strong>/5.0`,
+      aiNoData: "データなし",
+      aiCardNoData: `AI分析 適正時間 <strong>レビューなし</strong>`,
+      aiGradeNoData: "レビューが集まると学年群別の適合度が表示されます。",
       btnRecommend: (likes) => `おすすめ ${likes}`,
       btnViewDetail: "詳細・先生レビューを見る",
       btnLoadMore: (rem, total) => `もっと見る（+36件・残り${rem.toLocaleString()}件 / 全${total.toLocaleString()}件）`,
@@ -2514,16 +2522,16 @@
       const guideCaution = act.seedGuide ? getLocalizedReviewText(act.seedGuide.caution) : getLocalizedReviewText(AUTO_DICT_PHRASES[0]);
       const guideTip = act.seedGuide ? getLocalizedReviewText(act.seedGuide.upgradeTip) : getLocalizedReviewText(AUTO_DICT_PHRASES[1]);
       return {
-        avgDuration: dur0,
+        avgDuration: null,
         sessionKey: sKey0,
-        recommendedSession: tTerm("sessionShort", sKey0),
+        recommendedSession: "-",
         avgFit: "-",
         avgRating: "-",
         reviewCount: 0,
         gradeCounts: {
-          "1~2학년": act.gradeGroup.includes("1~2학년") ? 100 : 0,
-          "3~4학년": act.gradeGroup.includes("3~4학년") ? 100 : 0,
-          "5~6학년": act.gradeGroup.includes("5~6학년") ? 100 : 0
+          "1~2학년": 0,
+          "3~4학년": 0,
+          "5~6학년": 0
         },
         bestGrade: act.gradeGroup.map(g => tTerm("grade", g).split(" ")[0]).join("·"),
         latestCaution: guideCaution,
@@ -2673,9 +2681,13 @@
     renderActivities();
   }
 
+  let _searchTimer = null;
   function onSearchInput() {
-    visibleLimit = 36;
-    renderActivities();
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+      visibleLimit = 36;
+      renderActivities();
+    }, 250);
   }
 
   function resetPageAndRender() {
@@ -2772,64 +2784,19 @@
     return out;
   }
 
-  function getActivitySearchableCorpus(act) {
+  // 검색 대상: 제목 + 활동 내용(규칙)만. 한 번 만든 색인은 활동 객체에 캐시해 재사용
+  function getActivitySearchIndex(act) {
+    if (act._searchIdx) return act._searchIdx;
     const ko = (act.i18n && act.i18n.ko) || {};
     const en = (act.i18n && act.i18n.en) || {};
     const ja = (act.i18n && act.i18n.ja) || {};
-
     const titleText = [act.title, ko.title, en.title, ja.title].filter(Boolean).join(" ").toLowerCase();
     const rulesText = [act.rules, ko.rules, en.rules, ja.rules].filter(Boolean).join(" ").toLowerCase();
-    const cautionText = [
-      ko.caution, en.caution, ja.caution,
-      act.seedGuide && act.seedGuide.caution ? `${act.seedGuide.caution.ko} ${act.seedGuide.caution.en} ${act.seedGuide.caution.ja}` : ""
-    ].filter(Boolean).join(" ").toLowerCase();
-    const tipText = [
-      ko.upgradeTip, en.upgradeTip, ja.upgradeTip,
-      act.seedGuide && act.seedGuide.upgradeTip ? `${act.seedGuide.upgradeTip.ko} ${act.seedGuide.upgradeTip.en} ${act.seedGuide.upgradeTip.ja}` : ""
-    ].filter(Boolean).join(" ").toLowerCase();
-
-    const reviewsText = (act.reviews || []).map(r => {
-      const c = typeof r.caution === "object" ? `${r.caution.ko || ""} ${r.caution.en || ""} ${r.caution.ja || ""}` : (r.caution || "");
-      const u = typeof r.upgradeTip === "object" ? `${r.upgradeTip.ko || ""} ${r.upgradeTip.en || ""} ${r.upgradeTip.ja || ""}` : (r.upgradeTip || "");
-      const t = typeof r.teacher === "object" ? `${r.teacher.ko || ""}` : (r.teacher || "");
-      return `${t} ${r.grade || ""} ${c} ${u}`;
-    }).join(" ").toLowerCase();
-
-    const equipText = [
-      act.equipmentDetail, ko.equipmentDetail, en.equipmentDetail, ja.equipmentDetail,
-      ...(act.equipment || []),
-      ...(act.equipment || []).map(eq => `${tTerm("equipment", eq)}`)
-    ].filter(Boolean).join(" ").toLowerCase();
-
-    const metaText = [
-      act.country || "한국",
-      act.curriculumArea,
-      act.playType,
-      ...(act.place || []),
-      act.groupSize,
-      ...(act.gradeGroup || []),
-      act.slotKey || ""
-    ].filter(Boolean).join(" ").toLowerCase();
-
-    const fullText = `${titleText} ${rulesText} ${cautionText} ${tipText} ${reviewsText} ${equipText} ${metaText}`;
-    return {
-      titleText,
-      titleNoSpace: titleText.replace(/\s+/g, ""),
-      rulesText,
-      rulesNoSpace: rulesText.replace(/\s+/g, ""),
-      cautionText,
-      cautionNoSpace: cautionText.replace(/\s+/g, ""),
-      tipText,
-      tipNoSpace: tipText.replace(/\s+/g, ""),
-      reviewsText,
-      reviewsNoSpace: reviewsText.replace(/\s+/g, ""),
-      equipText,
-      equipNoSpace: equipText.replace(/\s+/g, ""),
-      metaText,
-      metaNoSpace: metaText.replace(/\s+/g, ""),
-      fullText,
-      fullNoSpace: fullText.replace(/\s+/g, "")
+    act._searchIdx = {
+      title: titleText.replace(/\s+/g, ""),
+      rules: rulesText.replace(/\s+/g, "")
     };
+    return act._searchIdx;
   }
 
   function renderActivities() {
@@ -2845,6 +2812,11 @@
     const rawTerms = q ? q.split(/\s+/).filter(t => t && !["놀이", "수업", "게임", "활동", "체육"].includes(t)) : [];
     const effectiveTerms = (q && rawTerms.length === 0) ? q.split(/\s+/).filter(Boolean) : rawTerms;
     const expandedTermSets = effectiveTerms.map(t => expandQueryTerm(t));
+    const termCandidates = expandedTermSets.map((cands, i) => {
+      const primary = effectiveTerms[i].replace(/\s+/g, "");
+      const uniq = new Set(cands.map(c => c.replace(/\s+/g, "")).filter(Boolean));
+      return Array.from(uniq).map(text => ({ text, weight: text === primary ? 2 : 1 }));
+    });
 
     const matchScoreMap = {};
 
@@ -2868,52 +2840,15 @@
         }
       }
 
-      if (expandedTermSets.length > 0) {
-        const corpus = getActivitySearchableCorpus(act);
+      if (termCandidates.length > 0) {
+        const idx = getActivitySearchIndex(act);
         let score = 0;
-
-        for (let i = 0; i < expandedTermSets.length; i++) {
-          const candidates = expandedTermSets[i];
-          const primary = effectiveTerms[i].replace(/\s+/g, "");
+        for (let i = 0; i < termCandidates.length; i++) {
           let termMatched = false;
-
-          // Check direct & synonym matches across all content fields
-          for (const cand of candidates) {
-            const cNoSpace = cand.replace(/\s+/g, "");
-            if (!cNoSpace) continue;
-            const isPrimary = (cNoSpace === primary);
-            const weight = isPrimary ? 2.0 : 1.0;
-
-            if (corpus.titleText.includes(cand) || corpus.titleNoSpace.includes(cNoSpace)) {
-              score += 100 * weight;
-              termMatched = true;
-            }
-            if (corpus.rulesText.includes(cand) || corpus.rulesNoSpace.includes(cNoSpace)) {
-              score += 60 * weight;
-              termMatched = true;
-            }
-            if (corpus.cautionText.includes(cand) || corpus.cautionNoSpace.includes(cNoSpace)) {
-              score += 45 * weight;
-              termMatched = true;
-            }
-            if (corpus.tipText.includes(cand) || corpus.tipNoSpace.includes(cNoSpace)) {
-              score += 45 * weight;
-              termMatched = true;
-            }
-            if (corpus.reviewsText.includes(cand) || corpus.reviewsNoSpace.includes(cNoSpace)) {
-              score += 40 * weight;
-              termMatched = true;
-            }
-            if (corpus.equipText.includes(cand) || corpus.equipNoSpace.includes(cNoSpace)) {
-              score += 50 * weight;
-              termMatched = true;
-            }
-            if (corpus.metaText.includes(cand) || corpus.metaNoSpace.includes(cNoSpace)) {
-              score += 30 * weight;
-              termMatched = true;
-            }
+          for (const c of termCandidates[i]) {
+            if (idx.title.includes(c.text)) { score += 100 * c.weight; termMatched = true; }
+            else if (idx.rules.includes(c.text)) { score += 60 * c.weight; termMatched = true; }
           }
-
           if (!termMatched) return false;
         }
         matchScoreMap[act.id] = score;
@@ -2923,8 +2858,10 @@
     });
 
     const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
+    const statCache = new Map();
+    if (sortVal !== "likes") filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
     filtered.sort((a, b) => {
-      if (expandedTermSets.length > 0) {
+      if (termCandidates.length > 0) {
         const sA = matchScoreMap[a.id] || 0;
         const sB = matchScoreMap[b.id] || 0;
         if (sB !== sA) return sB - sA;
@@ -2935,11 +2872,11 @@
         if (mB !== mA) return mB - mA;
       }
       if (sortVal === "likes") return b.likes - a.likes;
-      const stA = computeAiStats(a);
-      const stB = computeAiStats(b);
-      if (sortVal === "fit") return Number(stB.avgFit) - Number(stA.avgFit);
-      if (sortVal === "timeAsc") return stA.avgDuration - stB.avgDuration;
-      if (sortVal === "timeDesc") return stB.avgDuration - stA.avgDuration;
+      const stA = statCache.get(a.id);
+      const stB = statCache.get(b.id);
+      if (sortVal === "fit") return (stB.avgFit === "-" ? -1 : Number(stB.avgFit)) - (stA.avgFit === "-" ? -1 : Number(stA.avgFit));
+      if (sortVal === "timeAsc") return (stA.avgDuration === null ? 9999 : stA.avgDuration) - (stB.avgDuration === null ? 9999 : stB.avgDuration);
+      if (sortVal === "timeDesc") return (stB.avgDuration === null ? -1 : stB.avgDuration) - (stA.avgDuration === null ? -1 : stA.avgDuration);
       return 0;
     });
 
@@ -2972,29 +2909,13 @@
       const st = computeAiStats(act);
       const locTitle = getLocalizedField(act, "title");
       const locRules = getLocalizedField(act, "rules");
-      const locCaution = getLocalizedField(act, "caution") || st.latestCaution || "";
-      const locTip = getLocalizedField(act, "upgradeTip") || (st.allUpgrades && st.allUpgrades[0]) || "";
       const tagNames = (act.equipment || []).map(k => tTerm("equipment", k)).join(", ");
       const locEquip = `${getLocalizedField(act, "equipmentDetail")} (${tagNames})`;
 
       const titleHtml = highlightText(locTitle, rawQuery);
       const rulesHtml = highlightText(locRules, rawQuery);
       const equipHtml = highlightText(locEquip, rawQuery);
-      const cautionHtml = highlightText(locCaution, rawQuery);
-      const tipHtml = highlightText(locTip, rawQuery);
-
-      // Show matched caution/tip snippet on card when searching
-      let extraContentMatchHtml = "";
-      if (rawQuery && (cautionHtml.includes("<mark") || tipHtml.includes("<mark"))) {
-        const snippetParts = [];
-        if (cautionHtml.includes("<mark")) snippetParts.push(`<strong>${ui.revCautionLabel}</strong> ${cautionHtml}`);
-        if (tipHtml.includes("<mark")) snippetParts.push(`<strong>${ui.revTipLabel}</strong> ${tipHtml}`);
-        extraContentMatchHtml = `
-          <div style="background:var(--blue-soft); border:1px solid #bfdbfe; border-radius:6px; padding:7px 10px; font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
-            ${snippetParts.join("<br/>")}
-          </div>
-        `;
-      }
+      const extraContentMatchHtml = "";
 
       const placeStr = act.place.map(p => tTerm("place", p)).join("·");
       const sizeStr = tTerm("size", act.groupSize).split(" ")[0];
@@ -3023,7 +2944,7 @@
             </div>
 
             <div class="card-ai-line">
-              <span>${ui.aiCardSummary(st.avgDuration, st.recommendedSession)}</span>
+              <span>${st.avgDuration === null ? ui.aiCardNoData : ui.aiCardSummary(st.avgDuration, st.recommendedSession)}</span>
               <span>${ui.aiCardFit(st.avgFit)}</span>
             </div>
           </div>
@@ -3106,7 +3027,7 @@
       <div class="stat-row-3">
         <div class="stat-cell">
           <span class="stat-cell-label">${ui.aiStatDur}</span>
-          <span class="stat-cell-val">${ui.aiStatDurVal(st.avgDuration)}</span>
+          <span class="stat-cell-val">${st.avgDuration === null ? ui.aiNoData : ui.aiStatDurVal(st.avgDuration)}</span>
         </div>
         <div class="stat-cell">
           <span class="stat-cell-label">${ui.aiStatSess}</span>
@@ -3114,12 +3035,13 @@
         </div>
         <div class="stat-cell">
           <span class="stat-cell-label">${ui.aiStatFit}</span>
-          <span class="stat-cell-val">${st.avgFit} / 5.0</span>
+          <span class="stat-cell-val">${st.avgFit === "-" ? ui.aiNoData : st.avgFit + " / 5.0"}</span>
         </div>
       </div>
 
       <div style="margin-bottom:14px;">
         <div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">${ui.aiGradeChartTitle}</div>
+        ${st.reviewCount === 0 ? `<div style="font-size:12px; color:var(--text-muted);">${ui.aiGradeNoData}</div>` : `
         <div class="bar-row">
           <span style="width:84px;">${tTerm('grade', '1~2학년').split(' ')[0]}</span>
           <div class="bar-track"><div class="bar-fill" style="width:${st.gradeCounts['1~2학년']}%;"></div></div>
@@ -3134,7 +3056,7 @@
           <span style="width:84px;">${tTerm('grade', '5~6학년').split(' ')[0]}</span>
           <div class="bar-track"><div class="bar-fill" style="width:${st.gradeCounts['5~6학년']}%;"></div></div>
           <span style="width:34px; text-align:right;">${st.gradeCounts['5~6학년']}%</span>
-        </div>
+        </div>`}
       </div>
 
       <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6;">
