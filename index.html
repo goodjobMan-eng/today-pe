@@ -918,7 +918,7 @@
         type="text"
         id="searchInput"
         class="search-input"
-        placeholder="활동명·활동 내용 검색 (예: 학기초, 비오는날, 킨볼, 피구)"
+        placeholder="활동명·활동 내용 검색 (예: 피구, 킨볼, 협동, 가위바위보)"
         oninput="onSearchInput()"
         oncompositionend="onSearchInput()"
         onkeydown="if(event.key==='Enter'){event.preventDefault();recordSearchQuery(this.value);clearTimeout(_searchTimer);resetPageAndRender();}"
@@ -1026,6 +1026,12 @@
           </div>
           <p id="modalRules" style="font-size:13.5px; color:var(--text-primary); line-height:1.65; white-space:pre-line;"></p>
         </div>
+
+        <details class="panel-block variants-block" id="modalVariantsPanel">
+          <summary class="panel-title" id="modalVariantsTitle" style="cursor:pointer; margin-bottom:0;">학년·상황별 응용 아이디어</summary>
+          <p id="modalVariantsNote" style="font-size:11.5px; color:var(--text-muted); margin:8px 0 10px;"></p>
+          <ul id="modalVariantsList" style="font-size:13px; color:var(--text-secondary); line-height:1.6; padding-left:18px;"></ul>
+        </details>
 
         <div class="panel-block">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -1415,7 +1421,7 @@
     ko: {
       siteTitle: "오늘 체육 뭐 하지?",
       adminBtn: "관리자",
-      searchPlaceholder: "활동명·활동 내용 검색 (예: 학기초, 비오는날, 킨볼, 피구)",
+      searchPlaceholder: "활동명·활동 내용 검색 (예: 피구, 킨볼, 협동, 가위바위보)",
       resetBtn: "초기화",
       popularLabel: "추천 검색어",
       lblCountry: "국가별 수업",
@@ -1447,6 +1453,8 @@
       aiCardNoData: `AI 분석 적정시간 <strong>후기 자료 없음</strong>`,
       aiGradeNoData: "후기가 쌓이면 학년군별 적합도가 표시됩니다.",
       btnProposeEdit: "설명 수정 제안",
+      variantsTitle: "학년·상황별 응용 아이디어",
+      variantsNote: "AI가 제안한 일반적인 응용 방법입니다. 영상에 나오는 내용은 아니니 학급 상황에 맞게 골라 쓰세요.",
       noReviewsYet: "아직 후기가 없습니다. 첫 후기를 남겨 주세요.",
       submitting: "보내는 중…",
       toastSendFail: "시트에 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
@@ -1499,7 +1507,7 @@
     en: {
       siteTitle: "What to Teach in PE Today?",
       adminBtn: "Admin",
-      searchPlaceholder: "Search title or activity description (e.g., rainy day, Kin-Ball, dodgeball)",
+      searchPlaceholder: "Search title or activity (e.g., dodgeball, Kin-Ball, relay)",
       resetBtn: "Reset",
       popularLabel: "Popular Searches",
       lblCountry: "Country",
@@ -1531,6 +1539,8 @@
       aiCardNoData: `AI Optimal Time: <strong>No reviews yet</strong>`,
       aiGradeNoData: "Grade suitability will appear once reviews are added.",
       btnProposeEdit: "Suggest an Edit",
+      variantsTitle: "Adaptations by Grade & Situation",
+      variantsNote: "General adaptation ideas suggested by AI. They are not shown in the video; pick what fits your class.",
       noReviewsYet: "No reviews yet. Be the first to share one.",
       submitting: "Sending…",
       toastSendFail: "Could not save to the sheet. Please try again shortly.",
@@ -1583,7 +1593,7 @@
     ja: {
       siteTitle: "今日の体育、何する？",
       adminBtn: "管理者",
-      searchPlaceholder: "活動名・活動内容で検索（例：雨の日、キンボール、ドッジボール）",
+      searchPlaceholder: "活動名・活動内容で検索（例：ドッジボール、キンボール、リレー）",
       resetBtn: "リセット",
       popularLabel: "人気検索ワード",
       lblCountry: "国別フィルター",
@@ -1615,6 +1625,8 @@
       aiCardNoData: `AI分析 適正時間 <strong>レビューなし</strong>`,
       aiGradeNoData: "レビューが集まると学年群別の適合度が表示されます。",
       btnProposeEdit: "説明の修正を提案",
+      variantsTitle: "学年・場面別のアレンジ案",
+      variantsNote: "AIが提案した一般的なアレンジ方法です。動画の内容ではないので、学級に合わせて選んでください。",
       noReviewsYet: "まだレビューがありません。最初のレビューをお願いします。",
       submitting: "送信中…",
       toastSendFail: "シートに保存できませんでした。しばらくしてから再度お試しください。",
@@ -1841,7 +1853,7 @@
   }
 
   /* =========================================================================
-     3. BUILT-IN BASE ACTIVITIES (38 seeds × 10 variations = 380, used until the sheet is filled)
+     3. BUILT-IN BASE ACTIVITIES (one lesson per real video: 38, used until the sheet is filled)
      ========================================================================= */
   const MASTER_SEEDS = [
     {
@@ -2218,104 +2230,52 @@
     }
   ];
 
+  // 실제 영상 1개 = 수업 1개. 영상에 없는 학년·상황별 응용은 수업 상세의 '응용 아이디어'로만 보여줌
   function buildBaseActivities() {
-    const list = [];
-    const seedsLen = MASTER_SEEDS.length;
-    const varsLen = PEDAGOGICAL_VARIATIONS.length;
-    const totalTarget = seedsLen * varsLen; // 기본 수업 × 학년·상황 변형 = 중복 없는 전체 목록
-
-    for (let i = 0; i < totalTarget; i++) {
-      const seed = MASTER_SEEDS[i % seedsLen];
-      const vr = PEDAGOGICAL_VARIATIONS[Math.floor(i / seedsLen) % varsLen];
-      const tagSuffix = "";
-
-      const dur = Math.max(10, Math.min(45, vr.durBase + ((i % 5) - 2)));
-      const fitScore = (i % 6 === 0) ? 4 : 5;
-      const likes = 75 + ((i * 23) % 320);
-      const idStr = "pe-" + String(i + 1).padStart(5, "0");
-
-      const i18nObj = {
-        ko: {
-          title: seed.ko.title + vr.koSuffix + tagSuffix,
-          equipmentDetail: seed.ko.eqD,
-          rules: seed.ko.rules + vr.koRuleAdd,
-          caution: seed.ko.caution,
-          upgradeTip: seed.ko.tip
-        },
-        en: {
-          title: seed.en.title + vr.enSuffix + tagSuffix,
-          equipmentDetail: seed.en.eqD,
-          rules: seed.en.rules + vr.enRuleAdd,
-          caution: seed.en.caution,
-          upgradeTip: seed.en.tip
-        },
-        ja: {
-          title: seed.ja.title + vr.jaSuffix + tagSuffix,
-          equipmentDetail: seed.ja.eqD,
-          rules: seed.ja.rules + vr.jaRuleAdd,
-          caution: seed.ja.caution,
-          upgradeTip: seed.ja.tip
-        }
-      };
-
-      const gGroup = vr.gradeOverride || seed.grades;
-      const revGrade = gGroup[i % gGroup.length];
-
-      const countryVal = seed.country || "한국";
-
-      const seedGuide = {
-        caution: { ko: i18nObj.ko.caution, en: i18nObj.en.caution, ja: i18nObj.ja.caution },
-        upgradeTip: { ko: i18nObj.ko.upgradeTip, en: i18nObj.en.upgradeTip, ja: i18nObj.ja.upgradeTip }
-      };
-
-      list.push({
-        id: idStr,
-        country: countryVal,
+    return MASTER_SEEDS.map(seed => {
+      const i18nObj = {};
+      ["ko", "en", "ja"].forEach(l => {
+        i18nObj[l] = {
+          title: seed[l].title,
+          equipmentDetail: seed[l].eqD,
+          rules: seed[l].rules,
+          caution: seed[l].caution,
+          upgradeTip: seed[l].tip
+        };
+      });
+      return {
+        id: "pe-" + seed.vid,
+        country: seed.country || "한국",
         curriculumArea: seed.curr,
         playType: seed.type,
         title: i18nObj.ko.title,
-        place: vr.placeOverride || seed.place,
-        groupSize: vr.sizeOverride || seed.size,
-        slotKey: vr.slotKey,
-        minPlayers: 2,
-        maxPlayers: 36,
-        gradeGroup: gGroup,
-        equipment: (() => {
-          const baseEq = Array.isArray(seed.eq) ? seed.eq.slice() : [seed.eq];
-          const comboExtras = ["접시콘/라바콘", "팀조끼", "원마커(스팟)", "훌라후프", "폼볼/피구공", "펀스틱(스펀지봉)", "스카프/꼬리끈"];
-          const extra1 = comboExtras[i % comboExtras.length];
-          const extra2 = comboExtras[(i + 3) % comboExtras.length];
-          if (!baseEq.includes("없음(맨손)")) {
-            if (!baseEq.includes(extra1) && (i % 2 === 0)) baseEq.push(extra1);
-            if (!baseEq.includes(extra2) && (i % 3 === 0)) baseEq.push(extra2);
-          }
-          return baseEq;
-        })(),
+        place: seed.place.slice(),
+        groupSize: seed.size,
+        slotKey: "",
+        gradeGroup: seed.grades.slice(),
+        equipment: Array.isArray(seed.eq) ? seed.eq.slice() : [seed.eq],
         equipmentDetail: i18nObj.ko.equipmentDetail,
-        keywords: [
-          countryVal, seed.curr, seed.type, ...seed.eq,
-          ...(vr.placeOverride || seed.place),
-          vr.sizeOverride || seed.size,
-          ...gGroup,
-          vr.slotKey,
-          i18nObj.ko.caution, i18nObj.ko.upgradeTip,
-          i18nObj.en.title, i18nObj.en.caution, i18nObj.en.upgradeTip,
-          i18nObj.ja.title, i18nObj.ja.caution, i18nObj.ja.upgradeTip
-        ],
         videoId: seed.vid,
         youtubeUrl: `https://www.youtube.com/watch?v=${seed.vid}`,
         rules: i18nObj.ko.rules,
-        defaultLikes: likes,
-        defaultDur: dur,
-        defaultFit: fitScore,
+        defaultDur: 0,
         likes: 0,
         i18n: i18nObj,
-        seedGuide,
+        seedGuide: {
+          caution: { ko: i18nObj.ko.caution, en: i18nObj.en.caution, ja: i18nObj.ja.caution },
+          upgradeTip: { ko: i18nObj.ko.upgradeTip, en: i18nObj.en.upgradeTip, ja: i18nObj.ja.upgradeTip }
+        },
         reviews: []
-      });
-    }
+      };
+    });
+  }
 
-    return list;
+  // 모든 수업에 공통으로 쓸 수 있는 학년·상황별 응용 아이디어 (AI 제안, 영상 내용 아님)
+  function getVariantIdeas() {
+    return PEDAGOGICAL_VARIATIONS.filter(v => v.koSuffix).map(v => ({
+      label: (v[currentLang + "Suffix"] || v.koSuffix).replace(/^\s*—\s*/, ""),
+      text: (v[currentLang + "RuleAdd"] || v.koRuleAdd).trim()
+    }));
   }
 
   /* =========================================================================
@@ -2370,27 +2330,20 @@
   const PLACE_OPTIONS = ["전체 장소", "교실", "강당", "운동장"];
 
   const POPULAR_KEYWORDS_I18N = {
-    "학기초 놀이": { ko: "학기초 놀이", en: "Back to School", ja: "学期初め" },
-    "비오는날": { ko: "비오는날", en: "Rainy Day", ja: "雨の日・室内" },
-    "큰공": { ko: "큰공(킨볼·짐볼)", en: "Giant Ball (Kin-Ball)", ja: "大玉(キンボール)" },
-    "럭비공": { ko: "럭비공·태그럭비", en: "Tag Rugby", ja: "タグラグビー" },
-    "플라잉디스크": { ko: "플라잉디스크", en: "Flying Disc", ja: "フライングディスク" },
-    "줄넘기": { ko: "줄넘기·긴줄", en: "Jump Rope", ja: "長縄・なわとび" },
-    "펀스틱": { ko: "펀스틱", en: "Foam Noodle", ja: "スポンジ棒" },
+    "협동": { ko: "협동", en: "Co-op", ja: "協力" },
+    "가위바위보": { ko: "가위바위보", en: "Rock-Paper-Scissors", ja: "じゃんけん" },
+    "후프": { ko: "훌라후프", en: "Hula Hoop", ja: "フラフープ" },
     "피구": { ko: "피구", en: "Dodgeball", ja: "ドッジボール" },
+    "릴레이": { ko: "릴레이", en: "Relay", ja: "リレー" },
+    "무탈락": { ko: "무탈락", en: "Zero-Elimination", ja: "脱落なし" },
+    "킨볼": { ko: "킨볼·짐볼", en: "Kin-Ball", ja: "キンボール" },
+    "줄넘기": { ko: "줄넘기", en: "Jump Rope", ja: "なわとび" },
     "전래놀이": { ko: "전래놀이", en: "Traditional Play", ja: "伝統遊び" }
   };
 
   const INITIAL_POPULAR_SEARCHES = {
-    "학기초 놀이": 420,
-    "비오는날": 395,
-    "큰공": 360,
-    "럭비공": 342,
-    "플라잉디스크": 318,
-    "줄넘기": 305,
-    "펀스틱": 289,
-    "피구": 274,
-    "전래놀이": 250
+    "협동": 9, "가위바위보": 8, "후프": 7, "피구": 6, "릴레이": 5,
+    "무탈락": 4, "킨볼": 3, "줄넘기": 2, "전래놀이": 1
   };
 
   const GAS_DEFAULT_URL = "https://script.google.com/macros/s/AKfycbwH8ParKOTqjbi1RuDj6LX-RYWRD6aH_9_WZ7nkxICsg_6XYrhJzAKm0t1Uid4XyFq3FA/exec";
@@ -2443,7 +2396,7 @@
   }
 
   function loadData() {
-    BASE_COUNT = MASTER_SEEDS.length * PEDAGOGICAL_VARIATIONS.length;
+    BASE_COUNT = MASTER_SEEDS.length;
     gasWebAppUrl = safeGetStorage("pe_hub_gas_url_v2") || GAS_DEFAULT_URL;
 
     // 지난번에 시트에서 받아둔 내용이 있으면 먼저 보여주고, 시트에서 새로 받아오면 교체
@@ -2458,7 +2411,7 @@
 
     try { likedSet = new Set(JSON.parse(safeGetStorage(LIKED_KEY) || "[]")); } catch (e) { likedSet = new Set(); }
 
-    const savedPop = safeGetStorage("pe_archive12000_popular_v1");
+    const savedPop = safeGetStorage("pe_hub_popular_v2");
     popularSearches = savedPop ? JSON.parse(savedPop) : JSON.parse(JSON.stringify(INITIAL_POPULAR_SEARCHES));
 
     currentLang = safeGetStorage("pe_archive12000_lang") || "ko";
@@ -2470,7 +2423,7 @@
   }
 
   function saveData() {
-    safeSetStorage("pe_archive12000_popular_v1", JSON.stringify(popularSearches));
+    safeSetStorage("pe_hub_popular_v2", JSON.stringify(popularSearches));
   }
 
   /* =========================================================================
@@ -2927,7 +2880,7 @@
       if (selectedPlace !== "전체 장소" && !act.place.includes(selectedPlace)) return false;
       if (sizeVal !== "전체 인원" && act.groupSize !== sizeVal) return false;
       if (gradeVal !== "ALL" && !act.gradeGroup.includes(gradeVal)) return false;
-      if (slotVal !== "ALL" && act.slotKey && act.slotKey !== slotVal) return false;
+      if (slotVal !== "ALL" && act.slotKey !== slotVal) return false;
 
       if (!selectedEquipments.has("전체")) {
         const selArr = Array.from(selectedEquipments);
@@ -3106,6 +3059,10 @@
     `;
 
     document.getElementById("modalRules").textContent = locRules;
+    document.getElementById("modalVariantsTitle").textContent = ui.variantsTitle;
+    document.getElementById("modalVariantsNote").textContent = ui.variantsNote;
+    document.getElementById("modalVariantsList").innerHTML = getVariantIdeas()
+      .map(v => `<li style="margin-bottom:6px;"><strong style="color:var(--text-primary);">${escapeHtml(v.label)}</strong><br>${escapeHtml(v.text)}</li>`).join("");
 
     document.getElementById("modalAiPanel").innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
