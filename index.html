@@ -1245,10 +1245,10 @@
     <div id="adminAuthBox" class="panel-block" style="background:var(--bg);">
       <div class="panel-title">관리자 인증</div>
       <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
-        새 체육 수업 제안 승인 및 데이터베이스 연동 관리를 위해 비밀번호를 입력해 주세요. (초기 비밀번호: <code>1234</code>)
+        새 체육 수업 제안 승인 및 운영 설정을 위해 관리자 비밀번호를 입력해 주세요.
       </p>
       <div style="display:flex; gap:8px; max-width:360px;">
-        <input type="password" id="adminPinInput" class="input-box" value="1234" placeholder="비밀번호 입력" />
+        <input type="password" id="adminPinInput" class="input-box" placeholder="관리자 비밀번호 입력" />
         <button class="btn-submit" style="width:110px;" onclick="verifyAdminPin()">확인</button>
       </div>
       <div id="adminAuthError" style="color:#dc2626; font-size:12px; font-weight:600; margin-top:6px;"></div>
@@ -1257,6 +1257,7 @@
     <div id="adminPanelContent" style="display:none;">
       <div class="admin-tabs">
         <button class="admin-tab active" id="tabBtnPending" onclick="switchAdminTab('pending')">새 수업 승인 대기열</button>
+        <button class="admin-tab" id="tabBtnSecurity" onclick="switchAdminTab('security')">비밀번호 · 추천/후기 초기화</button>
         <button class="admin-tab" id="tabBtnDb" onclick="switchAdminTab('db')">구글 시트 DB 연동 설정</button>
       </div>
 
@@ -1265,6 +1266,40 @@
           <div id="pendingCountHeader" style="font-size:14px; font-weight:700;">승인 대기 목록</div>
         </div>
         <div id="pendingListContainer"></div>
+      </div>
+
+      <div id="adminTabSecurity" style="display:none;">
+        <div class="panel-block">
+          <div class="panel-title">1. 관리자 비밀번호 변경</div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
+            관리자 비밀번호를 원하는 새 비밀번호로 변경할 수 있습니다. 변경 후 아래 <strong>[변경된 설정이 박힌 배포용 index.html 다운로드]</strong> 버튼을 눌러 GitHub에 올리면 모든 기기에서 새 비밀번호가 영구 적용됩니다.
+          </p>
+          <div style="display:flex; gap:8px; max-width:440px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="newAdminPinInput" class="input-box" style="flex:1;" placeholder="새 관리자 비밀번호 입력 (예: pe2026!)" />
+            <button type="button" class="btn-submit" style="width:150px;" onclick="changeAdminPassword()">비밀번호 변경</button>
+          </div>
+          <div id="pinChangeStatusMsg" style="margin-top:8px; font-size:12px; color:var(--blue); font-weight:600;"></div>
+        </div>
+
+        <div class="panel-block">
+          <div class="panel-title">2. 초기 추천수 · 후기 데이터 표시 모드 설정</div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">
+            수업 규칙·준비물·유의사항·발전 팁은 실제 유튜브 체육 수업 영상 내용을 바탕으로 정리된 가이드이며, 초기 추천수 숫자와 샘플 후기 1건은 미리보기용 시드 데이터입니다. 실제 사이트 오픈 시 <strong>추천수 0 · 후기 0건(클린 모드)</strong>으로 시작할지 선택할 수 있습니다.
+          </p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <button type="button" class="btn-propose" id="btnCleanModeOn" onclick="setCleanZeroMode(true)">실제 운영 모드 켜기 (모든 임의 추천수·후기 0으로 초기화)</button>
+            <button type="button" class="btn-admin" id="btnCleanModeOff" onclick="setCleanZeroMode(false)">샘플 미리보기 모드 (초기 추천수·샘플 후기 표시)</button>
+          </div>
+          <div id="cleanModeStatusMsg" style="font-size:12px; color:var(--text-primary); font-weight:600;"></div>
+        </div>
+
+        <div class="panel-block" style="background:var(--blue-soft); border-color:#bfdbfe;">
+          <div class="panel-title" style="color:var(--blue);">3. 변경된 비밀번호·설정이 영구 반영된 배포용 index.html 다운로드</div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
+            위에서 변경한 <strong>새 관리자 비밀번호</strong>와 <strong>추천/후기 초기화 상태</strong>가 소스코드 자체에 영구 저장된 <code>index.html</code> 파일을 다운로드합니다. 이 파일을 GitHub 저장소에 올리면 모든 접속자에게 동일하게 적용됩니다.
+          </p>
+          <button type="button" class="btn-propose" onclick="downloadConfiguredIndexHtml()">변경 설정이 적용된 배포용 index.html 다운로드</button>
+        </div>
       </div>
 
       <div id="adminTabDb" style="display:none;">
@@ -2096,6 +2131,31 @@
       const countryPool = ["한국", "한국", "일본", "미국", "캐나다", "호주", "영국", "독일", "스페인", "프랑스", "글로벌"];
       const countryVal = seed.country || (i % 3 === 0 ? countryPool[i % countryPool.length] : "한국");
 
+      const seedReview = {
+        isSeed: true,
+        teacher: {
+          ko: `수업 영상 분석 가이드`,
+          en: `Video Lesson Guide`,
+          ja: `授業動画ガイド`
+        },
+        grade: revGrade,
+        rating: 5,
+        fitScore: fitScore,
+        duration: dur,
+        sessionType: vr.slotKey,
+        caution: {
+          ko: i18nObj.ko.caution,
+          en: i18nObj.en.caution,
+          ja: i18nObj.ja.caution
+        },
+        upgradeTip: {
+          ko: i18nObj.ko.upgradeTip,
+          en: i18nObj.en.upgradeTip,
+          ja: i18nObj.ja.upgradeTip
+        },
+        date: "기본 가이드"
+      };
+
       list.push({
         id: idStr,
         country: countryVal,
@@ -2128,33 +2188,13 @@
         videoId: seed.vid,
         youtubeUrl: `https://www.youtube.com/watch?v=${seed.vid}`,
         rules: i18nObj.ko.rules,
-        likes: likes,
+        defaultLikes: likes,
+        defaultDur: dur,
+        defaultFit: fitScore,
+        likes: cleanZeroMode ? 0 : likes,
         i18n: i18nObj,
-        reviews: [
-          {
-            teacher: {
-              ko: `현장 교사 후기 #${(i % 120) + 1}`,
-              en: `Verified Teacher #${(i % 120) + 1}`,
-              ja: `現場先生レビュー #${(i % 120) + 1}`
-            },
-            grade: revGrade,
-            rating: 5,
-            fitScore: fitScore,
-            duration: dur,
-            sessionType: vr.slotKey,
-            caution: {
-              ko: i18nObj.ko.caution,
-              en: i18nObj.en.caution,
-              ja: i18nObj.ja.caution
-            },
-            upgradeTip: {
-              ko: i18nObj.ko.upgradeTip,
-              en: i18nObj.en.upgradeTip,
-              ja: i18nObj.ja.upgradeTip
-            },
-            date: "2026-10-15"
-          }
-        ]
+        seedGuide: seedReview,
+        reviews: cleanZeroMode ? [] : [seedReview]
       });
     }
 
@@ -2236,28 +2276,7 @@
     "전래놀이": 250
   };
 
-  const INITIAL_PENDING = [
-    {
-      id: "pend-sample-1",
-      submittedAt: "2026-10-15",
-      curriculumArea: "경쟁",
-      playType: "피구·투척형",
-      title: "스카프 꼬리 수호 변형 피구",
-      place: ["강당", "운동장"],
-      groupSize: "학급 전체 (15~30명)",
-      minPlayers: 10,
-      maxPlayers: 32,
-      gradeGroup: ["3~4학년", "5~6학년"],
-      equipment: ["폼볼/피구공", "스카프/꼬리끈"],
-      equipmentDetail: "소프트폼볼 2개, 허리 스카프(인원수)",
-      keywords: ["스카프", "꼬리잡기", "변형 피구", "전원참여"],
-      videoId: "WCCFABwDpXE",
-      youtubeUrl: "https://www.youtube.com/watch?v=WCCFABwDpXE",
-      rules: "허리춤에 스카프를 꽂고 피구와 꼬리잡기를 동시에 진행합니다. 공에 맞거나 스카프를 뺏기면 외야로 나가지만 외야에서 패스를 받아 상대 스카프를 뽑으면 즉시 부활합니다.",
-      initDuration: 25,
-      latestCaution: "스카프를 옷 안으로 깊숙이 넣지 않고 20cm 이상 밖으로 보이게 착용하도록 사전 지도하세요."
-    }
-  ];
+  const INITIAL_PENDING = [];
 
   let activities = [];
   let userAddedActivities = [];
@@ -2275,7 +2294,10 @@
   let visibleLimit = 36;
   let activeModalId = null;
   let isAdminAuthenticated = false;
-  let currentAdminPin = "1234";
+  const DEFAULT_ADMIN_PIN = "250521parkha";
+  const DEFAULT_CLEAN_MODE = true;
+  let currentAdminPin = DEFAULT_ADMIN_PIN;
+  let cleanZeroMode = DEFAULT_CLEAN_MODE;
   let gasWebAppUrl = "";
 
   function safeGetStorage(key) {
@@ -2296,15 +2318,17 @@
   }
 
   function loadData() {
+    const savedClean = safeGetStorage("pe_hub_clean_zero_mode_v2");
+    cleanZeroMode = savedClean !== null ? (savedClean === "true") : DEFAULT_CLEAN_MODE;
     const base12000 = buildInitial12000Activities();
 
     const savedUserActs = safeGetStorage("pe_archive12000_user_acts_v1");
     userAddedActivities = savedUserActs ? JSON.parse(savedUserActs) : [];
 
-    const savedRevMap = safeGetStorage("pe_archive12000_rev_map_v1");
+    const savedRevMap = safeGetStorage("pe_archive12000_rev_map_v2");
     userReviewsMap = savedRevMap ? JSON.parse(savedRevMap) : {};
 
-    const savedLikesMap = safeGetStorage("pe_archive12000_likes_map_v1");
+    const savedLikesMap = safeGetStorage("pe_archive12000_likes_map_v2");
     userLikesMap = savedLikesMap ? JSON.parse(savedLikesMap) : {};
 
     base12000.forEach(item => {
@@ -2316,22 +2340,22 @@
 
     activities = userAddedActivities.concat(base12000);
 
-    const savedPend = safeGetStorage("pe_archive12000_pending_v1");
+    const savedPend = safeGetStorage("pe_archive12000_pending_v2");
     pendingActivities = savedPend ? JSON.parse(savedPend) : JSON.parse(JSON.stringify(INITIAL_PENDING));
 
     const savedPop = safeGetStorage("pe_archive12000_popular_v1");
     popularSearches = savedPop ? JSON.parse(savedPop) : JSON.parse(JSON.stringify(INITIAL_POPULAR_SEARCHES));
 
     currentLang = safeGetStorage("pe_archive12000_lang") || "ko";
-    currentAdminPin = safeGetStorage("pe_hub_admin_pin") || "1234";
+    currentAdminPin = safeGetStorage("pe_hub_admin_pin_v2") || DEFAULT_ADMIN_PIN;
     gasWebAppUrl = safeGetStorage("pe_hub_gas_url") || "";
   }
 
   function saveData() {
     safeSetStorage("pe_archive12000_user_acts_v1", JSON.stringify(userAddedActivities));
-    safeSetStorage("pe_archive12000_rev_map_v1", JSON.stringify(userReviewsMap));
-    safeSetStorage("pe_archive12000_likes_map_v1", JSON.stringify(userLikesMap));
-    safeSetStorage("pe_archive12000_pending_v1", JSON.stringify(pendingActivities));
+    safeSetStorage("pe_archive12000_rev_map_v2", JSON.stringify(userReviewsMap));
+    safeSetStorage("pe_archive12000_likes_map_v2", JSON.stringify(userLikesMap));
+    safeSetStorage("pe_archive12000_pending_v2", JSON.stringify(pendingActivities));
     safeSetStorage("pe_archive12000_popular_v1", JSON.stringify(popularSearches));
     updateAdminHeaderButton();
   }
@@ -2477,18 +2501,26 @@
   function computeAiStats(act) {
     const revs = act.reviews || [];
     if (revs.length === 0) {
+      const dur0 = act.defaultDur || 25;
+      const sKey0 = act.slotKey || (dur0 <= 16 ? "도입·자투리" : (dur0 <= 28 ? "반차시" : "1차시"));
+      const guideCaution = act.seedGuide ? getLocalizedReviewText(act.seedGuide.caution) : getLocalizedReviewText(AUTO_DICT_PHRASES[0]);
+      const guideTip = act.seedGuide ? getLocalizedReviewText(act.seedGuide.upgradeTip) : getLocalizedReviewText(AUTO_DICT_PHRASES[1]);
       return {
-        avgDuration: 20,
-        sessionKey: "반차시",
-        recommendedSession: tTerm("sessionShort", "반차시"),
-        avgFit: "5.0",
-        avgRating: "5.0",
+        avgDuration: dur0,
+        sessionKey: sKey0,
+        recommendedSession: tTerm("sessionShort", sKey0),
+        avgFit: "-",
+        avgRating: "-",
         reviewCount: 0,
-        gradeCounts: { "1~2학년": 33, "3~4학년": 34, "5~6학년": 33 },
+        gradeCounts: {
+          "1~2학년": act.gradeGroup.includes("1~2학년") ? 100 : 0,
+          "3~4학년": act.gradeGroup.includes("3~4학년") ? 100 : 0,
+          "5~6학년": act.gradeGroup.includes("5~6학년") ? 100 : 0
+        },
         bestGrade: act.gradeGroup.map(g => tTerm("grade", g).split(" ")[0]).join("·"),
-        latestCaution: getLocalizedReviewText(AUTO_DICT_PHRASES[0]),
-        allCautions: [getLocalizedReviewText(AUTO_DICT_PHRASES[0])],
-        allUpgrades: [getLocalizedReviewText(AUTO_DICT_PHRASES[1])]
+        latestCaution: guideCaution,
+        allCautions: [guideCaution],
+        allUpgrades: [guideTip]
       };
     }
 
@@ -3106,15 +3138,78 @@
       document.getElementById("adminPanelContent").style.display = "block";
       renderPendingList();
     } else {
-      document.getElementById("adminAuthError").textContent = "비밀번호가 일치하지 않습니다. (초기값: 1234)";
+      document.getElementById("adminAuthError").textContent = "비밀번호가 일치하지 않습니다.";
     }
   }
 
   function switchAdminTab(tab) {
     document.getElementById("tabBtnPending").classList.toggle("active", tab === "pending");
+    document.getElementById("tabBtnSecurity").classList.toggle("active", tab === "security");
     document.getElementById("tabBtnDb").classList.toggle("active", tab === "db");
     document.getElementById("adminTabPending").style.display = tab === "pending" ? "block" : "none";
+    document.getElementById("adminTabSecurity").style.display = tab === "security" ? "block" : "none";
     document.getElementById("adminTabDb").style.display = tab === "db" ? "block" : "none";
+    if (tab === "security") {
+      document.getElementById("newAdminPinInput").value = currentAdminPin;
+      updateCleanModeUi();
+    }
+  }
+
+  function changeAdminPassword() {
+    const newPin = document.getElementById("newAdminPinInput").value.trim();
+    if (!newPin || newPin.length < 2) {
+      document.getElementById("pinChangeStatusMsg").textContent = "2글자 이상의 새 비밀번호를 입력해 주세요.";
+      return;
+    }
+    currentAdminPin = newPin;
+    safeSetStorage("pe_hub_admin_pin_v2", currentAdminPin);
+    document.getElementById("adminPinInput").value = "";
+    document.getElementById("pinChangeStatusMsg").textContent =
+      `관리자 비밀번호가 '${currentAdminPin}'(으)로 변경되었습니다! GitHub 배포 파일에도 영구 적용하려면 아래 3번 다운로드 버튼을 눌러주세요.`;
+    showToast("관리자 비밀번호가 변경되었습니다.");
+  }
+
+  function setCleanZeroMode(isClean) {
+    cleanZeroMode = isClean;
+    safeSetStorage("pe_hub_clean_zero_mode_v2", isClean ? "true" : "false");
+    if (isClean) {
+      userLikesMap = {};
+      safeSetStorage("pe_archive12000_likes_map_v2", JSON.stringify(userLikesMap));
+    }
+    loadData();
+    renderActivities();
+    updateCleanModeUi();
+    showToast(isClean
+      ? "실제 운영 모드 적용: 임의 추천수와 샘플 후기가 모두 0으로 초기화되었습니다."
+      : "샘플 미리보기 모드 적용: 초기 추천수와 샘플 후기가 표시됩니다.");
+  }
+
+  function updateCleanModeUi() {
+    const msgEl = document.getElementById("cleanModeStatusMsg");
+    if (!msgEl) return;
+    msgEl.textContent = cleanZeroMode
+      ? "현재 상태: [실제 운영 모드] — 임의 추천수·샘플 후기가 모두 0으로 초기화되어 실제 선생님들의 추천과 후기만 집계됩니다."
+      : "현재 상태: [샘플 미리보기 모드] — 초기 추천수와 영상 기반 샘플 후기 1건이 함께 표시됩니다.";
+  }
+
+  function downloadConfiguredIndexHtml() {
+    let rawHtml = "<!DOC" + "TYPE html>\n" + document.documentElement.outerHTML;
+    rawHtml = rawHtml.replace(
+      /const DEFAULT_ADMIN_PIN = "[^"]*";/,
+      `const DEFAULT_ADMIN_PIN = "${currentAdminPin.replace(/"/g, '\\"')}";`
+    );
+    rawHtml = rawHtml.replace(
+      /const DEFAULT_CLEAN_MODE = (true|false);/,
+      `const DEFAULT_CLEAN_MODE = ${cleanZeroMode ? "true" : "false"};`
+    );
+    const blob = new Blob([rawHtml], { type: "text/html;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "index.html";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("설정이 영구 반영된 index.html 파일이 다운로드되었습니다.");
   }
 
   function renderPendingList() {
