@@ -884,11 +884,14 @@
         type="text"
         id="searchInput"
         class="search-input"
-        placeholder="활동명, 준비물(예: 럭비공, 킨볼, 플라잉디스크, 줄넘기), 상황 키워드(예: 학기초 놀이, 비오는날) 검색"
+        placeholder="활동명, 규칙·유의사항·발전팁 본문 내용, 준비물, 상황(예: 학기초, 비오는날, 무탈락) 통합 검색"
         oninput="onSearchInput()"
-        onkeydown="if(event.key==='Enter'){recordSearchQuery(this.value);}"
+        onkeyup="onSearchInput()"
+        oncompositionend="onSearchInput()"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();recordSearchQuery(this.value);onSearchInput();}"
       />
-      <button class="btn-reset" id="btnResetText" onclick="resetFilters()">초기화</button>
+      <button type="button" class="btn-propose" id="btnSearchExec" style="height:44px; padding:0 18px;" onclick="recordSearchQuery(document.getElementById('searchInput').value);onSearchInput();">검색</button>
+      <button type="button" class="btn-reset" id="btnResetText" onclick="resetFilters()">초기화</button>
     </div>
 
     <div class="popular-row">
@@ -2182,8 +2185,13 @@
         equipmentDetail: i18nObj.ko.equipmentDetail,
         keywords: [
           countryVal, seed.curr, seed.type, ...seed.eq,
-          "학기초 놀이", "비오는날", "소규모 놀이", "팀빌딩", "뉴스포츠",
-          i18nObj.en.title, i18nObj.ja.title
+          ...(vr.placeOverride || seed.place),
+          vr.sizeOverride || seed.size,
+          ...gGroup,
+          vr.slotKey,
+          i18nObj.ko.caution, i18nObj.ko.upgradeTip,
+          i18nObj.en.title, i18nObj.en.caution, i18nObj.en.upgradeTip,
+          i18nObj.ja.title, i18nObj.ja.caution, i18nObj.ja.upgradeTip
         ],
         videoId: seed.vid,
         youtubeUrl: `https://www.youtube.com/watch?v=${seed.vid}`,
@@ -2696,19 +2704,132 @@
     renderActivities();
   }
 
-  function highlightText(text, query) {
-    if (!query || !text) return text || "";
-    const terms = query.trim().split(/\s+/).filter(Boolean);
-    let out = String(text);
-    terms.forEach(t => {
-      if (!t) return;
-      const idx = out.toLowerCase().indexOf(t.toLowerCase());
-      if (idx !== -1) {
-        const matched = out.slice(idx, idx + t.length);
-        out = out.slice(0, idx) + `<mark class="hl">${matched}</mark>` + out.slice(idx + t.length);
+  const SEARCH_SYNONYM_GROUPS = [
+    ["학기초", "학기 초", "학기초놀이", "아이스브레이킹", "친교", "첫시간", "학급열기", "back to school", "icebreaker", "学期初め", "アイスブレイク"],
+    ["비오는날", "비 오는 날", "우천", "미세먼지", "실내체육", "교실체육", "저소음", "rainy day", "雨の日", "雨天"],
+    ["무탈락", "전원참여", "전원부활", "부활", "소외없는", "zero-elimination", "脱落なし"],
+    ["저학년", "1~2학년", "1학년", "2학년", "lower grade", "低学年"],
+    ["중학년", "3~4학년", "3학년", "4학년", "middle grade", "中学年"],
+    ["고학년", "5~6학년", "5학년", "6학년", "upper grade", "高学年"],
+    ["맨손", "준비물없는", "교구없는", "맨몸", "없음(맨손)", "no equipment", "用具なし"],
+    ["큰공", "대형공", "킨볼", "짐볼", "giant ball", "kin-ball", "stability ball", "大玉", "キンボール", "バランスボール"],
+    ["럭비", "럭비공", "태그럭비", "트라이", "rugby", "タグラグビー"],
+    ["원반", "플라잉디스크", "프리스비", "얼티미트", "디스크골프", "flying disc", "frisbee", "フライングディスク"],
+    ["스펀지봉", "펀스틱", "누들", "foam noodle", "foam stick", "スポンジ棒"],
+    ["전래놀이", "전통놀이", "비석치기", "달팽이", "민속놀이", "traditional", "伝統遊び"]
+  ];
+
+  function expandQueryTerm(term) {
+    const clean = term.toLowerCase().trim();
+    const cleanNoSpace = clean.replace(/\s+/g, "");
+    if (!clean) return [];
+    const expanded = new Set([clean, cleanNoSpace]);
+    // Also strip trailing "놀이", "수업", "게임" if query is longer than 2 chars (e.g. "학기초놀이" -> "학기초")
+    const stripped = cleanNoSpace.replace(/(놀이|수업|게임|활동)$/, "");
+    if (stripped.length >= 2) expanded.add(stripped);
+
+    SEARCH_SYNONYM_GROUPS.forEach(group => {
+      const hit = group.some(g => {
+        const gNoSpace = g.toLowerCase().replace(/\s+/g, "");
+        return gNoSpace === cleanNoSpace || gNoSpace === stripped || (cleanNoSpace.length >= 2 && gNoSpace.includes(cleanNoSpace));
+      });
+      if (hit) {
+        group.forEach(g => {
+          expanded.add(g.toLowerCase());
+          expanded.add(g.toLowerCase().replace(/\s+/g, ""));
+        });
       }
     });
+    return Array.from(expanded).filter(Boolean);
+  }
+
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function highlightText(text, query) {
+    if (!query || !text) return text || "";
+    const rawTerms = query.trim().split(/\s+/).filter(Boolean);
+    const highlightCandidates = new Set();
+    rawTerms.forEach(rt => {
+      highlightCandidates.add(rt);
+      const stripped = rt.replace(/(놀이|수업|게임|활동)$/, "");
+      if (stripped.length >= 2) highlightCandidates.add(stripped);
+      expandQueryTerm(rt).forEach(syn => {
+        if (syn.length >= 2) highlightCandidates.add(syn);
+      });
+    });
+
+    const sortedTerms = Array.from(highlightCandidates).sort((a, b) => b.length - a.length);
+    if (sortedTerms.length === 0) return String(text);
+
+    let out = String(text);
+    const pattern = sortedTerms.map(escapeRegExp).join("|");
+    try {
+      const regex = new RegExp(`(${pattern})`, "gi");
+      out = out.replace(regex, '<mark class="hl">$1</mark>');
+    } catch (e) {}
     return out;
+  }
+
+  function getActivitySearchableCorpus(act) {
+    const ko = (act.i18n && act.i18n.ko) || {};
+    const en = (act.i18n && act.i18n.en) || {};
+    const ja = (act.i18n && act.i18n.ja) || {};
+
+    const titleText = [act.title, ko.title, en.title, ja.title].filter(Boolean).join(" ").toLowerCase();
+    const rulesText = [act.rules, ko.rules, en.rules, ja.rules].filter(Boolean).join(" ").toLowerCase();
+    const cautionText = [
+      ko.caution, en.caution, ja.caution,
+      act.seedGuide && act.seedGuide.caution ? `${act.seedGuide.caution.ko} ${act.seedGuide.caution.en} ${act.seedGuide.caution.ja}` : ""
+    ].filter(Boolean).join(" ").toLowerCase();
+    const tipText = [
+      ko.upgradeTip, en.upgradeTip, ja.upgradeTip,
+      act.seedGuide && act.seedGuide.upgradeTip ? `${act.seedGuide.upgradeTip.ko} ${act.seedGuide.upgradeTip.en} ${act.seedGuide.upgradeTip.ja}` : ""
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    const reviewsText = (act.reviews || []).map(r => {
+      const c = typeof r.caution === "object" ? `${r.caution.ko || ""} ${r.caution.en || ""} ${r.caution.ja || ""}` : (r.caution || "");
+      const u = typeof r.upgradeTip === "object" ? `${r.upgradeTip.ko || ""} ${r.upgradeTip.en || ""} ${r.upgradeTip.ja || ""}` : (r.upgradeTip || "");
+      const t = typeof r.teacher === "object" ? `${r.teacher.ko || ""}` : (r.teacher || "");
+      return `${t} ${r.grade || ""} ${c} ${u}`;
+    }).join(" ").toLowerCase();
+
+    const equipText = [
+      act.equipmentDetail, ko.equipmentDetail, en.equipmentDetail, ja.equipmentDetail,
+      ...(act.equipment || []),
+      ...(act.equipment || []).map(eq => `${tTerm("equipment", eq)}`)
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    const metaText = [
+      act.country || "한국",
+      act.curriculumArea,
+      act.playType,
+      ...(act.place || []),
+      act.groupSize,
+      ...(act.gradeGroup || []),
+      act.slotKey || ""
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    const fullText = `${titleText} ${rulesText} ${cautionText} ${tipText} ${reviewsText} ${equipText} ${metaText}`;
+    return {
+      titleText,
+      titleNoSpace: titleText.replace(/\s+/g, ""),
+      rulesText,
+      rulesNoSpace: rulesText.replace(/\s+/g, ""),
+      cautionText,
+      cautionNoSpace: cautionText.replace(/\s+/g, ""),
+      tipText,
+      tipNoSpace: tipText.replace(/\s+/g, ""),
+      reviewsText,
+      reviewsNoSpace: reviewsText.replace(/\s+/g, ""),
+      equipText,
+      equipNoSpace: equipText.replace(/\s+/g, ""),
+      metaText,
+      metaNoSpace: metaText.replace(/\s+/g, ""),
+      fullText,
+      fullNoSpace: fullText.replace(/\s+/g, "")
+    };
   }
 
   function renderActivities() {
@@ -2719,6 +2840,13 @@
     const gradeVal = document.getElementById("gradeSelect").value;
     const slotVal = document.getElementById("slotSelect").value;
     const sortVal = document.getElementById("sortSelect").value;
+
+    // Split query into logical terms; if user typed "학기초 놀이", treat "학기초 놀이" as one concept or individual words
+    const rawTerms = q ? q.split(/\s+/).filter(t => t && !["놀이", "수업", "게임", "활동", "체육"].includes(t)) : [];
+    const effectiveTerms = (q && rawTerms.length === 0) ? q.split(/\s+/).filter(Boolean) : rawTerms;
+    const expandedTermSets = effectiveTerms.map(t => expandQueryTerm(t));
+
+    const matchScoreMap = {};
 
     let filtered = activities.filter(act => {
       if (selectedCountry !== "전체 국가" && (act.country || "한국") !== selectedCountry) return false;
@@ -2740,24 +2868,55 @@
         }
       }
 
-      if (q) {
-        const i18nStr = act.i18n
-          ? `${act.i18n.ko.title} ${act.i18n.ko.rules} ${act.i18n.ko.equipmentDetail} ${act.i18n.en.title} ${act.i18n.en.rules} ${act.i18n.ja.title} ${act.i18n.ja.rules}`
-          : `${act.title} ${act.rules} ${act.equipmentDetail}`;
-        const fullText = [
-          i18nStr,
-          act.curriculumArea,
-          act.playType,
-          act.groupSize,
-          ...(act.keywords || [])
-        ].join(" ").toLowerCase();
+      if (expandedTermSets.length > 0) {
+        const corpus = getActivitySearchableCorpus(act);
+        let score = 0;
 
-        const fullTextNoSpace = fullText.replace(/\s+/g, "");
-        const terms = q.split(/\s+/).filter(Boolean);
-        const matchesAll = terms.every(term =>
-          fullText.includes(term) || fullTextNoSpace.includes(term.replace(/\s+/g, ""))
-        );
-        if (!matchesAll) return false;
+        for (let i = 0; i < expandedTermSets.length; i++) {
+          const candidates = expandedTermSets[i];
+          const primary = effectiveTerms[i].replace(/\s+/g, "");
+          let termMatched = false;
+
+          // Check direct & synonym matches across all content fields
+          for (const cand of candidates) {
+            const cNoSpace = cand.replace(/\s+/g, "");
+            if (!cNoSpace) continue;
+            const isPrimary = (cNoSpace === primary);
+            const weight = isPrimary ? 2.0 : 1.0;
+
+            if (corpus.titleText.includes(cand) || corpus.titleNoSpace.includes(cNoSpace)) {
+              score += 100 * weight;
+              termMatched = true;
+            }
+            if (corpus.rulesText.includes(cand) || corpus.rulesNoSpace.includes(cNoSpace)) {
+              score += 60 * weight;
+              termMatched = true;
+            }
+            if (corpus.cautionText.includes(cand) || corpus.cautionNoSpace.includes(cNoSpace)) {
+              score += 45 * weight;
+              termMatched = true;
+            }
+            if (corpus.tipText.includes(cand) || corpus.tipNoSpace.includes(cNoSpace)) {
+              score += 45 * weight;
+              termMatched = true;
+            }
+            if (corpus.reviewsText.includes(cand) || corpus.reviewsNoSpace.includes(cNoSpace)) {
+              score += 40 * weight;
+              termMatched = true;
+            }
+            if (corpus.equipText.includes(cand) || corpus.equipNoSpace.includes(cNoSpace)) {
+              score += 50 * weight;
+              termMatched = true;
+            }
+            if (corpus.metaText.includes(cand) || corpus.metaNoSpace.includes(cNoSpace)) {
+              score += 30 * weight;
+              termMatched = true;
+            }
+          }
+
+          if (!termMatched) return false;
+        }
+        matchScoreMap[act.id] = score;
       }
 
       return true;
@@ -2765,6 +2924,11 @@
 
     const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
     filtered.sort((a, b) => {
+      if (expandedTermSets.length > 0) {
+        const sA = matchScoreMap[a.id] || 0;
+        const sB = matchScoreMap[b.id] || 0;
+        if (sB !== sA) return sB - sA;
+      }
       if (selEqArr.length > 1 && equipmentMatchMode === "OR") {
         const mA = selEqArr.filter(eq => a.equipment.includes(eq)).length;
         const mB = selEqArr.filter(eq => b.equipment.includes(eq)).length;
@@ -2808,10 +2972,30 @@
       const st = computeAiStats(act);
       const locTitle = getLocalizedField(act, "title");
       const locRules = getLocalizedField(act, "rules");
+      const locCaution = getLocalizedField(act, "caution") || st.latestCaution || "";
+      const locTip = getLocalizedField(act, "upgradeTip") || (st.allUpgrades && st.allUpgrades[0]) || "";
       const tagNames = (act.equipment || []).map(k => tTerm("equipment", k)).join(", ");
-      const locEquip = `${ getLocalizedField(act, "equipmentDetail") } (${tagNames})`;
+      const locEquip = `${getLocalizedField(act, "equipmentDetail")} (${tagNames})`;
+
       const titleHtml = highlightText(locTitle, rawQuery);
       const rulesHtml = highlightText(locRules, rawQuery);
+      const equipHtml = highlightText(locEquip, rawQuery);
+      const cautionHtml = highlightText(locCaution, rawQuery);
+      const tipHtml = highlightText(locTip, rawQuery);
+
+      // Show matched caution/tip snippet on card when searching
+      let extraContentMatchHtml = "";
+      if (rawQuery && (cautionHtml.includes("<mark") || tipHtml.includes("<mark"))) {
+        const snippetParts = [];
+        if (cautionHtml.includes("<mark")) snippetParts.push(`<strong>${ui.revCautionLabel}</strong> ${cautionHtml}`);
+        if (tipHtml.includes("<mark")) snippetParts.push(`<strong>${ui.revTipLabel}</strong> ${tipHtml}`);
+        extraContentMatchHtml = `
+          <div style="background:var(--blue-soft); border:1px solid #bfdbfe; border-radius:6px; padding:7px 10px; font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+            ${snippetParts.join("<br/>")}
+          </div>
+        `;
+      }
+
       const placeStr = act.place.map(p => tTerm("place", p)).join("·");
       const sizeStr = tTerm("size", act.groupSize).split(" ")[0];
 
@@ -2828,10 +3012,11 @@
             </div>
 
             <h3 class="card-title">${titleHtml}</h3>
-            <p class="card-desc">${rulesHtml}</p>
+            <p class="card-desc" style="${rawQuery ? '-webkit-line-clamp: 3;' : ''}">${rulesHtml}</p>
+            ${extraContentMatchHtml}
 
             <div class="card-meta-table">
-              <div class="meta-item"><span class="meta-key">${ui.metaEquip}</span><span class="meta-val">${locEquip}</span></div>
+              <div class="meta-item"><span class="meta-key">${ui.metaEquip}</span><span class="meta-val">${equipHtml}</span></div>
               <div class="meta-item"><span class="meta-key">${ui.metaPlace}</span><span class="meta-val">${placeStr}</span></div>
               <div class="meta-item"><span class="meta-key">${ui.metaSize}</span><span class="meta-val">${sizeStr}</span></div>
               <div class="meta-item"><span class="meta-key">${ui.metaGrade}</span><span class="meta-val">${st.bestGrade}</span></div>
