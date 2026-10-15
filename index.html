@@ -2463,7 +2463,7 @@
 
   function loadData() {
     BASE_COUNT = MASTER_SEEDS.length * PEDAGOGICAL_VARIATIONS.length;
-    gasWebAppUrl = safeGetStorage("pe_hub_gas_url") || GAS_DEFAULT_URL;
+    gasWebAppUrl = safeGetStorage("pe_hub_gas_url_v2") || GAS_DEFAULT_URL;
 
     // 지난번에 시트에서 받아둔 내용이 있으면 먼저 보여주고, 시트에서 새로 받아오면 교체
     let cached = null;
@@ -3789,7 +3789,7 @@
   function saveGasWebAppUrl() {
     const v = document.getElementById("gasWebAppUrlInput").value.trim();
     gasWebAppUrl = v || GAS_DEFAULT_URL;
-    safeSetStorage("pe_hub_gas_url", v);
+    safeSetStorage("pe_hub_gas_url_v2", v);
     document.getElementById("gasSyncStatusMsg").textContent = "저장했습니다. 시트에서 다시 불러옵니다.";
     syncFromSheet();
   }
