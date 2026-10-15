@@ -1430,6 +1430,7 @@
             <a href="https://docs.google.com/spreadsheets/d/1luIzrAEw2EQBuaMZv_5LvrvnMVsfEn6dZxUR7zPsQZI/edit" target="_blank" rel="noopener" class="btn-admin" style="text-decoration:none;">구글 시트 열기</a>
             <button class="btn-admin" onclick="syncFromSheet()">지금 다시 불러오기</button>
             <button class="btn-admin" onclick="exportCurrentDbToCsv()">현재 목록 CSV 백업</button>
+            <button class="btn-admin" onclick="copyExclusionList()">제외 목록 복사 (제미나이용)</button>
           </div>
           <div id="gasSyncStatusMsg" style="margin-top:8px; font-size:12px; color:var(--blue); font-weight:600;"></div>
         </div>
@@ -3934,6 +3935,18 @@
       sumEl.textContent = e.message;
     } finally {
       updateImportButton();
+    }
+  }
+
+  // 제미나이에게 "이미 있는 영상·수업" 목록으로 넘겨 중복 수집을 막는다
+  async function copyExclusionList() {
+    const lines = activities.map(a => `${a.videoId}\t${(a.i18n && a.i18n.ko && a.i18n.ko.title) || a.title}`);
+    const text = `[제외 목록] 아래 영상과 같은 videoId, 또는 같은 놀이(이름만 다르고 규칙이 같은 것)는 수집하지 마라. 총 ${lines.length}개\n` + lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`제외 목록 ${lines.length}개를 복사했습니다. 제미나이에 붙여 넣으세요.`);
+    } catch (e) {
+      showToast("복사하지 못했습니다.");
     }
   }
 
