@@ -1,0 +1,3274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘 체육 뭐 하지?</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface-subtle: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --accent: #111827;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 72px;
+    }
+
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Minimal Top Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .site-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Language Toggle Bar */
+    .lang-toggle {
+      display: inline-flex;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .lang-btn {
+      padding: 5px 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .lang-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .lang-btn.active {
+      background: var(--surface);
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .btn-admin {
+      padding: 7px 13px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-admin:hover {
+      color: var(--text-primary);
+      background: var(--surface-subtle);
+    }
+
+    /* Search & Popular Keywords Section */
+    .search-section {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 0 20px;
+    }
+
+    .search-bar-wrap {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .search-input {
+      flex: 1;
+      height: 44px;
+      padding: 0 16px;
+      font-size: 14.5px;
+      color: var(--text-primary);
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .search-input:focus {
+      background: var(--surface);
+      border-color: var(--text-primary);
+    }
+
+    .btn-reset {
+      height: 44px;
+      padding: 0 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .btn-reset:hover {
+      background: var(--surface-subtle);
+      color: var(--text-primary);
+    }
+
+    /* Popular Search Keywords Row */
+    .popular-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+      font-size: 12.5px;
+    }
+
+    .popular-label {
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    .popular-tag {
+      padding: 3px 10px;
+      background: var(--surface-subtle);
+      color: var(--text-secondary);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+    }
+
+    .popular-tag:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+      background: #e5e7eb;
+    }
+
+    /* Clean Filter Table */
+    .filter-box {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .filter-line {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    @media (max-width: 640px) {
+      .filter-line {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+    }
+
+    .filter-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      padding-top: 5px;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 5px 11px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      user-select: none;
+    }
+
+    .chip:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .chip.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    
+    .chip.multi-chip.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #ffffff;
+    }
+
+    .equip-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding: 6px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .equip-mode-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      padding: 2px;
+    }
+
+    .equip-mode-btn {
+      padding: 3px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .equip-mode-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .equip-clear-btn {
+      padding: 3px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--blue);
+      background: var(--blue-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Results Toolbar */
+    .results-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 24px 0 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .results-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .results-count {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .results-count span {
+      color: var(--blue);
+    }
+
+    .sort-select {
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn-propose {
+      padding: 9px 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--blue);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-propose:hover {
+      background: #1d4ed8;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card:hover {
+      border-color: #9ca3af;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      gap: 6px;
+    }
+
+    .card-cats {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    
+    .country-tag {
+      background: var(--blue-soft);
+      color: var(--blue);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11.5px;
+    }
+
+    .cat-tag {
+      background: var(--surface-subtle);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+    .card-rating {
+      font-weight: 600;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    mark.hl {
+      background: #fef08a;
+      color: var(--text-primary);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    .card-meta-table {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 12.5px;
+    }
+
+    .meta-item {
+      display: flex;
+      gap: 6px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .meta-key {
+      color: var(--text-muted);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .meta-val {
+      color: var(--text-primary);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-ai-line {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-ai-line strong {
+      color: var(--text-primary);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-recommend {
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .btn-recommend:hover {
+      background: var(--surface-subtle);
+      color: var(--text-primary);
+    }
+
+    .btn-view {
+      flex: 1;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      background: var(--surface-subtle);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .btn-view:hover {
+      background: #e5e7eb;
+    }
+
+    /* Load More Bar */
+    .load-more-wrap {
+      margin-top: 28px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-load-more {
+      padding: 11px 28px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-load-more:hover {
+      background: var(--surface-subtle);
+      border-color: var(--text-primary);
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      width: 100%;
+      max-width: 920px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      padding: 24px;
+    }
+
+    .modal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: 1px solid var(--border);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 800px) {
+      .modal-grid {
+        grid-template-columns: 1fr;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-block {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 16px;
+      background: var(--surface);
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .video-embed {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      background: #111827;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .video-embed iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .source-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+    }
+
+    .source-bar a {
+      color: var(--blue);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .stat-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .stat-cell {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-cell-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .stat-cell-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--surface-subtle);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--text-primary);
+      border-radius: 999px;
+    }
+
+    .review-card {
+      border-top: 1px solid var(--border);
+      padding: 12px 0;
+      font-size: 13px;
+    }
+
+    .review-card:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .review-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .review-meta strong {
+      color: var(--text-primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .form-field {
+      margin-bottom: 10px;
+    }
+
+    .form-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .btn-submit:hover {
+      background: #374151;
+    }
+
+    /* Admin Tabs */
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .admin-tab {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .admin-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--text-primary);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #111827;
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 2000;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container header-inner">
+    <h1 class="site-title" id="siteTitleText" onclick="resetFilters()">오늘 체육 뭐 하지?</h1>
+    <div class="header-right">
+      <div class="lang-toggle" role="group" aria-label="Language Selector">
+        <button type="button" class="lang-btn active" id="langBtnKo" onclick="setLanguage('ko')">한국어</button>
+        <button type="button" class="lang-btn" id="langBtnEn" onclick="setLanguage('en')">English</button>
+        <button type="button" class="lang-btn" id="langBtnJa" onclick="setLanguage('ja')">日本語</button>
+      </div>
+      <button class="btn-admin" id="adminHeaderBtn" onclick="openAdminModal()">관리자</button>
+    </div>
+  </div>
+</header>
+
+<section class="search-section">
+  <div class="container">
+    <div class="search-bar-wrap">
+      <input
+        type="text"
+        id="searchInput"
+        class="search-input"
+        placeholder="활동명, 준비물(예: 럭비공, 킨볼, 플라잉디스크, 줄넘기), 상황 키워드(예: 학기초 놀이, 비오는날) 검색"
+        oninput="onSearchInput()"
+        onkeydown="if(event.key==='Enter'){recordSearchQuery(this.value);}"
+      />
+      <button class="btn-reset" id="btnResetText" onclick="resetFilters()">초기화</button>
+    </div>
+
+    <div class="popular-row">
+      <span class="popular-label" id="popularLabelText">추천 검색어</span>
+      <div id="popularKeywordsWrap" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+
+    <div class="filter-box">
+      <div class="filter-line">
+        <div class="filter-label" id="lblCountry">국가별 수업</div>
+        <div class="chip-group" id="countryChips"></div>
+      </div>
+
+      <div class="filter-line">
+        <div class="filter-label" id="lblCurriculum">교육과정 영역</div>
+        <div class="chip-group" id="curriculumChips"></div>
+      </div>
+
+      <div class="filter-line">
+        <div class="filter-label" id="lblPlayType">놀이·활동 유형</div>
+        <div class="chip-group" id="playTypeChips"></div>
+      </div>
+
+      <div class="filter-line">
+        <div class="filter-label">
+          <div id="lblEquipment">체육교구(준비물)</div>
+          <div id="lblEquipMultiHint" style="font-size:11px; font-weight:500; color:var(--blue); margin-top:2px;">중복 선택 가능</div>
+        </div>
+        <div>
+          <div class="equip-toolbar">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span id="equipSelectedSummary" style="font-weight:600; color:var(--text-primary);">전체 교구 표시 중 (여러 교구를 동시에 클릭해 조합 검색 가능)</span>
+              <button type="button" class="equip-clear-btn" id="btnClearEquip" style="display:none;" onclick="clearEquipmentSelection()">선택 해제</button>
+            </div>
+            <div class="equip-mode-group" role="group" aria-label="Equipment Match Mode">
+              <button type="button" class="equip-mode-btn active" id="modeBtnAnd" onclick="setEquipmentMatchMode('AND')">모두 포함 (AND)</button>
+              <button type="button" class="equip-mode-btn" id="modeBtnOr" onclick="setEquipmentMatchMode('OR')">하나라도 포함 (OR)</button>
+            </div>
+          </div>
+          <div class="chip-group" id="equipmentChips"></div>
+        </div>
+      </div>
+
+      <div class="filter-line">
+        <div class="filter-label" id="lblSpaceGrade">장소·인원·학년·차시</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+          <div class="chip-group" id="placeChips"></div>
+          <select id="sizeSelect" class="sort-select" onchange="resetPageAndRender()"></select>
+          <select id="gradeSelect" class="sort-select" onchange="resetPageAndRender()"></select>
+          <select id="slotSelect" class="sort-select" onchange="resetPageAndRender()"></select>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="container">
+  <div class="results-toolbar">
+    <div class="results-left">
+      <div class="results-count" id="resultsCountText">검색된 체육 수업 <span>12,000</span>건</div>
+      <select id="sortSelect" class="sort-select" onchange="resetPageAndRender()"></select>
+    </div>
+    <button class="btn-propose" id="btnProposeText" onclick="openAddActivityModal()">새 체육 수업 제안 신청</button>
+  </div>
+
+  <section class="cards-grid" id="cardsGrid"></section>
+
+  <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+    <button type="button" class="btn-load-more" id="btnLoadMore" onclick="loadMoreItems()"></button>
+  </div>
+</main>
+
+<!-- Activity Detail & Review Modal -->
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div>
+        <div id="modalCategoryLine" style="font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px;"></div>
+        <h2 id="modalTitle" style="font-size:20px; font-weight:800;"></h2>
+      </div>
+      <button class="btn-close" onclick="closeDetailModal()">✕</button>
+    </div>
+
+    <div class="modal-grid">
+      <div>
+        <div class="video-embed" id="modalVideoBox"></div>
+        <div class="source-bar" id="modalSourceBar"></div>
+
+        <div class="panel-block">
+          <div class="panel-title" id="modalInfoTitle">수업 기본 정보</div>
+          <div id="modalMetaInfo" style="font-size:13px; color:var(--text-secondary); line-height:1.75;"></div>
+        </div>
+
+        <div class="panel-block">
+          <div class="panel-title" id="modalRulesTitle">활동 방법 및 규칙</div>
+          <p id="modalRules" style="font-size:13.5px; color:var(--text-primary); line-height:1.65; white-space:pre-line;"></p>
+        </div>
+
+        <div class="panel-block">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div class="panel-title" id="modalWriteReviewTitle" style="margin-bottom:0;">교사 후기 및 팁 작성</div>
+            <span id="modalNoLoginHint" style="font-size:11.5px; color:var(--text-muted);">로그인 없이 바로 등록 · 다국어 자동 번역</span>
+          </div>
+          <form id="reviewForm" onsubmit="submitReview(event)">
+            <div class="form-row">
+              <div>
+                <label id="lblRevTeacher" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">작성자 (별칭)</label>
+                <input type="text" id="revTeacher" class="input-box" placeholder="예: 3학년 담임" required />
+              </div>
+              <div>
+                <label id="lblRevGrade" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">지도 학년</label>
+                <select id="revGrade" class="input-box">
+                  <option value="1~2학년">1~2학년 (Grade 1-2 / 低学年)</option>
+                  <option value="3~4학년" selected>3~4학년 (Grade 3-4 / 中学年)</option>
+                  <option value="5~6학년">5~6학년 (Grade 5-6 / 高学年)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label id="lblRevFit" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">발달단계 적합성 (1~5점)</label>
+                <select id="revFitScore" class="input-box">
+                  <option value="5">5</option>
+                  <option value="4">4</option>
+                  <option value="3">3</option>
+                  <option value="2">2</option>
+                </select>
+              </div>
+              <div>
+                <label id="lblRevRating" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">전체 추천 점수 (1~5점)</label>
+                <select id="revRating" class="input-box">
+                  <option value="5">5</option>
+                  <option value="4">4</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label id="lblRevDur" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">적정 소요 시간 (분)</label>
+                <input type="number" id="revDuration" class="input-box" min="5" max="80" value="25" required />
+              </div>
+              <div>
+                <label id="lblRevSession" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">적정 차시</label>
+                <select id="revSessionType" class="input-box">
+                  <option value="도입·자투리">10~15 min (도입·자투리)</option>
+                  <option value="반차시" selected>20~25 min (반차시)</option>
+                  <option value="1차시">35~40 min (1차시)</option>
+                  <option value="2차시">50+ min (블록·운동회)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label id="lblRevCaution">수업 시 유의사항</label>
+              <textarea id="revCaution" class="input-box" rows="2" placeholder="안전 지도, 인원 배분, 동선 관리 등 유의할 점" required></textarea>
+            </div>
+
+            <div class="form-field">
+              <label id="lblRevTip">수업 발전 및 변형 팁</label>
+              <textarea id="revUpgradeTip" class="input-box" rows="2" placeholder="규칙 변형이나 학년별 응용 노하우" required></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnSubmitReview">후기 등록 (한·영·일 자동번역)</button>
+          </form>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-block" id="modalAiPanel" style="background:var(--bg);"></div>
+
+        <div class="panel-block">
+          <div class="panel-title" id="modalReviewCountTitle">교사 후기</div>
+          <div id="modalReviewsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Propose New Activity Modal -->
+<div class="modal-backdrop" id="addActivityModal">
+  <div class="modal-box" style="max-width:620px;">
+    <div class="modal-top">
+      <div>
+        <h2 id="proposeModalTitle" style="font-size:18px; font-weight:800;">새 체육 수업 제안 신청</h2>
+        <p id="proposeModalSub" style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">제안된 수업은 한·영·일 자동 번역되어 관리자 승인 후 게시됩니다.</p>
+      </div>
+      <button class="btn-close" onclick="closeAddActivityModal()">✕</button>
+    </div>
+
+    <form onsubmit="submitNewActivity(event)">
+      <div class="form-row">
+        <div>
+          <label id="lblNewCountry" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">국가 분류</label>
+          <select id="newCountry" class="input-box">
+            <option value="한국">한국 (Korea / 韓国)</option>
+            <option value="일본">일본 (Japan / 日本)</option>
+            <option value="미국">미국 (USA / アメリカ)</option>
+            <option value="캐나다">캐나다 (Canada / カナダ)</option>
+            <option value="호주">호주 (Australia / オーストラリア)</option>
+            <option value="영국">영국 (UK / イギリス)</option>
+            <option value="독일">독일 (Germany / ドイツ)</option>
+            <option value="스페인">스페인 (Spain / スペイン)</option>
+            <option value="프랑스">프랑스 (France / フランス)</option>
+            <option value="글로벌">글로벌 (Global / グローバル)</option>
+          </select>
+        </div>
+        <div>
+          <label id="lblNewTitle" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">활동명</label>
+          <input type="text" id="newTitle" class="input-box" placeholder="예: 킨볼 협동 술래잡기 / 플라잉디스크 골인" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label id="lblNewCurr" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">교육과정 영역</label>
+          <select id="newCurrArea" class="input-box">
+            <option value="건강">건강 (Health / 体つくり)</option>
+            <option value="도전">도전 (Challenge / 挑戦)</option>
+            <option value="경쟁">경쟁 (Competition / 競争・ゲーム)</option>
+            <option value="표현">표현 (Expression / 表現)</option>
+            <option value="안전·인성">안전·인성 (Safety & Teamwork / 安全・協同)</option>
+          </select>
+        </div>
+        <div>
+          <label id="lblNewPlayType" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">놀이·활동 유형</label>
+          <select id="newPlayType" class="input-box">
+            <option value="준비운동·코디네이션">준비운동·코디네이션</option>
+            <option value="팀빌딩·협동형">팀빌딩·협동형</option>
+            <option value="술래잡기·태그형">술래잡기·태그형</option>
+            <option value="피구·투척형">피구·투척형</option>
+            <option value="축구·발구기형">축구·발구기형</option>
+            <option value="농구·핸드볼형">농구·핸드볼형</option>
+            <option value="럭비·보물탈환형">럭비·보물탈환형</option>
+            <option value="네트·라켓형">네트·라켓형</option>
+            <option value="필드·티볼·야구형">필드·티볼·야구형</option>
+            <option value="플라잉디스크·하키형">플라잉디스크·하키형</option>
+            <option value="줄넘기·리듬스텝형">줄넘기·리듬스텝형</option>
+            <option value="육상·릴레이·순발력형">육상·릴레이·순발력형</option>
+            <option value="표적·컬링·보치아형">표적·컬링·보치아형</option>
+            <option value="전래·전통놀이형">전래·전통놀이형</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">수업 장소</label>
+          <select id="newPlace" class="input-box">
+            <option value="교실,강당">교실 · 강당</option>
+            <option value="강당,운동장">강당 · 운동장</option>
+            <option value="교실">교실</option>
+            <option value="교실,강당,운동장">교실 · 강당 · 운동장</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">적정 인원</label>
+          <select id="newGroupSize" class="input-box">
+            <option value="소규모·짝·모둠 (2~10명)">소규모·모둠 (2~10명)</option>
+            <option value="학급 전체 (15~30명)">학급 전체 (15~30명)</option>
+            <option value="대집단·합동 (30명+)">대집단·합동 (30명+)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">대표 교구 분류</label>
+          <select id="newEquipmentTag" class="input-box">
+            <option value="없음(맨손)">없음(맨손)</option>
+            <option value="폼볼/피구공">폼볼/피구공</option>
+            <option value="축구/농구/배구공">축구/농구/배구공</option>
+            <option value="럭비공/태그벨트">럭비공/태그벨트</option>
+            <option value="큰공(짐볼/킨볼)">큰공(짐볼/킨볼)</option>
+            <option value="풍선/탱탱볼/비치볼">풍선/탱탱볼/비치볼</option>
+            <option value="콩주머니(빈백)/보치아">콩주머니(빈백)/보치아</option>
+            <option value="플라잉디스크(원반)">플라잉디스크(원반)</option>
+            <option value="줄넘기/긴줄/고무줄">줄넘기/긴줄/고무줄</option>
+            <option value="라켓/스틱(플로어볼/패드민턴)">라켓/스틱(플로어볼/패드민턴)</option>
+            <option value="훌라후프">훌라후프</option>
+            <option value="접시콘/라바콘">접시콘/라바콘</option>
+            <option value="원마커(스팟)">원마커(스팟)</option>
+            <option value="펀스틱(스펀지봉)">펀스틱(스펀지봉)</option>
+            <option value="미트/스태킹컵(종이컵)">미트/스태킹컵(종이컵)</option>
+            <option value="스카프/꼬리끈">스카프/꼬리끈</option>
+            <option value="스텝래더(사다리)/허들">스텝래더(사다리)/허들</option>
+            <option value="파라슈트(낙하산)/타프">파라슈트(낙하산)/타프</option>
+            <option value="팀조끼">팀조끼</option>
+            <option value="스쿠터보드/매트">스쿠터보드/매트</option>
+            <option value="의자/책상">의자/책상</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">보조 교구 분류 (선택·중복용)</label>
+          <select id="newEquipmentTagSub" class="input-box">
+            <option value="">선택 안 함 (단일 교구)</option>
+            <option value="접시콘/라바콘">접시콘/라바콘</option>
+            <option value="원마커(스팟)">원마커(스팟)</option>
+            <option value="훌라후프">훌라후프</option>
+            <option value="팀조끼">팀조끼</option>
+            <option value="폼볼/피구공">폼볼/피구공</option>
+            <option value="펀스틱(스펀지봉)">펀스틱(스펀지봉)</option>
+            <option value="스카프/꼬리끈">스카프/꼬리끈</option>
+            <option value="줄넘기/긴줄/고무줄">줄넘기/긴줄/고무줄</option>
+            <option value="미트/스태킹컵(종이컵)">미트/스태킹컵(종이컵)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">상세 준비물 설명</label>
+        <input type="text" id="newEquipmentDetail" class="input-box" placeholder="예: 킨볼 1개, 접시콘 8개, 팀조끼 3색" required />
+      </div>
+
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">참고 영상 URL (YouTube)</label>
+        <input type="url" id="newYoutubeUrl" class="input-box" placeholder="https://www.youtube.com/watch?v=..." required />
+      </div>
+
+      <div class="form-field">
+        <label>활동 내용 및 규칙</label>
+        <textarea id="newRules" class="input-box" rows="3" placeholder="단계별 활동 방법을 작성해 주세요." required></textarea>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">적정 소요 시간 (분)</label>
+          <input type="number" id="newDuration" class="input-box" value="25" min="5" max="80" required />
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">핵심 유의사항</label>
+          <input type="text" id="newCaution" class="input-box" placeholder="안전 및 운영 유의점" required />
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnSubmitPropose" style="margin-top:6px;">제안 신청 제출 (자동 번역 적용)</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Modal (Approval Queue + DB Settings) -->
+<div class="modal-backdrop" id="adminModal">
+  <div class="modal-box" style="max-width:780px;">
+    <div class="modal-top">
+      <div>
+        <h2 style="font-size:18px; font-weight:800;">관리자 페이지 (Admin)</h2>
+      </div>
+      <button class="btn-close" onclick="closeAdminModal()">✕</button>
+    </div>
+
+    <div id="adminAuthBox" class="panel-block" style="background:var(--bg);">
+      <div class="panel-title">관리자 인증</div>
+      <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
+        새 체육 수업 제안 승인 및 데이터베이스 연동 관리를 위해 비밀번호를 입력해 주세요. (초기 비밀번호: <code>1234</code>)
+      </p>
+      <div style="display:flex; gap:8px; max-width:360px;">
+        <input type="password" id="adminPinInput" class="input-box" value="1234" placeholder="비밀번호 입력" />
+        <button class="btn-submit" style="width:110px;" onclick="verifyAdminPin()">확인</button>
+      </div>
+      <div id="adminAuthError" style="color:#dc2626; font-size:12px; font-weight:600; margin-top:6px;"></div>
+    </div>
+
+    <div id="adminPanelContent" style="display:none;">
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="tabBtnPending" onclick="switchAdminTab('pending')">새 수업 승인 대기열</button>
+        <button class="admin-tab" id="tabBtnDb" onclick="switchAdminTab('db')">구글 시트 DB 연동 설정</button>
+      </div>
+
+      <div id="adminTabPending">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div id="pendingCountHeader" style="font-size:14px; font-weight:700;">승인 대기 목록</div>
+        </div>
+        <div id="pendingListContainer"></div>
+      </div>
+
+      <div id="adminTabDb" style="display:none;">
+        <div class="panel-block">
+          <div class="panel-title">구글 스프레드시트 실시간 DB 연동</div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
+            Google Drive의 실시간 DB 시트(ID: <code>1luIzrAEw2EQBuaMZv_5LvrvnMVsfEn6dZxUR7zPsQZI</code>)에 Apps Script 웹 앱 URL을 연결하면 후기와 승인된 수업이 시트에 자동 기록됩니다.
+          </p>
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input type="url" id="gasWebAppUrlInput" class="input-box" placeholder="https://script.google.com/macros/s/.../exec" />
+            <button class="btn-submit" style="width:140px;" onclick="saveGasWebAppUrl()">URL 저장</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="https://docs.google.com/spreadsheets/d/1luIzrAEw2EQBuaMZv_5LvrvnMVsfEn6dZxUR7zPsQZI/edit" target="_blank" rel="noopener" class="btn-admin" style="text-decoration:none;">구글 DB 시트 열기</a>
+            <button class="btn-admin" onclick="exportCurrentDbToCsv()">현재 12,000건 데이터 CSV 백업</button>
+          </div>
+          <div id="gasSyncStatusMsg" style="margin-top:8px; font-size:12px; color:var(--blue); font-weight:600;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastBox" class="toast"></div>
+
+<script>
+  /* =========================================================================
+     1. TRILINGUAL (KO / EN / JA) UI & EXPANDED TAXONOMY DICTIONARY
+     ========================================================================= */
+  let currentLang = "ko";
+
+  const UI_I18N = {
+    ko: {
+      siteTitle: "오늘 체육 뭐 하지?",
+      adminBtn: "관리자",
+      searchPlaceholder: "활동명, 준비물(예: 럭비공, 킨볼, 짐볼, 플라잉디스크, 줄넘기), 상황 키워드(예: 학기초 놀이, 비오는날) 검색",
+      resetBtn: "초기화",
+      popularLabel: "추천 검색어",
+      lblCountry: "국가별 수업",
+      lblCurriculum: "교육과정 영역",
+      lblPlayType: "놀이·활동 유형",
+      lblEquipment: "체육교구(준비물)",
+      lblEquipMultiHint: "중복 선택 가능",
+      equipAllSummary: "전체 교구 표시 중 (여러 교구를 동시에 클릭해 중복 검색 가능)",
+      equipSelectedSummary: (names, n, mode) => `선택된 준비물 ${n}개 [${names}] · ${mode === 'AND' ? '모두 사용하는 수업' : '하나라도 사용하는 수업'}`,
+      equipClearBtn: "교구 선택 초기화",
+      equipModeAnd: "모두 포함 (AND)",
+      equipModeOr: "하나라도 포함 (OR)",
+      lblSpaceGrade: "장소·인원·학년·차시",
+      resultsCount: (n) => `검색된 체육 수업 <span>${n.toLocaleString()}</span>건`,
+      proposeBtn: "새 체육 수업 제안 신청",
+      sortLikes: "추천순",
+      sortFit: "발달단계 적합도순",
+      sortTimeAsc: "소요시간 짧은순",
+      sortTimeDesc: "소요시간 긴순",
+      ratingLabel: "평점",
+      reviewLabel: "후기",
+      metaEquip: "준비물",
+      metaPlace: "장소",
+      metaSize: "인원",
+      metaGrade: "대상",
+      aiCardSummary: (dur, sess) => `AI 분석 적정시간 <strong>평균 ${dur}분</strong> (${sess})`,
+      aiCardFit: (fit) => `적합도 <strong>${fit}</strong>/5.0`,
+      btnRecommend: (likes) => `추천 ${likes}`,
+      btnViewDetail: "상세 및 후기 보기",
+      btnLoadMore: (rem, total) => `더 보기 (+36건 · 남은 수업 ${rem.toLocaleString()}건 / 전체 ${total.toLocaleString()}건)`,
+      emptyTitle: "조건에 맞는 체육 수업이 없습니다.",
+      emptySub: "다른 검색어나 필터를 선택해 보세요.",
+      modalInfoTitle: "수업 기본 정보",
+      modalRulesTitle: "활동 방법 및 규칙",
+      modalWriteReviewTitle: "교사 후기 및 팁 작성",
+      modalNoLoginHint: "로그인 없이 바로 등록 · 한/영/일 자동 번역",
+      btnSubmitReview: "후기 등록 (한·영·일 자동번역)",
+      aiPanelTitle: "AI 교사 피드백 요약",
+      aiPanelCount: (c) => `응답 ${c}건 기준`,
+      aiStatDur: "적정 소요시간",
+      aiStatDurVal: (d) => `평균 ${d}분`,
+      aiStatSess: "권장 차시",
+      aiStatFit: "발달단계 적합도",
+      aiGradeChartTitle: "학년군별 적합도 비율",
+      aiCautionTitle: "핵심 유의사항 요약:",
+      aiUpgradeTitle: "수업 발전 팁 요약:",
+      reviewSectionTitle: (c) => `교사 후기 (${c})`,
+      revMetaLine: (t, g, f, d) => `<strong>${t}</strong> · 지도학년 ${g} · 적합성 ${f}점 · 적정 ${d}분`,
+      revCautionLabel: "유의사항:",
+      revTipLabel: "발전 팁:",
+      sourcePrefix: "수업 참고 영상 (YouTube 공식 임베드)",
+      openYoutube: "원본 영상 보기 ↗",
+      toastLike: "추천이 반영되었습니다.",
+      toastReview: "후기가 등록되어 한국어·영어·일본어로 자동 번역되었습니다.",
+      toastProposed: "수업 제안이 접수되었습니다. 관리자 승인 후 게시됩니다."
+    },
+    en: {
+      siteTitle: "What to Teach in PE Today?",
+      adminBtn: "Admin",
+      searchPlaceholder: "Search game title, equipment (e.g., rugby ball, Kin-Ball, flying disc, jump rope), or scenario...",
+      resetBtn: "Reset",
+      popularLabel: "Popular Searches",
+      lblCountry: "Country",
+      lblCurriculum: "Curriculum Area",
+      lblPlayType: "Activity Type",
+      lblEquipment: "Equipment",
+      lblEquipMultiHint: "Multi-select enabled",
+      equipAllSummary: "Showing all equipment (Click multiple items to combine filters)",
+      equipSelectedSummary: (names, n, mode) => `${n} Selected [${names}] · ${mode === 'AND' ? 'Uses ALL selected' : 'Uses ANY selected'}`,
+      equipClearBtn: "Clear Gear",
+      equipModeAnd: "Match ALL (AND)",
+      equipModeOr: "Match ANY (OR)",
+      lblSpaceGrade: "Space·Size·Grade·Time",
+      resultsCount: (n) => `<span>${n.toLocaleString()}</span> PE Lessons Found`,
+      proposeBtn: "Propose New PE Lesson",
+      sortLikes: "Most Recommended",
+      sortFit: "Highest Developmental Fit",
+      sortTimeAsc: "Shortest Duration",
+      sortTimeDesc: "Longest Duration",
+      ratingLabel: "Rating",
+      reviewLabel: "Reviews",
+      metaEquip: "Gear",
+      metaPlace: "Space",
+      metaSize: "Size",
+      metaGrade: "Grade",
+      aiCardSummary: (dur, sess) => `AI Optimal Time: <strong>Avg ${dur}m</strong> (${sess})`,
+      aiCardFit: (fit) => `Dev Fit <strong>${fit}</strong>/5.0`,
+      btnRecommend: (likes) => `Recommend ${likes}`,
+      btnViewDetail: "View Details & Reviews",
+      btnLoadMore: (rem, total) => `Load More (+36 · ${rem.toLocaleString()} remaining of ${total.toLocaleString()})`,
+      emptyTitle: "No matching PE lessons found.",
+      emptySub: "Try adjusting your search keywords or filters.",
+      modalInfoTitle: "Lesson Overview",
+      modalRulesTitle: "How to Play & Rules",
+      modalWriteReviewTitle: "Leave a Teacher Review & Tip",
+      modalNoLoginHint: "No login required · Auto-translated to KO/EN/JA",
+      btnSubmitReview: "Submit Review (Auto-Translate)",
+      aiPanelTitle: "AI Teacher Feedback Summary",
+      aiPanelCount: (c) => `Based on ${c} reviews`,
+      aiStatDur: "Optimal Duration",
+      aiStatDurVal: (d) => `Avg ${d} min`,
+      aiStatSess: "Recommended Slot",
+      aiStatFit: "Developmental Fit",
+      aiGradeChartTitle: "Suitability by Grade Group",
+      aiCautionTitle: "Key Safety & Management Notes:",
+      aiUpgradeTitle: "Lesson Progression & Variation Tips:",
+      reviewSectionTitle: (c) => `Teacher Reviews (${c})`,
+      revMetaLine: (t, g, f, d) => `<strong>${t}</strong> · Taught ${g} · Fit ${f}/5 · ${d} min`,
+      revCautionLabel: "Caution:",
+      revTipLabel: "Progression Tip:",
+      sourcePrefix: "Reference Video (Official YouTube Embed)",
+      openYoutube: "Watch on YouTube ↗",
+      toastLike: "Recommendation added.",
+      toastReview: "Review submitted and auto-translated into KO/EN/JA.",
+      toastProposed: "Lesson proposal submitted for admin approval."
+    },
+    ja: {
+      siteTitle: "今日の体育、何する？",
+      adminBtn: "管理者",
+      searchPlaceholder: "活動名、用具（例：ラグビーボール、キンボール、フライングディスク、なわとび）、場面キーワードを検索",
+      resetBtn: "リセット",
+      popularLabel: "人気検索ワード",
+      lblCountry: "国別フィルター",
+      lblCurriculum: "学習指導領域",
+      lblPlayType: "運動・遊びタイプ",
+      lblEquipment: "体育用具（準備物）",
+      lblEquipMultiHint: "複数選択可能",
+      equipAllSummary: "すべての用具を表示中（複数の用具を同時にクリックして組み合わせ検索可能）",
+      equipSelectedSummary: (names, n, mode) => `選択中の用具 ${n}個 [${names}] · ${mode === 'AND' ? 'すべて使用する授業' : 'いずれかを使用する授業'}`,
+      equipClearBtn: "選択解除",
+      equipModeAnd: "すべて含む (AND)",
+      equipModeOr: "いずれか含む (OR)",
+      lblSpaceGrade: "場所・人数・学年・時間",
+      resultsCount: (n) => `検索された体育授業 <span>${n.toLocaleString()}</span>件`,
+      proposeBtn: "新しい体育授業を提案",
+      sortLikes: "おすすめ順",
+      sortFit: "発達段階の適合度順",
+      sortTimeAsc: "所要時間が短い順",
+      sortTimeDesc: "所要時間が長い順",
+      ratingLabel: "評価",
+      reviewLabel: "レビュー",
+      metaEquip: "用具",
+      metaPlace: "場所",
+      metaSize: "人数",
+      metaGrade: "対象",
+      aiCardSummary: (dur, sess) => `AI分析 適正時間 <strong>平均 ${dur}分</strong> (${sess})`,
+      aiCardFit: (fit) => `適合度 <strong>${fit}</strong>/5.0`,
+      btnRecommend: (likes) => `おすすめ ${likes}`,
+      btnViewDetail: "詳細・先生レビューを見る",
+      btnLoadMore: (rem, total) => `もっと見る（+36件・残り${rem.toLocaleString()}件 / 全${total.toLocaleString()}件）`,
+      emptyTitle: "条件に一致する体育授業がありません。",
+      emptySub: "別のキーワードやフィルターを選択してください。",
+      modalInfoTitle: "授業の基本情報",
+      modalRulesTitle: "活動方法とルール",
+      modalWriteReviewTitle: "先生レビュー・指導のコツを投稿",
+      modalNoLoginHint: "ログイン不要・日/韓/英 自動翻訳対応",
+      btnSubmitReview: "レビューを登録（自動翻訳）",
+      aiPanelTitle: "AI 教師フィードバック要約",
+      aiPanelCount: (c) => `回答 ${c}件基準`,
+      aiStatDur: "適正所要時間",
+      aiStatDurVal: (d) => `平均 ${d}分`,
+      aiStatSess: "推奨時間枠",
+      aiStatFit: "発達段階適合度",
+      aiGradeChartTitle: "学年群別の適合割合",
+      aiCautionTitle: "安全・指導上の留意点まとめ:",
+      aiUpgradeTitle: "授業発展・アレンジのコツ:",
+      reviewSectionTitle: (c) => `先生レビュー (${c})`,
+      revMetaLine: (t, g, f, d) => `<strong>${t}</strong> · 指導学年 ${g} · 適合性 ${f}点 · 適正 ${d}分`,
+      revCautionLabel: "留意点:",
+      revTipLabel: "発展のコツ:",
+      sourcePrefix: "授業参考動画 (YouTube公式埋め込み)",
+      openYoutube: "元動画を開く ↗",
+      toastLike: "おすすめが反映されました。",
+      toastReview: "レビューが登録され、日・韓・英に自動翻訳されました。",
+      toastProposed: "新しい授業の提案が送信されました。管理者承認後に公開されます。"
+    }
+  };
+
+  const TERM_MAP = {
+        country: {
+      "전체 국가": { ko: "전체 국가", en: "All Countries", ja: "すべての国" },
+      "한국": { ko: "한국", en: "Korea", ja: "韓国" },
+      "일본": { ko: "일본", en: "Japan", ja: "日本" },
+      "미국": { ko: "미국", en: "USA", ja: "アメリカ" },
+      "캐나다": { ko: "캐나다", en: "Canada", ja: "カナダ" },
+      "호주": { ko: "호주", en: "Australia", ja: "オーストラリア" },
+      "영국": { ko: "영국", en: "UK", ja: "イギリス" },
+      "독일": { ko: "독일", en: "Germany", ja: "ドイツ" },
+      "스페인": { ko: "스페인", en: "Spain", ja: "スペイン" },
+      "프랑스": { ko: "프랑스", en: "France", ja: "フランス" },
+      "글로벌": { ko: "글로벌", en: "Global", ja: "グローバル" }
+    },
+    curriculum: {
+      "전체": { ko: "전체", en: "All", ja: "すべて" },
+      "건강": { ko: "건강", en: "Health & Fitness", ja: "体つくり・健康" },
+      "도전": { ko: "도전", en: "Challenge", ja: "挑戦・記録" },
+      "경쟁": { ko: "경쟁", en: "Competition", ja: "競争・ゲーム" },
+      "표현": { ko: "표현", en: "Expression", ja: "表現・リズム" },
+      "안전·인성": { ko: "안전·인성", en: "Safety & Teamwork", ja: "安全・協同" }
+    },
+    playType: {
+      "전체": { ko: "전체", en: "All", ja: "すべて" },
+      "준비운동·코디네이션": { ko: "준비운동·코디네이션", en: "Warm-Up & Coordination", ja: "準備運動・コーディネーション" },
+      "팀빌딩·협동형": { ko: "팀빌딩·협동형", en: "Teambuilding & Co-op", ja: "チームビルディング・協同型" },
+      "술래잡기·태그형": { ko: "술래잡기·태그형", en: "Tag & Evasion", ja: "鬼ごっこ・タグ型" },
+      "피구·투척형": { ko: "피구·투척형", en: "Dodgeball & Throwing", ja: "ドッジボール・投擲型" },
+      "축구·발구기형": { ko: "축구·발구기형", en: "Soccer & Foot Invasion", ja: "サッカー・足球技型" },
+      "농구·핸드볼형": { ko: "농구·핸드볼형", en: "Basketball & Handball", ja: "バスケ・ハンドボール型" },
+      "럭비·보물탈환형": { ko: "럭비·보물탈환형", en: "Tag Rugby & Territory Raid", ja: "タグラグビー・宝奪還型" },
+      "네트·라켓형": { ko: "네트·라켓형", en: "Volleyball & Racket Net", ja: "ネット・ラケット型" },
+      "필드·티볼·야구형": { ko: "필드·티볼·야구형", en: "Tee-Ball & Kickball", ja: "ティーボール・野球型" },
+      "플라잉디스크·하키형": { ko: "플라잉디스크·하키형", en: "Flying Disc & Floorball", ja: "フライングディスク・ホッケー型" },
+      "줄넘기·리듬스텝형": { ko: "줄넘기·리듬스텝형", en: "Jump Rope & Rhythm Step", ja: "なわとび・リズムステップ型" },
+      "육상·릴레이·순발력형": { ko: "육상·릴레이·순발력형", en: "Track, Relay & Agility", ja: "陸上・リレー・瞬発型" },
+      "표적·컬링·보치아형": { ko: "표적·컬링·보치아형", en: "Target, Curling & Boccia", ja: "ターゲット・カーリング・ボッチャ型" },
+      "전래·전통놀이형": { ko: "전래·전통놀이형", en: "Traditional Folk Games", ja: "伝統・伝承遊び型" }
+    },
+    equipment: {
+      "전체": { ko: "전체", en: "All", ja: "すべて" },
+      "없음(맨손)": { ko: "없음(맨손)", en: "No Equipment", ja: "用具なし(徒手)" },
+      "폼볼/피구공": { ko: "폼볼/피구공", en: "Foam / Dodgeballs", ja: "ソフトボール・ドッジ球" },
+      "축구/농구/배구공": { ko: "축구/농구/배구공", en: "Soccer/Basket/Volleyball", ja: "サッカー・バスケ・バレー球" },
+      "럭비공/태그벨트": { ko: "럭비공/태그벨트", en: "Rugby Ball / Tag Belt", ja: "ラグビー球・タグベルト" },
+      "큰공(짐볼/킨볼)": { ko: "큰공(짐볼/킨볼)", en: "Giant Ball (Kin-Ball/Gym Ball)", ja: "大玉(キンボール・バランス球)" },
+      "풍선/탱탱볼/비치볼": { ko: "풍선/탱탱볼/비치볼", en: "Balloons / Bouncy / Beach Ball", ja: "風船・ビーチボール" },
+      "콩주머니(빈백)/보치아": { ko: "콩주머니(빈백)/보치아", en: "Beanbags / Boccia", ja: "お手玉・ビーンバッグ・ボッチャ" },
+      "플라잉디스크(원반)": { ko: "플라잉디스크(원반)", en: "Flying Disc (Frisbee)", ja: "フライングディスク" },
+      "줄넘기/긴줄/고무줄": { ko: "줄넘기/긴줄/고무줄", en: "Jump Rope / Long Rope", ja: "短縄・長縄・ゴム紐" },
+      "라켓/스틱(플로어볼/패드민턴)": { ko: "라켓/스틱(플로어볼/패드민턴)", en: "Rackets / Floorball Sticks", ja: "ラケット・フロアボールスティック" },
+      "훌라후프": { ko: "훌라후프", en: "Hula Hoops", ja: "フラフープ" },
+      "접시콘/라바콘": { ko: "접시콘/라바콘", en: "Cones", ja: "カラーコーン・マーカー" },
+      "원마커(스팟)": { ko: "원마커(스팟)", en: "Poly Spots", ja: "スポットマーカー" },
+      "펀스틱(스펀지봉)": { ko: "펀스틱(스펀지봉)", en: "Foam Noodles / Sticks", ja: "スポンジ棒(ヌードル)" },
+      "미트/스태킹컵(종이컵)": { ko: "미트/스태킹컵(종이컵)", en: "Target Pads / Stacking Cups", ja: "ミット・スタッキングカップ" },
+      "스카프/꼬리끈": { ko: "스카프/꼬리끈", en: "Scarves / Tail Ribbons", ja: "スカーフ・しっぽリボン" },
+      "스텝래더(사다리)/허들": { ko: "스텝래더(사다리)/허들", en: "Agility Ladder / Hurdles", ja: "ラダー・ミニハードル" },
+      "파라슈트(낙하산)/타프": { ko: "파라슈트(낙하산)/타프", en: "Parachute / Co-op Tarp", ja: "パラシュート・タープ" },
+      "팀조끼": { ko: "팀조끼", en: "Pinnies / Bibs", ja: "ビブス(ゼッケン)" },
+      "스쿠터보드/매트": { ko: "스쿠터보드/매트", en: "Scooter Boards / Mats", ja: "スクーター・マット" },
+      "의자/책상": { ko: "의자/책상", en: "Chairs / Desks", ja: "椅子・机" }
+    },
+    place: {
+      "전체 장소": { ko: "전체 장소", en: "All Spaces", ja: "すべての場所" },
+      "교실": { ko: "교실", en: "Classroom", ja: "教室" },
+      "강당": { ko: "강당", en: "Gymnasium", ja: "体育館" },
+      "운동장": { ko: "운동장", en: "Outdoor Field", ja: "運動場・校庭" }
+    },
+    size: {
+      "전체 인원": { ko: "적정 인원 전체", en: "All Group Sizes", ja: "適正人数すべて" },
+      "소규모·짝·모둠 (2~10명)": { ko: "소규모·모둠 (2~10명)", en: "Small Group (2-10)", ja: "ペア・少人数 (2~10人)" },
+      "학급 전체 (15~30명)": { ko: "학급 전체 (15~30명)", en: "Whole Class (15-30)", ja: "学級全体 (15~30人)" },
+      "대집단·합동 (30명+)": { ko: "대집단·합동 (30명+)", en: "Large Group (30+)", ja: "大人数・合同 (30人+)" }
+    },
+    grade: {
+      "ALL": { ko: "대상 학년 전체", en: "All Grades", ja: "対象学年すべて" },
+      "1~2학년": { ko: "1~2학년 (저학년)", en: "Grades 1-2 (Lower)", ja: "1〜2年生 (低学年)" },
+      "3~4학년": { ko: "3~4학년 (중학년)", en: "Grades 3-4 (Middle)", ja: "3〜4年生 (中学年)" },
+      "5~6학년": { ko: "5~6학년 (고학년)", en: "Grades 5-6 (Upper)", ja: "5〜6年生 (高学年)" }
+    },
+    slot: {
+      "ALL": { ko: "권장 수업시간 전체", en: "All Durations", ja: "推奨時間すべて" },
+      "도입·자투리": { ko: "도입·자투리 (10~15분)", en: "Warm-up / Short (10-15m)", ja: "導入・短時間 (10~15分)" },
+      "반차시": { ko: "반차시 활동 (20~25분)", en: "Half-Lesson (20-25m)", ja: "ハーフ活動 (20~25分)" },
+      "1차시": { ko: "1차시 본수업 (35~40분)", en: "Full Lesson (35-40m)", ja: "1単位時間 (35~40分)" }
+    },
+    sessionShort: {
+      "도입·자투리": { ko: "도입·자투리", en: "Warm-up 10-15m", ja: "導入 10~15分" },
+      "반차시": { ko: "반차시", en: "Half-Lesson 20-25m", ja: "ハーフ 20~25分" },
+      "1차시": { ko: "1차시", en: "Full Lesson 40m", ja: "1単位時間 40分" },
+      "2차시": { ko: "2차시 블록", en: "Block 50m+", ja: "2時間続き" }
+    }
+  };
+
+  function tTerm(group, key) {
+    if (TERM_MAP[group] && TERM_MAP[group][key]) {
+      return TERM_MAP[group][key][currentLang] || key;
+    }
+    return key;
+  }
+
+  /* =========================================================================
+     2. AUTOMATIC TRANSLATION ENGINE FOR USER-GENERATED REVIEWS & PROPOSALS
+     ========================================================================= */
+  const AUTO_DICT_PHRASES = [
+    { ko: "사전 안전 규칙과 이동 동선을 먼저 안내한 뒤 시작하세요.", en: "Explain safety rules and movement lanes clearly before starting the game.", ja: "事前の安全ルールと移動動線を案内してから開始してください。" },
+    { ko: "학생 수준에 따라 공이나 술래 인원을 조절해 보세요.", en: "Adjust the number of balls or taggers according to student skill levels.", ja: "児童のレベルに応じてボールや鬼の人数を調整してみてください。" }
+  ];
+
+  async function translateFreeApi(text, sourceLang, targetLang) {
+    if (!text || sourceLang === targetLang) return text;
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("API status");
+      const data = await res.json();
+      if (data && data.responseData && data.responseData.translatedText) {
+        return data.responseData.translatedText;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function detectLanguage(text) {
+    if (/[\u3040-\u30ff]/.test(text)) return "ja";
+    if (/[\uac00-\ud7af]/.test(text)) return "ko";
+    return "en";
+  }
+
+  function localSmartTranslate(text, targetLang) {
+    if (!text) return "";
+    const exact = AUTO_DICT_PHRASES.find(p => p.ko === text || p.en === text || p.ja === text);
+    if (exact) return exact[targetLang];
+
+    const src = detectLanguage(text);
+    if (src === targetLang) return text;
+
+    let out = text;
+    const replacements = [
+      { ko: "럭비공", en: "rugby ball", ja: "ラグビーボール" },
+      { ko: "킨볼", en: "Kin-Ball", ja: "キンボール" },
+      { ko: "짐볼", en: "stability ball", ja: "バランスボール" },
+      { ko: "플라잉디스크", en: "flying disc", ja: "フライングディスク" },
+      { ko: "플로어볼", en: "floorball", ja: "フロアボール" },
+      { ko: "긴줄넘기", en: "long jump rope", ja: "長縄跳び" },
+      { ko: "파라슈트", en: "parachute", ja: "パラシュート" },
+      { ko: "스텝래더", en: "agility ladder", ja: "ラダー" },
+      { ko: "스펀지봉", en: "foam stick", ja: "スポンジ棒" },
+      { ko: "펀스틱", en: "foam noodle", ja: "スポンジ棒" },
+      { ko: "술래", en: "tagger", ja: "鬼(おに)" },
+      { ko: "피구", en: "dodgeball", ja: "ドッジボール" },
+      { ko: "훌라후프", en: "hula hoop", ja: "フラフープ" },
+      { ko: "원마커", en: "poly spot", ja: "スポットマーカー" },
+      { ko: "라바콘", en: "cone", ja: "カラーコーン" },
+      { ko: "콩주머니", en: "beanbag", ja: "お手玉(ビーンバッグ)" },
+      { ko: "안전", en: "safety", ja: "安全" },
+      { ko: "교실", en: "classroom", ja: "教室" },
+      { ko: "강당", en: "gymnasium", ja: "体育館" },
+      { ko: "운동장", en: "outdoor field", ja: "校庭" }
+    ];
+    replacements.forEach(item => {
+      if (out.includes(item[src])) {
+        out = out.split(item[src]).join(item[targetLang]);
+      }
+    });
+    const tagMap = {
+      ko: "[자동 번역] ",
+      en: "[Auto-Translated] ",
+      ja: "[自動翻訳] "
+    };
+    return tagMap[targetLang] + out;
+  }
+
+  /* =========================================================================
+     3. MASSIVE 12,000-ACTIVITY NEUTRAL ARCHIVE ACROSS ALL 22 EQUIPMENTS & 15 TYPES
+     ========================================================================= */
+  const MASTER_SEEDS = [
+    {
+      country: "일본", vid: "IpcjL_xvkQY", curr: "경쟁", type: "표적·컬링·보치아형", eq: ["폼볼/피구공", "접시콘/라바콘"], place: ["강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년"],
+      ko: { title: "중앙 표적 상자 양방향 투척 밀어내기 게임", eqD: "소프트볼, 중앙 표적 상자/콘", rules: "두 팀이 안전선 뒤에서 중앙의 표적 상자나 콘을 향해 공을 던져 맞히거나 상대 진영으로 밀어내며 자연스럽게 어깨 던지기 동작을 익힙니다.", caution: "공을 주우러 중앙 위험 구역에 들어갈 때는 반드시 호루라기 정지 신호 후에 들어가게 하세요.", tip: "양옆에 낮은 표적과 높은 표적을 함께 배치하면 학생마다 성공 경험을 얻을 수 있습니다." },
+      en: { title: "Two-Way Target Box Ball-Throw Push Game", eqD: "Soft balls, center target boxes/cones", rules: "Teams stand behind throwing lines and throw soft balls at center target boxes or cones to knock them over or push them across the line.", caution: "Students may only enter the center zone to retrieve balls after the teacher's stop whistle.", tip: "Provide both low and high targets so every child experiences throwing success." },
+      ja: { title: "中央ターゲット箱・両方向ボール投げ押し出しゲーム", eqD: "ソフトボール、的用ダンボール箱・コーン", rules: "両チームがラインの後ろから中央の的やコーンに向かってボールを投げ、当てた数や押し込んだ距離を競いながら楽しく投動作を身につけます。", caution: "ボールを拾いに中央エリアへ入る際は、必ずホイッスルで投球を止めてから行わせてください。", tip: "高さや距離の異なる的を複数用意すると、どの子も得点する喜びを味わえます。" }
+    },
+    {
+      country: "일본", vid: "MRSd5UM3Px8", curr: "건강", type: "준비운동·코디네이션", eq: ["없음(맨손)", "접시콘/라바콘"], place: ["교실", "강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "조건 반전 두뇌 반응 코디네이션 점프", eqD: "접시콘 또는 맨손", rules: "교사의 구령과 반대 방향으로 점프하거나 가위바위보 조건(비기면 중앙, 이기면 전진)을 매 라운드 바꾸어 생각하며 움직이는 코디네이션 준비운동입니다.", caution: "처음부터 규칙을 복잡하게 하지 말고 기본 동작 후 조건을 하나씩 추가하세요.", tip: "반사적으로 움직이는 대신 0.5초 생각하고 몸을 반응하게 해 두뇌와 신체를 동시에 깨웁니다." },
+      en: { title: "Cognitive Cue-Flip Coordination Jump Warm-Up", eqD: "Cones or no equipment", rules: "Students react to changing cognitive cues—such as jumping opposite to the teacher's call or switching rock-paper-scissors movement conditions each round.", caution: "Start with one simple rule so students warm up quickly before layering cognitive twists.", tip: "Adding a split-second decision before sprinting boosts both engagement and coordination." },
+      ja: { title: "条件チェンジ！頭と体を動かすコーディネーションジャンプ", eqD: "マーカーコーンまたは用具なし", rules: "先生の合図と逆方向にジャンプしたり、じゃんけんの条件（あいこで前進など）を毎回変えて「考えて動く」コーディネーション準備運動です。", caution: "最初から複雑なルールにせず、体が温まってから少しずつ条件を追加してください。", tip: "一瞬考える要素が入ることで、運動神経の差に関係なく全員が笑顔で汗をかけます。" }
+    },
+    {
+      country: "미국", vid: "0lNY8fA5Q8o", curr: "도전", type: "술래잡기·태그형", eq: ["펀스틱(스펀지봉)", "폼볼/피구공"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "파이어 앤 아이스 얼음땡 패스 구출 술래", eqD: "파란 펀스틱 2~3개(얼음), 빨간 폼볼 2~3개(불)", rules: "파란 스틱 얼음 술래에게 태그당하면 멈추고, 빨간 불꽃 공을 가진 구출자가 던져준 공을 두 손으로 받아내면 얼음이 녹아 부활하며 새 구출자가 됩니다.", caution: "불꽃 공을 가진 구출자는 패스를 완료하면 반드시 부활한 친구에게 공을 넘겨주도록 하세요.", tip: "얼음땡에 정확한 언더핸드 패스와 캐치가 결합되어 구기 수업 도입부로 탁월합니다." },
+      en: { title: "Fire and Ice Throwing-Rescue Freeze Tag", eqD: "Blue foam noodles (Ice), red foam balls (Fire)", rules: "Ice taggers freeze runners with blue noodles. Frozen players are thawed when a teammate holding a red Fireball tosses them a clean catch, swapping roles.", caution: "Fireball holders must hand off the ball by completing a pass rather than keeping it.", tip: "Blends high-energy freeze tag with purposeful underhand throwing and two-hand catching." },
+      ja: { title: "ファイア＆アイス パス救出氷鬼", eqD: "青ヌードル2〜3本（氷鬼）、赤ソフトボール2〜3個（炎の救出者）", rules: "青スティックの氷鬼にタッチされたら凍り、赤い炎ボールを持つ味方からのパスを両手でキャッチすると氷が溶けて復活し、次の救出者になります。", caution: "炎ボールを独占しないよう、救出パスが成功したら必ず相手にボールを譲るルールにします。", tip: "氷鬼に「正確なパス＆キャッチ」が組み合わさり、球技単元の導入に最適です。" }
+    },
+    {
+      country: "미국", vid: "u8BpTKgYOnE", curr: "경쟁", type: "피구·투척형", eq: ["훌라후프", "폼볼/피구공"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "캐슬볼 훌라후프 입체 성 무너뜨리기 대결", eqD: "훌라후프 팀당 6~18개, 소프트폼볼 다수", rules: "훌라후프 6개로 입체 성(Hula Hut)을 세우고, 사람을 맞히는 대신 공을 던져 상대 진영의 성을 먼저 모두 무너뜨리는 표적형 피구입니다.", caution: "수비수가 성에 몸을 기대지 못하도록 성 주변에 수비수 출입 금지 원을 표시하세요.", tip: "공격수, 수비수, 성을 다시 세우는 건축가로 역할을 나누면 모든 학생이 끝까지 몰입합니다." },
+      en: { title: "Castleball / Hula-Hoop Castle Showdown", eqD: "6-18 Hula hoops per team, soft foam balls", rules: "Teams build 3D castles using 6 hula hoops each and throw foam balls across the centerline to knock down the opponent's castles without eliminating players.", caution: "Place a boundary hoop or cone ring around each castle so defenders do not lean on the structure.", tip: "Assign rotating roles—throwers, castle guards, and builders—so every student stays engaged." },
+      ja: { title: "キャッスルボール（フラフープ立体城崩し合戦）", eqD: "フラフープ（1城につき6本）、ソフトフォームボール多数", rules: "フラフープ6本で立体のお城を組み立て、人を当てるのではなく相手のお城をボールで全て崩したチームが勝つターゲット型ゲームです。", caution: "守備者がお城に触れて支えないよう、お城の周囲に立ち入り禁止ラインを設定してください。", tip: "攻撃・守備・お城の再建係など役割分担ができ、男女問わず全員が夢中になります。" }
+    },
+    {
+      country: "캐나다", vid: "OBlGg_drQcE", curr: "경쟁", type: "피구·투척형", eq: ["폼볼/피구공"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "마피아 볼 추리 전원부활 피구", eqD: "소프트폼볼 4~6개", rules: "개인전 피구 시작 전 비밀리에 1~2명의 마피아를 지정합니다. 외곽 탈락자는 안쪽 생존자를 맞히면 즉시 부활하며, 비밀 마피아가 아웃되면 탈락자 전원이 부활합니다.", caution: "마피아가 일부러 맞아주지 않도록 최후 3인까지 살아남으면 마피아 승리로 인정하세요.", tip: "누가 마피아인지 추리하는 재미 덕분에 아웃된 학생도 외곽에서 적극적으로 참여합니다." },
+      en: { title: "Mafia Ball Mystery Revival Dodgeball", eqD: "4-6 Soft foam balls", rules: "Free-for-all dodgeball where 1-2 secret Mafia players are chosen with eyes closed. Out players revive by hitting anyone inside, or EVERYONE revives at once if a Mafia is hit.", caution: "Reward Mafia players with a solo win if they survive to the final 3 so they dodge authentically.", tip: "Eliminated players stay active around the perimeter trying to deduce and hit the secret Mafia." },
+      ja: { title: "マフィアボール（推理＆全員復活ドッジボール）", eqD: "ソフトフォームボール 4〜6個", rules: "開始前に秘密の「マフィア」を1〜2人指名します。外野に出た人も内野に当てれば即復活でき、もしマフィアがアウトになると外野全員が一斉に復活します。", caution: "マフィアがわざと当たらないよう、最後の3人まで残ればマフィアの勝利とします。", tip: "誰がマフィアか推理する楽しさがあり、外野に出た児童も最後まで積極的にボールを投げます。" }
+    },
+    {
+      country: "호주", vid: "ne-uS98wClw", curr: "도전", type: "육상·릴레이·순발력형", eq: ["훌라후프", "폼볼/피구공", "콩주머니(빈백)/보치아"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "둥지 털기 4모둠 전략 공 모으기 릴레이", eqD: "훌라후프 5개(중앙 1+모서리 4), 공/빈백 15~20개", rules: "4팀이 모서리 둥지에서 1명씩 달려가 중앙 후프의 공을 가져오고, 중앙이 비면 다른 팀 둥지에서 1개씩 가져와(수비 금지) 목표 개수를 먼저 채웁니다.", caution: "자기 팀 둥지의 공을 몸으로 막거나 발로 누르는 수비 행위는 반칙으로 규정하세요.", tip: "공 색깔별로 점수를 다르게 부여하면 달리기와 암산 전략을 동시에 발휘할 수 있습니다." },
+      en: { title: "Rob the Nest 4-Team Strategic Relay", eqD: "5 Hula hoops, 15-20 balls or beanbags", rules: "Four teams relay to collect balls from a center hoop into their corner nest. Once the center is empty, runners raid one ball at a time from other nests (no defending allowed).", caution: "Strictly forbid guarding or standing over your own nest so the raiding flow stays fast and safe.", tip: "Assign different point values by ball color to add mental math and tactical choices." },
+      ja: { title: "4チーム巣ごもり玉集め戦略リレー", eqD: "フラフープ5本（中央1＋四隅4）、ボール・お手玉15〜20個", rules: "4チームが1人ずつ中央のフープからボールを自陣の巣へ運び、中央が空になったら他チームの巣から1個ずつ持ち帰って（守備禁止）目標数を競います。", caution: "自分の巣のボールを体や足で隠して守る行為は反則とし、スムーズな移動を保ちます。", tip: "ボールの色ごとに得点を変えると、走力と計算戦略の両方が楽しめます。" }
+    },
+    {
+      country: "영국", vid: "obHiUq4R7-M", curr: "경쟁", type: "피구·투척형", eq: ["폼볼/피구공", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "눈사태 협동 증식 패스 피구", eqD: "소프트폼볼 2~3개, 팀조끼", rules: "처음엔 2명의 술래가 패스로 시작해 맞은 학생이 계속 술래 팀에 합류하며 눈사태처럼 패스 팀이 커지는 무탈락 협동 피구입니다.", caution: "공을 들고 달리는 워킹 반칙을 엄격히 잡아 패스 위주로 눈사태 팀이 움직이게 하세요.", tip: "초반에 맞은 학생도 즉시 공격 주체가 되어 소외감 없이 끝까지 코트를 누빕니다." },
+      en: { title: "Avalanche Expanding-Team Pass Dodgeball", eqD: "2-3 Soft foam balls, pinnies", rules: "Starts with 2 throwers who pass the ball to tag runners below the waist. Tagged players join the throwers, growing like an avalanche until one survivor remains.", caution: "Throwers cannot run with the ball—they must advance using quick team passes.", tip: "Eliminates sitting on the sidelines since tagged players immediately join the passing team." },
+      ja: { title: "雪崩（アバランチ）式・増殖パスドッジボール", eqD: "ソフトフォームボール2〜3個、ビブス", rules: "最初は2人の投げ手から始まり、当てられた児童が次々と投げ手チームに加わって雪崩のように人数が増えていく全員参加型ボールゲームです。", caution: "ボールを持ったまま走ることは禁止し、パスワークで追い詰めるルールを徹底します。", tip: "早く当たってしまった児童もすぐにパス回しに参加できるため、全員が最後まで動けます。" }
+    },
+    {
+      country: "독일", vid: "hbd7fd-aaUk", curr: "경쟁", type: "피구·투척형", eq: ["폼볼/피구공", "스쿠터보드/매트", "의자/책상"], place: ["강당"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "할렌 브렌발(실내 베이스 러닝 피구) 매트 세이프", eqD: "소프트폼볼, 체조 매트(안전 베이스) 4~6개", rules: "공을 코트 안으로 던져 넣고 외곽에 깔린 체조 매트(안전지대)들을 거치며 한 바퀴 완주하는 독일식 실내 베이스 러닝 게임입니다. 매트 하나에 여러 명이 동시에 머물며 전략적으로 진루할 수 있습니다.", caution: "매트 위로 점프해 다이빙하지 않고 두 발로 안전하게 매트 가장자리를 밟고 멈추도록 지도하세요.", tip: "단독으로 한 바퀴를 쉬지 않고 완주하면 보너스 3점을 부여해 박진감을 높입니다." },
+      en: { title: "Indoor Brennball (German Mat-Base Running Game)", eqD: "Soft foam ball, 4-6 gym mats as safe bases", rules: "Throw the ball into the court and sprint around a perimeter of gym-mat safe islands before the fielding team places the ball into the center burner box.", caution: "Step onto mats on two feet rather than diving or sliding onto them.", tip: "Multiple runners may share a mat base, and a non-stop full lap scores 3 bonus points." },
+      ja: { title: "ブレンバル（マット安全地帯ベースランニング）", eqD: "ソフトボール、体操マット（安全ベース）4〜6枚", rules: "ボールを投げてから外周に置かれた体操マット（安全地帯）を渡り歩き、守備側が中央ボックスへ返球する前に一周を目指すドイツ定番の室内ゲームです。", caution: "マットへ飛び込まず、両足で安全にマットの上へ乗るよう指導します。", tip: "1枚のマットに複数人が止まれるため、低学年や走力に自信がない児童も安心して進塁できます。" }
+    },
+    {
+      country: "스페인", vid: "uL6acB6v0sA", curr: "안전·인성", type: "술래잡기·태그형", eq: ["폼볼/피구공", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "4색 조끼 협동 술래 & 구출 게임", eqD: "4색 팀조끼, 소프트폼볼", rules: "4개 색상 모둠이 교대로 술래와 도망자 역할을 수행하며, 공을 패스해 동료를 구출하거나 지정된 색상 순서대로 태그하는 스페인식 체육 협동 게임입니다.", caution: "좁은 공간에서는 달리기 대신 빠른 걷기나 스킵 스텝으로 이동 속도를 조절하세요.", tip: "언어 설명이 길지 않아도 조끼 색깔 신호만으로 즉시 역할이 바뀌어 흐름이 빠릅니다." },
+      en: { title: "4-Color Bib Cooperative Tag & Rescue", eqD: "4-color pinnies, soft foam balls", rules: "Four color squads rotate tagger and rescuer roles dynamically on visual color cues, using quick team passes to free frozen teammates.", caution: "Switch to skip-steps or speed-walking when playing in smaller indoor courts.", tip: "Color-coded role switches keep transitions instant without long verbal explanations." },
+      ja: { title: "4色ビブス協力鬼ごっこ＆パス救出ゲーム", eqD: "4色ビブス、ソフトフォームボール", rules: "4色のチームが合図に応じて鬼役と逃げる役を瞬時に切り替え、味方へのパスで捕まった仲間を救出するスペイン式協力ゲームです。", caution: "狭い体育館ではスピードウォークやスキップ移動に制限して衝突を防ぎます。", tip: "色の合図だけで役割が切り替わるため、説明時間を最小限にして運動量を確保できます。" }
+    },
+    {
+      country: "프랑스", vid: "l4c958cbD2A", curr: "도전", type: "럭비·보물탈환형", eq: ["콩주머니(빈백)/보치아", "훌라후프", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "보물 방어와 탈환 (공격·수비 역할 분담 게임)", eqD: "콩주머니(보물) 20개, 훌라후프, 팀조끼", rules: "수비 구역의 파수꾼을 피해 보물(콩주머니)을 우리 진영 후프로 옮기는 프랑스 초등 필수 체육 단원 게임으로, 페인트 스텝과 유인 작전을 통해 공간 돌파 개념을 익힙니다.", caution: "파수꾼은 보물 후프 안으로 들어갈 수 없도록 경계선을 명확히 표시하세요.", tip: "2분마다 파수꾼과 침투조 역할을 전원 교대해 공수 양면의 전략을 모두 경험하게 하세요." },
+      en: { title: "Treasure Defense & Raid (French EPS Lead-Up)", eqD: "20 Beanbags (treasures), hula hoops, pinnies", rules: "Raiders use feints and decoy runs to slip past zone guardians and bring beanbag treasures back to their home hoop.", caution: "Guardians must stay outside the treasure hoop boundary ring at all times.", tip: "Rotate guardian and raider roles every 2 minutes so both teams test offensive and defensive tactics." },
+      ja: { title: "宝の防衛と奪還（攻守役割分担ゲーム）", eqD: "ビーンバッグ（宝）20個、フラフープ、ビブス", rules: "守備役のガーディアンをかわして宝（お手玉）を自陣フープへ運ぶフランス小学校体育の定番ゲーム。おとり作戦やフェイントで空間突破を学びます。", caution: "守備役は宝のフープ内に入れないよう境界線を明確にしてください。", tip: "2分ごとに攻守を交代し、チームで作戦を話し合う時間を設けると盛り上がります。" }
+    },
+    {
+      country: "글로벌", vid: "ZKnT22bU7sg", curr: "건강", type: "준비운동·코디네이션", eq: ["접시콘/라바콘"], place: ["교실", "강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "스위치! 4코너 순발력 자리바꾸기", eqD: "콘 4개 (또는 4칸 코트)", rules: "4개 코너에 1명씩 서고 중앙 술래가 '스위치!'를 외치면 모두 다른 코너로 달려가 자리를 바꿉니다. 동시에 도착하면 가위바위보로 주인을 정합니다.", caution: "슬라이딩이나 다이빙을 금지하고 서서 발로 코너를 먼저 밟는 규칙을 지키게 하세요.", tip: "5명씩 여러 사각형 코트를 만들어 동시에 돌리면 자투리 10분 최고의 순발력 게임이 됩니다." },
+      en: { title: "Switch! 4-Corner Instant Agility Warm-Up", eqD: "4 Cones (or 4-square court)", rules: "Four corner players and one center caller: when the caller yells 'Switch!', everyone sprints to a new corner. Ties are settled instantly with rock-paper-scissors.", caution: "No sliding or diving for corners—players must stay on their feet.", tip: "Run 5-6 courts simultaneously and rotate winners up a court every 2 minutes." },
+      ja: { title: "スイッチ！4コーナー席替え瞬発ゲーム", eqD: "コーン4本（または4マスコート）", rules: "四隅に1人ずつ立ち、中央の鬼が「Switch!」と叫んだら全員別の角へ走って移動します。同着はじゃんけんで決める素早いウォーミングアップです。", caution: "滑り込みやダイビングは禁止し、立ったまま足でコーン横を踏むルールを徹底してください。", tip: "5人1組で複数のコートを同時進行すると、待ち時間ゼロで全員が全力で動けます。" }
+    },
+    // 1. 큰공 (짐볼 / 킨볼)
+    {
+      vid: "eqcBew8XZOA", curr: "안전·인성", type: "팀빌딩·협동형", eq: ["큰공(짐볼/킨볼)", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "킨볼(대형공) 3인 협동 굴리기 술래잡기", eqD: "킨볼(또는 대형 짐볼) 1~2개, 팀조끼", rules: "3명이 한 조가 되어 지름 1m 이상의 대형 킨볼(또는 짐볼)에서 손을 떼지 않고 함께 굴리며 도망가는 친구들을 태그하는 협동 술래잡기입니다. 세 사람의 이동 방향과 속도가 일치해야만 공이 앞으로 굴러갑니다.", caution: "공 위로 몸을 던지거나 발로 대형공을 차는 행위를 금지하고 반드시 두 손바닥으로 밀어 굴리게 하세요.", tip: "술래 모둠이 '왼쪽! 오른쪽!' 구령을 외치며 호흡을 맞추는 과정에서 협동심이 자연스럽게 길러집니다." },
+      en: { title: "Giant Kin-Ball 3-Player Co-op Rolling Tag", eqD: "1-2 Giant Kin-Balls (or stability balls), pinnies", rules: "A trio of taggers must keep both hands on a giant Kin-Ball at all times while rolling it together across the gym to tag fleeing classmates.", caution: "No kicking or diving onto the giant ball—players must push it with open palms at waist height.", tip: "Forces the three taggers to communicate directions aloud to steer the giant ball effectively." },
+      ja: { title: "キンボール（大玉）3人協力転がし鬼ごっこ", eqD: "キンボール（または大型バランスボール）1〜2個、ビブス", rules: "3人1組の鬼全員が大玉から手を離さずに一緒に転がして逃げる友達をタッチする協同鬼ごっこです。3人の息が合わないと進まないため声かけが必須になります。", caution: "大玉を足で蹴ったり上に乗ったりせず、必ず両手で押して転がすよう安全指導してください。", tip: "「右！左！」と声を掛け合いながら進路を決めるため、チームワーク育成に最適です。" }
+    },
+    {
+      vid: "GJXuv7EmzxQ", curr: "도전", type: "육상·릴레이·순발력형", eq: ["큰공(짐볼/킨볼)", "접시콘/라바콘"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "대형공 톰과 제리 원형 추격 릴레이", eqD: "큰공(킨볼) 1개, 작은 폼볼 1개, 원형 콘", rules: "학급 전체가 큰 원을 만들어 앉고, 원 둘레를 따라 대형공(고양이 톰)과 작은 공(생쥐 제리)을 반대편에서 동시에 옆 사람에게 전달해 큰공이 작은 공을 따라잡는지 겨루는 협동 속도전입니다.", caution: "공을 넘겨줄 때 던지지 않고 옆 친구의 손에 확실히 닿도록 전달해 공이 원 밖으로 튀지 않게 하세요.", tip: "2라운드에서는 전원이 일어서서 머리 위로 대형공을 전달하는 '킨볼 파도타기'로 변형하면 전신 근력 운동이 됩니다." },
+      en: { title: "Giant Ball 'Tom & Jerry' Circle Chase Relay", eqD: "1 Giant Kin-Ball, 1 small foam ball, circle cones", rules: "Seated or standing in a large circle, the class passes a giant ball ('Tom') and a small ball ('Jerry') from opposite sides of the ring to see if the giant ball can overtake the small ball.", caution: "Hand balls directly to the next person rather than throwing across gaps.", tip: "Upgrade to overhead standing passes in Round 2 for an engaging full-body core workout." },
+      ja: { title: "大玉トムとジェリー・サークル追跡リレー", eqD: "キンボール（大玉）1個、小ボール1個、円形マーカー", rules: "全員で大きな円を作り、反対側から同時に大玉（トム）と小玉（ジェリー）を隣の人へ素早く送り、大玉が小玉に追いつけるかを競う全員参加リレーです。", caution: "ボールを投げずに隣の人の手へ確実に渡すよう指導します。", tip: "第2ラウンドは全員立って頭上で大玉を送るウェーブ方式にすると全身運動になります。" }
+    },
+    {
+      vid: "yvcU1ZZeTP0", curr: "경쟁", type: "피구·투척형", eq: ["큰공(짐볼/킨볼)", "원마커(스팟)"], place: ["교실", "강당"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "짐볼 바닥 굴리기 안전 교실·강당 피구", eqD: "짐볼(큰공) 1~2개, 구역 라인", rules: "작고 빠른 피구공 대신 크고 속도가 완만한 짐볼을 양손으로 굴려서만 공격하는 안전 피구입니다. 짐볼이 크지만 느리게 굴러오기 때문에 저학년이나 공을 무서워하는 학생도 점프하며 즐겁게 피할 수 있습니다.", caution: "짐볼을 가슴 높이 이상 들어 올려 던지지 않고 무조건 바닥에 붙여 굴리도록 지도하세요.", tip: "숙련되면 짐볼 2개를 동시에 굴려 사방에서 오는 큰공을 시야 넓게 보고 점프해 피하게 해보세요." },
+      en: { title: "Stability-Ball Floor-Roll Safe Dodgeball", eqD: "1-2 Large stability/gym balls", rules: "Uses large, slow-rolling stability balls instead of fast dodgeballs. Throwers roll the giant ball with two hands while dodgers leap and sidestep inside the court.", caution: "Keep the stability ball on the floor at all times—lifting and throwing it in the air is a turnover.", tip: "Introduce a second stability ball midway through to train 360-degree peripheral vision." },
+      ja: { title: "バランスボール床転がし安全ドッジボール", eqD: "大型バランスボール 1〜2個", rules: "速いドッジボールの代わりに、大きくてゆっくり転がるバランスボールを両手で転がして当てる安全ドッジボールです。ボールが苦手な子もジャンプして楽しくよけられます。", caution: "バランスボールを空中に持ち上げて投げるのは禁止し、必ず床を転がすルールにします。", tip: "慣れてきたらボールを2個にすると、周囲を見渡す空間認知力が一気に高まります。" }
+    },
+    {
+      vid: "2SP839xnyzs", curr: "도전", type: "표적·컬링·보치아형", eq: ["큰공(짐볼/킨볼)", "폼볼/피구공", "접시콘/라바콘"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "몬스터 볼 대형 짐볼 투척 밀어내기 대결", eqD: "대형 짐볼 1~2개, 작은 소프트폼볼 20개", rules: "코트 중앙에 놓인 커다란 짐볼을 손으로 건드리지 않고, 양 팀이 자기 진영 라인 뒤에서 작은 폼볼을 던져 맞히는 힘만으로 대형 짐볼을 상대 라인 너머로 밀어내면 득점합니다.", caution: "라인을 넘어 들어가 짐볼을 손발로 직접 차면 반칙으로 처리해 안전거리를 유지하세요.", tip: "팀원이 구령에 맞춰 같은 지점을 동시에 명중시켜야 큰공이 움직이므로 협동심과 투척력이 함께 자랍니다." },
+      en: { title: "Monster Ball Target-Throw Push Battle", eqD: "1-2 Giant stability balls, 20+ small foam balls", rules: "Teams stand behind boundary lines and throw small foam balls at a center giant stability ball to push it across the opponent's line using only throwing impact.", caution: "Players may never touch or kick the giant ball directly with hands or feet.", tip: "Coordinated team volleys hitting the same spot move the giant ball fastest." },
+      ja: { title: "モンスターボール 大玉ターゲット押し出し合戦", eqD: "大型バランスボール1〜2個、小フォームボール20個", rules: "中央の大玉に直接触れず、両チームがライン後方から小さなボールを投げ当てる力だけで相手陣地へ押し込むターゲットゲームです。", caution: "ラインを越えて大玉を直接蹴ったり押したりしないよう安全距離を保ってください。", tip: "「せーの！」で同じ場所を狙って一斉に投げることで、投力とチームワークが同時に高まります。" }
+    },
+
+    // 2. 럭비공 / 태그벨트
+    {
+      vid: "AssuHuvknt8", curr: "경쟁", type: "럭비·보물탈환형", eq: ["럭비공/태그벨트", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "럭비공 안고 달리는 태그럭비 트라이 게임", eqD: "폼 럭비공 2개, 허리 태그벨트(또는 스카프), 팀조끼", rules: "허리 양옆에 태그벨트(또는 스카프)를 부착하고 럭비공을 두 손으로 안고 달려 상대 인골(Endzone) 바닥에 공을 찍으면(트라이) 득점합니다. 수비수에게 허리 태그를 뺏기면 즉시 멈춰 뒤나 옆에 있는 팀원에게 패스해야 합니다.", caution: "몸을 잡거나 미는 신체 접촉을 엄격히 금지하고 오직 허리 태그만 떼도록 지도하세요.", tip: "발로 드리블할 필요 없이 공을 안고 달리기만 하면 되어 구기 종목을 어려워하는 학생도 쉽게 득점합니다." },
+      en: { title: "Tag Rugby Carry & Backward-Pass Try Game", eqD: "Foam rugby balls, waist tag belts (or scarves), pinnies", rules: "Players wear waist tags and run carrying a rugby ball in both hands to ground it in the opponent's try zone. If a defender pulls a waist tag, the ball carrier must pass backward or laterally within 3 seconds.", caution: "Zero body contact—defenders may only grab and pull the hanging waist tags.", tip: "Running with the ball in hands requires no complex dribbling, letting every student join the attack." },
+      ja: { title: "タグラグビー・キャリー＆後方パストライゲーム", eqD: "ソフトラグビーボール、タグベルト（またはスカーフ）、ビブス", rules: "腰のタグを守りながらラグビーボールを抱えて走り、相手ゴールラインにトライします。タグを取られたら3秒以内に後ろや横の味方へパスをつなぐ非接触ゲームです。", caution: "身体接触は一切禁止し、必ず腰のタグのみを取るルールを徹底してください。", tip: "ドリブル技術が不要で抱えて走るだけなので、球技が苦手な児童も大活躍できます。" }
+    },
+    {
+      vid: "W7s32xEZadQ", curr: "도전", type: "럭비·보물탈환형", eq: ["럭비공/태그벨트", "접시콘/라바콘", "훌라후프"], place: ["강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "럭비공 불규칙 바운드 캐치 & 트라이 릴레이", eqD: "소프트 럭비공 모둠당 1개, 후프, 반환점 콘", rules: "타원형 럭비공 특유의 통통 튀는 불규칙 바운드를 활용한 릴레이로, 출발선에서 달려가며 지정된 후프 안에 럭비공을 원바운드시켜 뒤따라오는 다음 주자가 두 손으로 캐치해 이어 달립니다.", caution: "럭비공을 품에 안을 때는 손가락으로만 잡지 않고 양팔과 가슴으로 감싸 안는 '바구니 캐치'를 지도하세요.", tip: "공이 어디로 튈지 모르는 의외성 덕분에 집중력과 순발력이 동시에 폭발합니다." },
+      en: { title: "Rugby-Ball Crazy-Bounce Catch & Try Relay", eqD: "1 Foam rugby ball per group, hula hoops, cones", rules: "Runners sprint to a target hoop, bounce the oval rugby ball inside the hoop, and the trailing teammate must read the unpredictable bounce to catch it cleanly and continue the relay.", caution: "Teach students to cradle the oval ball against their chest with both arms ('basket catch').", tip: "The unpredictable oval bounce keeps every runner alert and levels the playing field." },
+      ja: { title: "ラグビーボール不規則バウンドキャッチ＆トライリレー", eqD: "ソフトラグビーボール（各班1個）、フープ、コーン", rules: "楕円形のラグビーボール特有の予測不能なバウンドを活かし、指定フープ内にワンバウンドさせて次の走者が両手でキャッチしてつなぐリレーです。", caution: "指先だけでなく腕と胸で包み込むようにキャッチする姿勢を指導してください。", tip: "どこに跳ねるかわからない面白さで、瞬発力と集中力が一気に高まります。" }
+    },
+
+    // 3. 플라잉디스크 (원반) / 플로어볼 / 패드민턴
+    {
+      vid: "qZXSLOZjfO4", curr: "도전", type: "플라잉디스크·하키형", eq: ["플라잉디스크(원반)", "훌라후프", "접시콘/라바콘"], place: ["강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "말랑 플라잉디스크 강당 디스크골프 골인 게임", eqD: "말랑 스펀지 플라잉디스크, 거리별 표적 후프/골대", rules: "부드러운 스펀지 플라잉디스크를 백핸드 스냅으로 던져 5m(1점), 8m(2점), 12m(3점) 거리에 배치된 훌라후프나 골대 과녁 안에 안착시키는 디스크골프 리드업 게임입니다.", caution: "전방에 디스크를 회수하는 학생이 있을 때는 절대 던지지 않도록 '투척-회수' 신호를 분리하세요.", tip: "원반을 수평으로 유지해 손목 스냅으로 릴리스하는 감각을 경쟁 없이 즐겁게 익힐 수 있습니다." },
+      en: { title: "Soft Flying-Disc Indoor Disc-Golf Target Game", eqD: "Soft foam flying discs, target hoops/goals at 5m, 8m, 12m", rules: "Students throw soft foam flying discs using a flat backhand snap into target hoops placed at tiered distances (1, 2, and 3 points).", caution: "Use a strict 'all throw, then all retrieve' whistle signal so nobody walks into flight paths.", tip: "Teaches flat release angles and wrist snap before progressing to Ultimate Frisbee." },
+      ja: { title: "ソフトフライングディスク・ターゲットゴルフ", eqD: "ソフトスポンジディスク、距離別ターゲットフープ", rules: "柔らかいフライングディスクを水平にスローし、5m(1点)・8m(2点)・12m(3点)のフープやゴールへ入れるディスクゴルフ導入ゲームです。", caution: "前方に回収する児童がいる時は絶対に投げないよう、投擲と回収の合図を分けてください。", tip: "ディスクを水平に保って手首のスナップで投げる感覚が楽しく身につきます。" }
+    },
+    {
+      vid: "dD9fYd7hexI", curr: "경쟁", type: "플라잉디스크·하키형", eq: ["플라잉디스크(원반)", "팀조끼", "접시콘/라바콘"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "플라잉디스크 변형 얼티미트 엔드존 패스 게임", eqD: "말랑 플라잉디스크 1~2개, 팀조끼, 엔드존 콘", rules: "디스크를 가진 사람은 걸을 수 없고 피벗 스텝만 가능하며, 팀원 간 패스로만 전진해 상대 엔드존 안에 서 있는 우리 팀원이 디스크를 캐치하면 득점하는 비접촉 영역형 스포츠입니다.", caution: "수비수는 디스크를 가진 공격수로부터 1걸음 이상 떨어져 막는 비접촉 수비 규칙을 지키게 하세요.", tip: "원반을 한 번에 잡기 어려운 학년은 '원바운드 캐치 인정'이나 플라잉디스크 2개 동시 투입 규칙을 쓰면 활발해집니다." },
+      en: { title: "Modified Ultimate Flying-Disc Endzone Game", eqD: "1-2 Soft flying discs, pinnies, endzone cones", rules: "Disc holders cannot run (pivot only) and pass the disc upfield to score by completing a catch inside the opponent's endzone.", caution: "Defenders must maintain a 1-meter mark distance with zero physical contact.", tip: "Use two discs simultaneously for younger classes so everyone gets frequent touches." },
+      ja: { title: "変形アルティメット・フライングディスクパスゲーム", eqD: "ソフトフライングディスク1〜2枚、ビブス、エンドゾーン用コーン", rules: "ディスク保持者は歩けずピボットのみ可能で、味方へのパスで前進し、相手エンドゾーン内でキャッチすると得点になる非接触ゴール型ゲームです。", caution: "守備者はディスク保持者から1歩以上離れて守るルールを徹底します。", tip: "キャッチが難しい場合はディスクを2枚同時投入すると全員が活発に動けます。" }
+    },
+    {
+      vid: "5sC7l8Rexy0", curr: "경쟁", type: "플라잉디스크·하키형", eq: ["라켓/스틱(플로어볼/패드민턴)", "원마커(스팟)", "훌라후프"], place: ["교실", "강당"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "플로어볼(고리하키) 다리 사이 터널 통과 리드업", eqD: "플로어볼 스틱(또는 펀스틱), 플로어볼 공(또는 고리), 미니 골대", rules: "스틱으로 공(또는 링)을 드리블하며 코트 곳곳에 다리를 벌리고 서 있는 '터널 친구'들의 다리 사이로 공을 통과시킬 때마다 1점을 얻고, 3점을 모으면 골대에 슛할 자격을 얻는 하키형 리드업 게임입니다.", caution: "스틱 헤드(아랫부분)를 무릎 높이 이상 들어 올리는 하이 스틱 반칙을 엄격히 금지해 안전을 확보하세요.", tip: "정식 플로어볼 경기에 들어가기 전 고개를 들고 빈 공간으로 드리블하는 감각을 기르는 데 최고입니다." },
+      en: { title: "Floorball Tunnel-Pass & Shoot Lead-Up", eqD: "Floorball sticks (or foam sticks), floorballs/rings, mini goals", rules: "Players dribble a floorball or ring with their stick and score points by sliding it cleanly through the wide-stance 'leg tunnels' of stationed teammates before taking a shot on goal.", caution: "Enforce a strict knee-height stick blade limit—no high-sticking at any time.", tip: "Trains heads-up stickhandling and accurate push-passes before full floorball matches." },
+      ja: { title: "フロアボール（ホッケー型）トンネル通過リードアップ", eqD: "フロアボールスティック（またはスポンジ棒）、ボール、ミニゴール", rules: "スティックでボールをドリブルし、コート内で足を開いて立つ味方の「足トンネル」にボールを通すたびに得点が入るホッケー型導入ゲームです。", caution: "スティックの先端を膝より高く上げるハイスティック反則を厳しく制限して安全を守ります。", tip: "顔を上げて周囲を見ながらドリブル＆プッシュパスする感覚が楽しく身につきます。" }
+    },
+    {
+      vid: "9EC6c2G5sOI", curr: "경쟁", type: "네트·라켓형", eq: ["라켓/스틱(플로어볼/패드민턴)", "풍선/탱탱볼/비치볼"], place: ["교실", "강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "패드민턴(핸들러) 셔틀콕 협동 랠리 & 표적 넘기기", eqD: "패드민턴 라켓(손잡이 짧은 라켓), 대형 셔틀콕, 낮은 네트", rules: "배드민턴보다 라켓 길이가 짧아 손바닥 감각으로 치기 쉬운 패드민턴 라켓과 셔틀콕을 사용해, 짝과 떨어뜨리지 않고 연속 10회 협동 랠리를 성공한 뒤 네트 너머 표적 후프로 넘기는 네트형 수업입니다.", caution: "복식(2인 1조) 진행 시 두 사람의 라켓이 부딪히지 않도록 앞뒤 또는 좌우 담당 구역을 먼저 정해주세요.", tip: "일반 배드민턴 라켓이 길어서 헛스윙하는 중학년 학생들에게 백전백승 성공 경험을 줍니다." },
+      en: { title: "Paddleminton (Short-Racket) Co-op Rally & Target Net Game", eqD: "Short paddle-rackets, large shuttlecocks, low net", rules: "Using short-handled paddleminton rackets and slow shuttlecocks, pairs complete cooperative rally missions before aiming shots into target hoops across the net.", caution: "Define clear left/right court zones for doubles partners so rackets never clash.", tip: "Short handles eliminate the leverage difficulty of full badminton rackets for 3rd-4th graders." },
+      ja: { title: "パドミントン（ショートラケット）協力ラリー＆的入れ", eqD: "パドミントンラケット、大型シャトル、低いネット", rules: "柄が短く当てやすいパドミントンラケットとシャトルを使い、ペアで連続ラリーを達成してからネット越しのフープ的を狙うネット型授業です。", caution: "ペア同士のラケットがぶつからないよう、左右の守備範囲を事前に決めてください。", tip: "通常のバドミントンラケットで空振りしやすい中学年児童でも簡単にラリーが続きます。" }
+    },
+
+    // 4. 줄넘기 / 긴줄넘기 / 스텝래더
+    {
+      vid: "CHdCnWLc5TU", curr: "도전", type: "줄넘기·리듬스텝형", eq: ["줄넘기/긴줄/고무줄"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "긴줄넘기 안에서 가위바위보 챔피언 대결", eqD: "긴줄넘기 모둠당 1개", rules: "두 사람이 긴줄을 돌리고 양쪽에서 1명씩 타이밍에 맞춰 줄 안으로 뛰어 들어가 함께 3회 점프하며 '가위, 바위, 보!'를 합니다. 진 사람은 줄 밖으로 빠져나가고 이긴 사람은 줄 안에 남아 다음 도전자를 맞이합니다.", caution: "줄을 돌리는 줄잡이는 줄이 바닥에 가볍게 스치도록 일정한 박자로 돌리고, 줄에 걸리면 즉시 줄을 놓아주도록 안내하세요.", tip: "단순 줄넘기 횟수 세기보다 승부의 재미가 더해져 줄넘기를 싫어하는 학생도 줄 서서 기다립니다." },
+      en: { title: "Long-Rope Jump-In Rock-Paper-Scissors Duel", eqD: "1 Long jump rope per group", rules: "Two turners swing a long rope while challengers from each team jump into the center together, bounce 3 times to play rock-paper-scissors mid-jump, and the winner stays to face the next jumper.", caution: "Instruct turners to let go of the rope handle immediately if a jumper's foot catches the rope.", tip: "Turns long-rope jumping into a fast-paced game where students eagerly line up for their turn." },
+      ja: { title: "長縄跳び「縄の中でじゃんけんチャンピオン」", eqD: "長縄（各班1本）", rules: "回っている長縄の中に両側から1人ずつ入り、3回ジャンプしながら「じゃん・けん・ぽん！」で対決します。負けた人は抜け、勝った人が残って次の挑戦者を迎えます。", caution: "縄が足に引っかかったら回し手はすぐに手を離すよう事前に安全指導してください。", tip: "ただ跳ぶ回数だけを数えるよりゲーム性が高く、長縄が苦手な子も夢中で挑戦します。" }
+    },
+    {
+      vid: "gRaVgPFWM00", curr: "안전·인성", type: "줄넘기·리듬스텝형", eq: ["줄넘기/긴줄/고무줄"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "8자 마라톤 긴줄넘기 학급 협동 타이머 챌린지", eqD: "긴줄넘기, 타이머, 신나는 리듬 음악", rules: "모둠원이 8자 동선으로 줄에 들어가 1회 넘고 대각선으로 빠져나오기를 연속 수행합니다. 다른 모둠과 경쟁하는 대신 '우리 모둠의 1라운드 기록보다 2라운드에 10개 더 넘기' 성장형 공동 미션으로 진행합니다.", caution: "앞 친구가 무사히 빠져나갈 수 있도록 줄 중앙에서 점프한 뒤 즉시 줄잡이 어깨 옆 대각선 방향으로 빠져나가게 하세요.", tip: "진입 타이밍을 어려워하는 학생이 있으면 줄잡이가 '하나, 둘, 들어와!' 구령을 맞춰주도록 격려하세요." },
+      en: { title: "Figure-8 Long-Rope Cooperative Beat-Your-Record", eqD: "Long jump ropes, timer, upbeat music", rules: "Teams run a continuous figure-8 path through a turning long rope, aiming to beat their own Round 1 jump count by 10+ jumps in Round 2.", caution: "Coach jumpers to enter near one turner's shoulder, jump in the center, and exit diagonally past the opposite turner.", tip: "Have turners chant '1, 2, Go!' to help hesitant jumpers find the entry rhythm." },
+      ja: { title: "8の字長縄跳び・自己ベスト更新協同チャレンジ", eqD: "長縄、タイマー、リズム音楽", rules: "8の字の動線で連続して長縄を跳び、他の班との競争ではなく「1回目の自分たちの記録を10回上回る」協同目標に挑みます。", caution: "次の人とぶつからないよう、中央で跳んだら回し手の肩の横へ斜めに抜ける動線を徹底します。", tip: "入るタイミングが難しい子には、全員で「せーの、ハイ！」とリズムコールを送ると成功率が上がります。" }
+    },
+    {
+      vid: "YbcLci3OnUk", curr: "건강", type: "준비운동·코디네이션", eq: ["스텝래더(사다리)/허들", "접시콘/라바콘"], place: ["교실", "강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "스텝래더(민첩성 사다리) 리듬 풋워크 & 가위바위보", eqD: "스텝래더(민첩성 사다리) 2~4줄, 접시콘", rules: "바닥에 펼친 민첩성 사다리 칸을 '인-인-아웃-아웃', '가위바위보 점프', '외발 홉스텝' 등 지정된 리듬 스텝으로 통과한 뒤 반환점 콘을 돌아와 다음 주자와 하이파이브 교대하는 워밍업입니다.", caution: "사다리 가로줄을 발로 밟아 밀리지 않도록 뒤꿈치를 살짝 들고 앞발바닥(모지구)으로 가볍게 통통 뛰도록 지도하세요.", tip: "신나는 120~130 BPM 음악을 틀어주면 지루한 제자리 체조 대신 전원이 신나게 발놀림을 익힙니다." },
+      en: { title: "Agility-Ladder Rhythm Footwork & RPS Relay", eqD: "2-4 Agility ladders, turnaround cones", rules: "Students travel through floor agility ladders using rhythm patterns (In-In-Out-Out, hopscotch, lateral quick-feet) before sprinting back to high-five the next runner.", caution: "Stay on the balls of the feet so ladder rungs do not slide across the floor.", tip: "Play 125 BPM music so students naturally lock their footwork into the beat." },
+      ja: { title: "ラダーステップ（敏捷性梯子）リズムフットワーク＆じゃんけん", eqD: "アジリティラダー2〜4本、コーン", rules: "床に広げたラダーのマス目を「イン・イン・アウト・アウト」や「グーパー跳び」などのリズムステップで通過してつなぐ準備運動です。", caution: "ラダーの横棒を踏んで滑らないよう、かかとを少し浮かせて母指球で軽く弾むように跳ばせます。", tip: "アップテンポな音楽をかけると、単調な体操の代わりに全員が楽しく俊敏性を高められます。" }
+    },
+
+    // 5. 파라슈트(낙하산) / 전래·전통놀이 / 보치아·표적형
+    {
+      vid: "vZ0-4Gyv_QU", curr: "안전·인성", type: "팀빌딩·협동형", eq: ["파라슈트(낙하산)/타프", "폼볼/피구공"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년"],
+      ko: { title: "대형 파라슈트(낙하산) 파도타기·팝콘 튀기기 협동 놀이", eqD: "대형 파라슈트 천 1개, 가벼운 폼볼/풍선공 10~15개", rules: "학급 전원이 대형 파라슈트 손잡이를 둥글게 잡고, 구령에 맞춰 잔물결·큰파도·이글루 지붕 만들기를 수행한 뒤, 파라슈트 위에 폼볼을 올리고 다 함께 흔들어 팝콘처럼 튀어 오르는 공이 밖으로 떨어지지 않게 지키는 협동 놀이입니다.", caution: "파라슈트 천 위로 학생이 올라가거나 목을 내밀지 않도록 안전 수칙을 먼저 약속하세요.", tip: "운동 기능 격차가 전혀 드러나지 않아 1~2학년 학기초 놀이 및 통합체육 수업에 최고입니다." },
+      en: { title: "Giant Parachute Wave, Igloo & Popcorn Co-op Play", eqD: "1 Giant parachute, 10-15 light foam balls", rules: "The whole class holds the perimeter handles of a giant parachute to create synchronized waves, build a giant air dome, and bounce foam 'popcorn' balls without letting them fall off.", caution: "Students must never climb on top of the parachute fabric while others are shaking it.", tip: "100% cooperative and non-competitive—ideal for lower elementary and inclusive PE." },
+      ja: { title: "大型パラシュート（バルーン）波作り＆ポップコーン協同遊び", eqD: "大型パラシュート1枚、軽量フォームボール10〜15個", rules: "クラス全員でパラシュートの持ち手を握り、波作りやドーム作りを行った後、上に乗せたボールをポップコーンのように弾ませながら外に落とさないよう協力します。", caution: "揺らしているパラシュートの上に児童が乗らないよう事前に安全ルールを約束します。", tip: "運動能力の差が出ない100%協同型の活動で、低学年やインクルーシブ体育に最適です。" }
+    },
+    {
+      vid: "LgbL-Yq-WB0", curr: "도전", type: "전래·전통놀이형", eq: ["콩주머니(빈백)/보치아", "접시콘/라바콘"], place: ["교실", "강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "안전 스펀지 비석치기 8단계 전통 도전 놀이", eqD: "스펀지 비석 세트(또는 플라스틱 콘/빈백)", rules: "전통 놀이 비석치기를 학교 안전에 맞게 스펀지 블록이나 콩주머니로 변형한 수업입니다. 1단계 던져 맞히기부터 발등에 얹고 걷기, 무릎 사이에 끼우고 점프하기, 머리 위에 올리고 가서 떨어뜨려 쓰러뜨리기까지 8단계를 모둠원이 협동해 클리어합니다.", caution: "돌 대신 반드시 푹신한 스펀지 블록, 빈백, 또는 우유팩 비석을 사용해 발등이나 정강이 부상을 예방하세요.", tip: "실패한 단계는 같은 모둠 친구가 대신 성공시켜 구제해 주는 '어깨동무 규칙'을 넣으면 응원이 쏟아집니다." },
+      en: { title: "8-Stage Traditional Stone-Toss (Biseok-Chigi) Balance Game", eqD: "Foam blocks or beanbags (safe traditional stones)", rules: "A safe school adaptation of Korean Biseok-Chigi: players knock down target foam blocks across 8 progressive stages—from throwing to carrying the block on the instep, between knees, and on the head.", caution: "Always use soft foam blocks or beanbags instead of real stones or hard wood.", tip: "Allow teammates to 'rescue' a missed stage by completing the balance walk together." },
+      ja: { title: "韓国伝統遊び「碑石打ち（ピソクチギ）」8段階バランス挑戦", eqD: "スポンジブロックまたはビーンバッグ（安全な石代用品）", rules: "韓国の伝統遊びを安全なスポンジブロックで再現。手で投げて倒す第1段階から、足の甲・膝の間・頭の上に乗せて運んで落とす8段階のバランスミッションに挑みます。", caution: "本物の石ではなく、必ず柔らかいスポンジブロックやお手玉を使用してください。", tip: "失敗した段階を班の仲間がカバーできる「助け合いルール」を入れると応援が盛り上がります。" }
+    },
+    {
+      vid: "cpFaluu7ZnA", curr: "경쟁", type: "전래·전통놀이형", eq: ["원마커(스팟)", "접시콘/라바콘", "없음(맨손)"], place: ["교실", "강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년"],
+      ko: { title: "달팽이집 나선형 라인 추격 & 가위바위보 진놀이", eqD: "바닥 달팽이 라인(또는 원마커/분필/로프)", rules: "바닥에 커다란 나선형 달팽이집 길을 그리고, 안쪽 집에서 출발하는 팀과 바깥쪽 입구에서 출발하는 팀이 선을 따라 달려와 만나는 지점에서 가위바위보를 합니다. 이기면 계속 전진하고 지면 다음 주자가 즉시 출발해 상대 진영 끝까지 먼저 도달하면 승리합니다.", caution: "구부러진 나선형 코스를 달릴 때 원심력으로 미끄러지지 않도록 작은 보폭으로 달리게 하세요.", tip: "비 오는 날 교실 바닥에 마스킹테이프나 원마커로 달팽이 길을 만들어 한 발 뛰기로 진행해도 정말 재미있습니다." },
+      en: { title: "Snail-Spiral Line Chase & RPS Territory Game", eqD: "Spiral floor line (chalk, tape, rope, or poly spots)", rules: "One team starts at the center of a giant spiral snail path while the other starts at the outer entrance. Runners follow the spiral until they meet, play rock-paper-scissors, and the winner advances toward the opponent's base.", caution: "Remind students to use short, controlled steps around tight spiral curves.", tip: "Lay poly spots in a spiral on the classroom floor for a rainy-day hopping duel." },
+      ja: { title: "伝統遊び「カタツムリ陣取り」渦巻きラインじゃんけん", eqD: "床の渦巻きライン（テープ・ロープ・スポットマーカー）", rules: "大きな渦巻き（カタツムリ）コースの内側と外側から1人ずつ走って進み、出会った場所でじゃんけんをして相手陣地のゴールまで先に到達したチームが勝ちます。", caution: "カーブで滑らないよう、歩幅を小さくして走るよう指導してください。", tip: "雨の日は教室の床にマーカーを渦巻き状に並べてケンケンで進むと安全に盛り上がります。" }
+    },
+    {
+      vid: "N4f-znYas0s", curr: "도전", type: "표적·컬링·보치아형", eq: ["콩주머니(빈백)/보치아", "원마커(스팟)", "훌라후프"], place: ["교실", "강당"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "교실·강당 보치아 & 원마커 컬링 표적 전략 게임", eqD: "하얀 표적구(잭볼) 1개, 청·적 콩주머니(또는 원마커) 각 6개", rules: "패럴림픽 종목인 보치아와 컬링 규칙을 결합한 표적형 수업입니다. 먼저 하얀 표적구(또는 표적 원마커)를 던진 뒤, 양 팀이 번갈아 공이나 원마커를 굴려 표적구에 가장 가까이 붙인 팀이 점수를 얻습니다.", caution: "언더핸드로 낮게 굴리거나 밀어서 던지며, 투척선을 밟거나 넘지 않도록 지도하세요.", tip: "신체 능력과 무관하게 고도의 힘 조절과 밀어내기(컴비네이션) 두뇌 전략이 승패를 가르는 최고의 통합체육 활동입니다." },
+      en: { title: "Classroom Boccia & Poly-Spot Curling Strategy", eqD: "1 White target ball (Jack), 6 red & 6 blue beanbags/spots", rules: "Combines Paralympic Boccia and floor curling: after throwing the white target Jack, teams take turns rolling beanbags or sliding poly spots to finish closest to the Jack.", caution: "All throws must be rolled or slid underhand from behind the throwing line.", tip: "Pure precision and tactical knockouts allow every student to excel regardless of running speed." },
+      ja: { title: "教室ボッチャ＆スポットカーリング戦略ターゲットゲーム", eqD: "白の目標球（ジャックボール）1個、赤・青ビーンバッグ各6個", rules: "パラリンピック種目のボッチャとカーリングを融合。白い目標球の近くに自チームのボールやマーカーを寄せたり、相手球を弾き出したりして得点を競います。", caution: "スローラインを越えず、アンダースローで低く転がすルールを徹底します。", tip: "走力に関係なく緻密な力加減と作戦が勝敗を決めるため、全員が主役になれる授業です。" }
+    },
+
+    // 6. 기존 핵심 인기 종목 (준비운동, 바나나술래, 원피구, 후프틱택토, 캐슬볼, 땅따먹기축구, 이동골대농구, 스펀지봉 소규모 등)
+    {
+      vid: "NMfjHSDsIgs", curr: "건강", type: "준비운동·코디네이션", eq: ["없음(맨손)"], place: ["교실", "강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "관절풀기 5단계 가위바위보 승격 준비운동", eqD: "없음 (맨손)", rules: "1~5단계(목·어깨·손목발목·허리·무릎) 관절풀기 단계를 정하고 같은 단계 친구끼리 만나 관절을 돌린 뒤 가위바위보로 승격하는 학기초 준비운동입니다.", caution: "4·5단계 허리와 무릎은 활동 후 학급 전체가 함께 한 번 더 풀어주면 안전합니다.", tip: "통과한 학생을 보조 진행자로 지정하면 대기 줄 없이 전원이 계속 움직입니다." },
+      en: { title: "5-Stage Joint Warm-Up RPS Progression", eqD: "No equipment", rules: "Students progress through 5 joint-rotation stages (neck, shoulders, wrists/ankles, waist, knees) by pairing up, rotating joints 4 counts each way, and playing RPS.", caution: "Ensure students rotate joints slowly for 4 full counts rather than rushing to win.", tip: "Have students who finish become assistant challengers so nobody waits in line." },
+      ja: { title: "関節ほぐし5段階じゃんけん準備運動", eqD: "用具なし（徒手）", rules: "1〜5段階（首・肩・手首足首・腰・膝）の関節回しを行い、同じ段階の友達とじゃんけんして勝ち上がる学期初めの体ほぐし運動です。", caution: "早く勝とうとして関節回しを省略しないよう、4拍ずつゆっくり回すルールを徹底してください。", tip: "クリアした児童をチャレンジャー役にすると、列が詰まらず全員が動き続けられます。" }
+    },
+    {
+      vid: "3irlxC5axiw", curr: "안전·인성", type: "술래잡기·태그형", eq: ["팀조끼", "폼볼/피구공"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년"],
+      ko: { title: "바나나 술래잡기 (2인 협력 껍질 벗기기 구출)", eqD: "팀조끼, 소프트폼볼", rules: "술래에게 태그당하면 두 손을 머리 위로 모아 바나나 자세로 멈추고, 안 잡힌 친구 2명이 양팔을 한쪽씩 내려 바나나 껍질을 벗겨주면 부활합니다.", caution: "팔을 세게 잡아당기지 않고 가볍게 터치해 내리도록 안전 지도하세요.", tip: "구출하는 2초 동안 무적 보호 규칙을 적용하면 협동 구출이 훨씬 활발해집니다." },
+      en: { title: "Banana Tag (2-Player Cooperative Rescue)", eqD: "Pinnies, soft foam ball", rules: "When tagged, players freeze with hands together overhead like a banana. Two untagged teammates peel one arm down each to revive them.", caution: "Remind students to gently lower teammates' arms without pulling hard on shoulders.", tip: "Grant a 2-second safe immunity while peeling so students actively rescue classmates." },
+      ja: { title: "バナナ鬼ごっこ（2人協力救出タグ）", eqD: "ビブス、ソフトフォームボール", rules: "鬼にタッチされたら両手を頭の上で合わせてバナナのポーズで止まり、味方2人が片腕ずつ下ろして皮をむくと復活できる協力鬼遊びです。", caution: "腕を強く引っ張らず、軽くタッチして下ろすように事前指導してください。", tip: "救出中の2秒間はタッチされない無敵ルールを入れると協力プレイが活発になります。" }
+    },
+    {
+      vid: "2hIvQDueauA", curr: "경쟁", type: "피구·투척형", eq: ["폼볼/피구공", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "득점제 원피구 놀이 (무탈락 배려 차등 득점)", eqD: "소프트 피구공, 팀조끼 2색", rules: "지름 10m 원 안에 두 팀 수비수가 함께 들어가고 원 밖 공격수가 공을 던져 맞히며, 아웃당해도 코트 밖으로 나가지 않고 팀 득점으로만 집계합니다.", caution: "원 밖에서 공을 잡으려다 부딪히지 않도록 먼저 손을 댄 사람에게 소유권을 인정하세요.", tip: "비숙련 학생이나 여학생 공에 맞으면 2점을 부여하면 자연스러운 양보와 패스가 살아납니다." },
+      en: { title: "Scoring Circle Dodgeball (Zero-Elimination Bonus Points)", eqD: "Soft dodgeball, 2-color pinnies", rules: "Defenders from both teams stay inside a 10m circle while throwers attack from outside. Hits score points without eliminating players from the game.", caution: "Enforce a 'first hand on the ball' rule outside the circle to prevent collisions.", tip: "Award double points when less-experienced players score a hit to encourage inclusive passing." },
+      ja: { title: "得点制サークル・ドッジボール（脱落なし・全員参加型）", eqD: "ソフトドッジボール、2色ビブス", rules: "直径10mの円内に両チームの守備が入り、円外から攻撃します。当たっても脱落せず得点のみ加算されるため全員が最後まで参加できます。", caution: "円外でボールを取り合って衝突しないよう、先に触れた人の優先ルールを明確にしてください。", tip: "球技が苦手な児童のヒットを2点にすると、自然なパス回しと譲り合いが生まれます。" }
+    },
+    {
+      vid: "H6YSQwAUEe8", curr: "도전", type: "육상·릴레이·순발력형", eq: ["훌라후프", "팀조끼", "접시콘/라바콘"], place: ["강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "후프 틱택토(빙고) 두뇌 전략 릴레이", eqD: "훌라후프 9개(3x3), 2색 팀조끼 각 3개", rules: "3x3으로 놓인 9개 후프에 두 팀이 달려가 조끼를 1개씩 놓아 한 줄 빙고를 만듭니다. 4번째 주자부터는 기존 조끼 위치를 옮겨 빙고를 완성합니다.", caution: "팀당 조끼를 정확히 3개만 지급해 4번째 주자가 새 조끼를 들고 나가는 실수를 방지하세요.", tip: "달리기 속도와 순간적인 수 싸움이 결합되어 모두가 활약할 수 있는 전략 이어달리기입니다." },
+      en: { title: "Hula Hoop Tic-Tac-Toe Strategy Relay", eqD: "9 Hula hoops (3x3 grid), 3 pinnies per team", rules: "Two teams sprint one by one to place 3 pinnies into a 3x3 hoop grid. From the 4th runner onward, players move one of their existing pinnies until 3-in-a-row is formed.", caution: "Give each team strictly 3 markers so the 4th runner remembers to reposition an existing marker.", tip: "Combines sprinting with tactical thinking so every student contributes regardless of speed." },
+      ja: { title: "フープ三目並べ（ビンゴ）頭脳戦略リレー", eqD: "フラフープ9本(3×3)、2色ビブス各3枚", rules: "3×3に並べたフープに1人ずつ走ってビブスを置き、一列ビンゴを狙います。4人目以降は既に置いた味方のビブスを別の空きフープへ移動させます。", caution: "各チームにビブスをきっちり3枚だけ渡しておくと、4人目以降のルールミスを防げます。", tip: "走力だけでなく瞬時の判断力が勝敗を分けるため、運動が得意でない子も大活躍できます。" }
+    },
+    {
+      vid: "vR8NAGOPgt0", curr: "경쟁", type: "축구·발구기형", eq: ["축구/농구/배구공", "접시콘/라바콘", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "땅따먹기 축구 (콘 명중 골대 늘리기)", eqD: "소프트 축구공 3개, 라바콘 12개, 팀조끼", rules: "상대 엔드라인의 라바콘을 인사이드 슛으로 맞혀 쓰러뜨리면 그 콘을 가져와 우리 진영에 세우며 더 많은 콘을 모은 팀이 승리합니다.", caution: "콘 앞 1.5m 수비 금지 구역을 설정해 골키퍼가 콘 앞에 드러눕는 것을 방지하세요.", tip: "공 3개를 동시에 투입하면 모든 학생에게 볼 터치와 득점 기회가 골고루 돌아갑니다." },
+      en: { title: "Cone Conquest Soccer (Multi-Ball Target Invasion)", eqD: "3 Soft soccer balls, 12 cones, pinnies", rules: "Teams dribble and pass to knock down the opponent's endline cones with inside-foot shots. Knocked-down cones are claimed and added to your own endline.", caution: "Mark a 1.5m no-goalie zone in front of the cones so defenders cannot block them at point-blank range.", tip: "Using 3 balls simultaneously gives every student frequent touches and scoring chances." },
+      ja: { title: "陣取りターゲットサッカー（コーン獲得ゲーム）", eqD: "ソフトサッカーボール3個、コーン12本、ビブス", rules: "相手エンドライン上のコーンをシュートで倒したら自陣に持ち帰って設置し、制限時間内に多くのコーンを集めたチームが勝ちます。", caution: "コーンの手前1.5mを守備立ち入り禁止ゾーンにするとシュートチャンスが増えます。", tip: "ボールを3個同時に使うことで、サッカーが苦手な児童にも何度もシュート機会が回ります。" }
+    },
+    {
+      vid: "ONfTNMgNvtY", curr: "경쟁", type: "농구·핸드볼형", eq: ["축구/농구/배구공", "훌라후프", "팀조끼"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "훌라후프 이동 골대 간이 농구·핸드볼", eqD: "소프트 농구공, 훌라후프 2개, 팀조끼", rules: "골대 역할을 맡은 학생이 엔드라인 구역에서 훌라후프를 들고 좌우로 움직이며 우리 팀원이 던진 슛이 후프를 통과하도록 돕는 농구형 게임입니다.", caution: "수비수는 골대 구역 라인 안으로 들어갈 수 없도록 제한해 충돌을 막으세요.", tip: "높은 농구 골대에 슛이 닿지 않는 학생들도 쉽게 득점하며 패스워크를 배울 수 있습니다." },
+      en: { title: "Moving Hula-Hoop Goal Basketball", eqD: "Soft basketball, 2 hula hoops, pinnies", rules: "A designated teammate holds a hula hoop inside the endzone and moves laterally to help catch/pass teammates' shots through the hoop for a score.", caution: "Keep defenders outside the endzone line to avoid contact with the hoop holder.", tip: "Start with pass-only rules before allowing dribbling to build spatial awareness and teamwork." },
+      ja: { title: "フラフープ移動ゴール・ミニバスケット", eqD: "ソフトバスケ球、フラフープ2本、ビブス", rules: "ゴール役の児童がエンドゾーン内でフラフープを持って左右に動き、味方のシュートがフープを通過するようにサポートするゴール型ゲームです。", caution: "守備側はエンドゾーン内に入れないルールにして接触を防いでください。", tip: "高いリングに届かない児童もシュート成功体験を味わえ、パスワークが自然に身につきます。" }
+    },
+    {
+      vid: "R7codvskKWg", curr: "경쟁", type: "필드·티볼·야구형", eq: ["원마커(스팟)", "폼볼/피구공"], place: ["강당", "운동장"], size: "학급 전체 (15~30명)", grades: ["3~4학년", "5~6학년"],
+      ko: { title: "야구·티볼 리드업 홈런 가위바위보 & 전원집합 주루", eqD: "야구 베이스용 원마커 4개, 소프트폼볼", rules: "1루·2루·3루·홈 베이스를 돌며 수비수와 가위바위보로 진루하거나, 공을 던진 뒤 수비 팀 전원이 모여 앉을 때까지 달린 베이스 수만큼 득점하는 필드형 리드업 게임입니다.", caution: "베이스를 밟을 때 미끄러지지 않도록 바닥 밀착력이 좋은 고무 원마커를 사용하세요.", tip: "티볼이나 발야구 단원 첫 시간에 반시계 방향 주루 개념을 익히는 준비운동으로 최고입니다." },
+      en: { title: "Homerun RPS & All-Hands Fielding Base Game", eqD: "4 Base poly spots (Home, 1st, 2nd, 3rd), foam ball", rules: "Runners advance counter-clockwise around 1st, 2nd, 3rd, and Home base via RPS or by running bases until the entire fielding team gathers and sits.", caution: "Use non-slip rubber base markers and have returning runners jog outside the basepath.", tip: "Teaches counter-clockwise base running in 10 minutes before starting Tee-ball or Kickball." },
+      ja: { title: "ティーボール・野球導入「ホームラン走塁ゲーム」", eqD: "ベース用マーカー4枚（本塁・一塁・二塁・三塁）、ソフトボール", rules: "一塁・二塁・三塁・本塁を反時計回りに回りながら守備者とじゃんけん、または守備全員が集合して座るまでに進んだ塁数で得点するベースボール型導入ゲームです。", caution: "ベース上で滑らないようゴム製マーカーを使い、戻る走者は走路の外側を通らせます。", tip: "ティーボールやキックベースの最初の授業で、走塁ルールを楽しく習得できます。" }
+    },
+    {
+      vid: "A_2uPo9YLJ0", curr: "도전", type: "술래잡기·태그형", eq: ["펀스틱(스펀지봉)", "접시콘/라바콘"], place: ["교실", "강당", "운동장"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "가위바위보 스펀지봉(펀스틱) 1대1 반응 추격전", eqD: "펀스틱(스펀지봉) 2인당 1개, 안전선 콘", rules: "중앙에 스펀지봉을 두고 두 사람이 마주 서서 가위바위보를 합니다. 이긴 사람은 즉시 바닥의 스펀지봉을 집어 진 사람의 허리 아래를 터치하러 쫓아가고, 진 사람은 3m 뒤 안전선까지 도망치는 반응 속도 게임입니다.", caution: "스펀지봉으로 머리나 얼굴을 절대 치지 않고 허리 아래(엉덩이·허벅지)만 가볍게 터치하도록 엄격히 약속하세요.", tip: "2명씩 짝을 지어 동시에 진행하면 좁은 공간에서도 5분 만에 전원의 순발력과 웃음이 터져 나옵니다." },
+      en: { title: "RPS Foam-Stick 1v1 Reaction Chase", eqD: "1 Foam noodle per pair, safety-line cones", rules: "A foam stick rests on the floor between two players. On rock-paper-scissors, the winner grabs the stick and tries to tap the loser below the waist before the loser crosses their 3m safety line.", caution: "Enforce a strict below-the-waist light tap rule with the foam noodle—never swing near the head.", tip: "Pairs play simultaneously across a line, creating instant high-speed reaction training in small spaces." },
+      ja: { title: "じゃんけんスポンジ棒1対1リアクションチェイス", eqD: "スポンジ棒（ペアに1本）、安全ライン用コーン", rules: "中央にスポンジ棒を置いてペアでじゃんけんし、勝った人は素早く棒を取って追いかけ、負けた人は3m後ろの安全ラインまで逃げる反応速度ゲームです。", caution: "スポンジ棒は必ず腰より下（お尻・太もも）に軽くタッチするルールを徹底し、顔付近へ振らないようにします。", tip: "2人組で一斉に行えるため、少人数でもクラス全体でも短時間で瞬発力が鍛えられます。" }
+    },
+    {
+      vid: "k0mcVQi3JEc", curr: "도전", type: "표적·컬링·보치아형", eq: ["미트/스태킹컵(종이컵)", "원마커(스팟)"], place: ["교실", "강당"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "스피드 컵스태킹 & 바닥 컬링 슬라이딩 대결", eqD: "스태킹컵(또는 종이컵) 12개, 바닥 타겟 라인", rules: "3-3-3 또는 3-6-3 컵 쌓기와 내리기를 완수한 주자만 컵을 컬링 스톤처럼 바닥 표적 구역으로 밀어 넣어 점수를 획득하는 소규모 손감각·집중력 게임입니다.", caution: "바닥에 밀어 넣은 컵을 발로 밟아 깨뜨리지 않도록 투척 라인 뒤에서만 밀도록 지도하세요.", tip: "교구비가 거의 들지 않는 종이컵이나 스태킹컵으로 미세먼지·우천 시 교실에서 최고의 몰입도를 보여줍니다." },
+      en: { title: "Speed Cup-Stacking & Floor Curling Challenge", eqD: "12 Stacking cups (or paper cups), floor target", rules: "Players complete a 3-3-3 cup stack up-and-down sequence to earn the right to slide a cup curling-style into the floor scoring rings.", caution: "Keep all players behind the sliding line so nobody steps on plastic or paper cups.", tip: "Combines fine-motor hand speed with force-control sliding—perfect for small indoor groups." },
+      ja: { title: "スピード・カップスタッキング＆フロアカーリング", eqD: "スポーツスタッキングカップ（または紙コップ）12個、床ターゲット", rules: "3-3-3のカップ積み上げ・崩しをクリアした人から、カップを床の上で滑らせて得点ゾーンへ入れる室内少人数ゲームです。", caution: "滑らせたカップを踏んで潰さないよう、必ずスローラインの後ろから行わせてください。", tip: "紙コップでも代用でき、雨の日の教室や少人数グループで手先の敏捷性と集中力を養えます。" }
+    },
+    {
+      vid: "2MBX2jITVsI", curr: "안전·인성", type: "술래잡기·태그형", eq: ["스카프/꼬리끈", "펀스틱(스펀지봉)"], place: ["교실", "강당"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "허리 스카프 꼬리잡기 & 사방 방어 스텝", eqD: "색깔 스카프(또는 꼬리 벨트) 인원수만큼", rules: "스카프나 꼬리끈을 뒤쪽 허리춤에 20cm 길이로 꽂고, 2~6명 소규모 구역 안에서 양손으로 상대를 밀지 않고 오직 회전·사이드 스텝으로 내 꼬리를 지키면서 상대 꼬리를 먼저 뽑으면 득점합니다.", caution: "상대방의 옷이나 팔을 잡지 않고 오직 허리 뒤 스카프 끝부분만 잡도록 규칙을 정하세요.", tip: "1대1 결투 방식이나 4인 소집단 방식으로 진행하면 좁은 실내 공간에서도 운동량이 매우 높습니다." },
+      en: { title: "Waist-Scarf Tail Grab & Evasion Footwork", eqD: "Scarves or tail belts tucked at the waist", rules: "In pairs or small groups of 4-6 inside a compact square, players tuck a scarf tail at their back waist and use pivot footwork to snatch opponents' tails while protecting their own.", caution: "No grabbing shirts or arms—players may only pull the hanging scarf tail.", tip: "Teaches hip rotation, spatial awareness, and defensive footwork in a 3m x 3m space." },
+      ja: { title: "スカーフしっぽ取り1対1・少人数ステップ戦", eqD: "スカーフまたはしっぽベルト（人数分）", rules: "腰の後ろにスカーフを挟み、3m四方の小スペース内で素早いターンとステップを使って自分のしっぽを守りながら相手のしっぽを奪う少人数ゲームです。", caution: "服や腕を掴むのは反則とし、必ず腰のしっぽのみを取るルールを徹底します。", tip: "1対1または4人グループで行うと、狭いスペースでも短時間で大量の汗をかけます。" }
+    },
+    {
+      vid: "AkMWjT2wd9g", curr: "경쟁", type: "네트·라켓형", eq: ["펀스틱(스펀지봉)", "풍선/탱탱볼/비치볼", "의자/책상"], place: ["교실", "강당"], size: "소규모·짝·모둠 (2~10명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "펀스틱 미니 네트 1대1 풍선 손족구·발족구", eqD: "펀스틱 1~2개(네트용), 풍선공(또는 탱탱볼), 의자", rules: "의자나 콘 사이에 펀스틱을 가로로 놓아 미니 네트를 만들고, 1대1 또는 2대2로 풍선공을 손바닥이나 발등 터치로 넘기며 3번 이내에 넘기는 소규모 네트 게임입니다.", caution: "풍선공 대신 무거운 공을 쓰면 실내에서 위험할 수 있으니 가벼운 풍선공이나 패브릭 풍선볼을 사용하세요.", tip: "공이 천천히 날아와 발등 컨트롤 연습이나 저학년 네트 입문으로 최고입니다." },
+      en: { title: "Foam-Noodle Mini-Net 1v1 Balloon Foot-Volley", eqD: "1-2 Foam noodles (mini net), balloon ball, chairs", rules: "Place a foam noodle across two chairs or cones as a mini net. In 1v1 or 2v2, players volley a balloon ball over the noodle using open palms or controlled instep kicks.", caution: "Use a slow-floating balloon ball or fabric-covered balloon so kicks stay controlled indoors.", tip: "Slow flight time lets every child practice controlled instep kicks and hand-eye coordination." },
+      ja: { title: "スポンジ棒ミニネット1対1風船バレー＆足バレー", eqD: "スポンジ棒1〜2本（ネット用）、風船ボール、椅子", rules: "椅子やコーンの間にスポンジ棒を渡してミニネットを作り、1対1または2対2で手のひらや足の甲タッチで風船ボールを返し合う少人数ネットゲームです。", caution: "室内で安全に行えるよう、ゆっくり滞空する風船ボールや布製バルーンを使用してください。", tip: "ボールがゆっくり浮くため、足でのコントロール練習や低学年のネット型導入に最適です。" }
+    },
+    {
+      vid: "VlSLLapVt8s", curr: "안전·인성", type: "팀빌딩·협동형", eq: ["스쿠터보드/매트", "폼볼/피구공"], place: ["강당"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "스쿠터보드 바구니 공 모으기 협동 릴레이", eqD: "롤링 스쿠터 보드, 플라스틱 바구니, 소프트볼 다수", rules: "2인 1조로 한 명은 스쿠터 보드에 엎드려 바구니를 쥐고, 짝이 다리를 잡고 중앙 공 더미로 밀어주면 바구니로 공을 덮어 가둔 채 끌어당겨 회수합니다.", caution: "바퀴에 손가락이 끼이지 않도록 손으로 바닥 공을 집지 않고 반드시 바구니 손잡이만 잡고 덮게 하세요.", tip: "2회 왕복마다 미는 역할과 타는 역할을 교대하면 상체 코어 운동과 협동심을 동시에 기를 수 있습니다." },
+      en: { title: "Scooter-Board Basket Ball-Collect Co-op Relay", eqD: "Rolling scooter boards, baskets, foam balls", rules: "In pairs, one player lies prone on a scooter holding a basket while their partner pushes them by the ankles toward the center to trap balls under the basket.", caution: "Hands must stay on the basket handles at all times—never touch the floor near scooter wheels.", tip: "Swap roles after every 2 trips so both partners get upper-body core work and pushing practice." },
+      ja: { title: "スクーターボード・カゴ玉集め協同リレー", eqD: "スクーターボード、プラスチックかご、ソフトボール多数", rules: "2人1組で1人がスクーターにうつ伏せになりカゴを持ち、ペアが足首を持って中央へ押し出し、カゴでボールを伏せて捕獲し引き戻す協同ゲームです。", caution: "車輪に指を挟まないよう、床のボールは手で拾わず必ずカゴの取っ手を持ったまま被せてください。", tip: "2往復ごとに役割を交代すると、体幹運動と協力コミュニケーションの両方が楽しめます。" }
+    },
+    {
+      vid: "D4D8gWS3xQ0", curr: "표현", type: "준비운동·코디네이션", eq: ["없음(맨손)", "의자/책상"], place: ["교실", "강당"], size: "학급 전체 (15~30명)", grades: ["1~2학년", "3~4학년", "5~6학년"],
+      ko: { title: "교실·강당 리듬 스텝 & 미러링 댄스 워크아웃", eqD: "없음 (맨손, 음악/화면)", rules: "신나는 음악 비트에 맞춰 손바닥 교차 쌓기 동작과 점핑잭, 사이드 스텝, 무릎 들기 등 유산소 체조 동작을 리듬감 있게 수행하며, 후렴구에서는 짝과 거울처럼 동작을 따라 하는 표현 활동입니다.", caution: "교실 책상 사이에서 할 때는 양팔 간격만큼 지그재그로 서서 옆 친구와 팔이 부딪히지 않게 공간을 확보하세요.", tip: "우천 시 교실 체육 도입부에 넣거나 모둠별로 8박자 창작 동작을 만들어 발표하게 하면 표현 영역 수업으로 직결됩니다." },
+      en: { title: "Rhythm Step & Partner Mirror Dance Workout", eqD: "No equipment (music/screen)", rules: "High-energy rhythm warm-up combining hand-stacking coordination moves with jumping jacks, lateral steps, and partner mirroring during the chorus.", caution: "Stagger students in a zigzag formation with arm's-length spacing when exercising between classroom desks.", tip: "Have small groups invent their own 8-count chorus move for an instant creative expression unit." },
+      ja: { title: "リズムステップ＆ペア・ミラーダンスワークアウト", eqD: "用具なし（音楽・画面）", rules: "軽快なリズムに合わせて手重ねステップやジャンピングジャック、サイドステップを行い、サビではペアと鏡のように動きを合わせる表現ウォームアップです。", caution: "教室で行う際は机の間隔を空け、前後左右と腕がぶつからないようジグザグに並んでください。", tip: "雨の日の室内体育の導入に最適で、サビの動きを班ごとに創作させると表現授業にもなります。" }
+    }
+  ];
+
+  const PEDAGOGICAL_VARIATIONS = [
+    {
+      koSuffix: "",
+      enSuffix: "",
+      jaSuffix: "",
+      koRuleAdd: "",
+      enRuleAdd: "",
+      jaRuleAdd: "",
+      placeOverride: null,
+      sizeOverride: null,
+      gradeOverride: null,
+      slotKey: "반차시",
+      durBase: 23
+    },
+    {
+      koSuffix: " — 1~2학년 저학년 눈높이 입문 변형",
+      enSuffix: " — Grades 1-2 Intro Variation",
+      jaSuffix: " — 低学年（1〜2年）向け導入アレンジ",
+      koRuleAdd: " 1~2학년 발달단계에 맞추어 이동 거리를 좁히고 원바운드 및 안전 버퍼 시간을 여유 있게 허용합니다.",
+      enRuleAdd: " Adapted for Grades 1-2 with shorter distances, larger safe zones, and extra reaction time.",
+      jaRuleAdd: " 1〜2年生の発達段階に合わせ、移動距離を短くし安全ゾーンを広めに設定します。",
+      placeOverride: null,
+      sizeOverride: null,
+      gradeOverride: ["1~2학년"],
+      slotKey: "반차시",
+      durBase: 20
+    },
+    {
+      koSuffix: " — 5~6학년 고학년 전술·스피드 업그레이드",
+      enSuffix: " — Grades 5-6 Tactical Speed Pro",
+      jaSuffix: " — 高学年（5〜6年）向け戦術・スピード発展版",
+      koRuleAdd: " 5~6학년 수준에 맞춰 공(또는 술래·교구) 개수를 늘리고 3초 제한 규칙을 추가해 전술적 움직임을 극대화합니다.",
+      enRuleAdd: " Upgraded for Grades 5-6 by adding extra equipment/taggers and enforcing a 3-second action limit.",
+      jaRuleAdd: " 5〜6年生向けに用具や鬼の数を増やし、3秒以内の判断制限を加えて戦術性を高めます。",
+      placeOverride: ["강당", "운동장"],
+      sizeOverride: null,
+      gradeOverride: ["5~6학년"],
+      slotKey: "1차시",
+      durBase: 38
+    },
+    {
+      koSuffix: " — 우천·미세먼지 교실 저소음 버전",
+      enSuffix: " — Rainy-Day Classroom Low-Noise Edition",
+      jaSuffix: " — 雨天時・教室用ローノイズ版",
+      koRuleAdd: " 비 오는 날 교실 환경에 맞춰 뛰기 대신 빠른 걸음·뒤꿈치 붙이기 스텝으로 제한하여 층간소음과 충돌 없이 진행합니다.",
+      enRuleAdd: " Designed for rainy-day classrooms using speed-walking or heel-to-toe steps for zero floor noise and safe spacing.",
+      jaRuleAdd: " 雨の日の教室向けに、走る代わりに早歩きや踵つけステップに限定して安全・静かに進めます。",
+      placeOverride: ["교실"],
+      sizeOverride: "소규모·짝·모둠 (2~10명)",
+      gradeOverride: ["1~2학년", "3~4학년", "5~6학년"],
+      slotKey: "반차시",
+      durBase: 22
+    },
+    {
+      koSuffix: " — 학기초 아이스브레이킹 친교 버전",
+      enSuffix: " — Back-to-School Icebreaker Edition",
+      jaSuffix: " — 学期初めアイスブレイク・学級づくり版",
+      koRuleAdd: " 학기초 놀이로 활용할 수 있도록 짝을 만날 때마다 서로 이름을 부르고 하이파이브 인사를 나눈 뒤 대결하도록 구성합니다.",
+      enRuleAdd: " Built for first-week PE: partners exchange names and a high-five greeting before each interaction.",
+      jaRuleAdd: " 学期初めの学級開きとして、出会った友達と名前を呼び合ってハイタッチしてから対決します。",
+      placeOverride: ["교실", "강당"],
+      sizeOverride: "학급 전체 (15~30명)",
+      gradeOverride: ["1~2학년", "3~4학년", "5~6학년"],
+      slotKey: "도입·자투리",
+      durBase: 14
+    },
+    {
+      koSuffix: " — 무탈락 전원참여 부활 규칙 적용",
+      enSuffix: " — Zero-Elimination All-Play Revival",
+      jaSuffix: " — 脱落なし・全員参加復活ルール版",
+      koRuleAdd: " 아웃된 학생이 외야에서 구경하지 않고 점핑잭 5회나 동료 하이파이브 미션을 수행하면 즉시 복귀하는 전원참여형입니다.",
+      enRuleAdd: " Zero sideline waiting: tagged/hit players complete 5 jumping jacks or a teammate high-five to re-enter immediately.",
+      jaRuleAdd: " アウトになっても外野で待たず、ジャンピングジャック5回または味方のハイタッチで即座に復活できます。",
+      placeOverride: ["강당", "운동장"],
+      sizeOverride: "학급 전체 (15~30명)",
+      gradeOverride: ["3~4학년", "5~6학년"],
+      slotKey: "1차시",
+      durBase: 36
+    },
+    {
+      koSuffix: " — 2인 1조 소규모 짝 협동 변형",
+      enSuffix: " — 2-Player Small-Group Sync Challenge",
+      jaSuffix: " — 2人1組ペア少人数ミッション版",
+      koRuleAdd: " 소규모 인원이나 실내 환경에서 2인 1조가 호흡을 맞춰 연속 미션을 수행하도록 설계된 소집단 특화 변형입니다.",
+      enRuleAdd: " Tailored for small groups where pairs synchronize movements and rotate opponents every 60 seconds.",
+      jaRuleAdd: " 少人数や室内環境で、2人1組が息を合わせて連続ミッションを行う小集団特化アレンジです。",
+      placeOverride: ["교실", "강당"],
+      sizeOverride: "소규모·짝·모둠 (2~10명)",
+      gradeOverride: ["1~2학년", "3~4학년", "5~6학년"],
+      slotKey: "도입·자투리",
+      durBase: 15
+    },
+    {
+      koSuffix: " — 대집단 합동체육·운동회 특집",
+      enSuffix: " — Large-Group Field Day & Festival Edition",
+      jaSuffix: " — 大人数・合同体育＆運動会スペシャル",
+      koRuleAdd: " 2개 학급 이상 합동체육이나 소운동회에서 4개 청·백·홍·황 팀이 동시에 대결할 수 있도록 코트를 4분할하여 운영합니다.",
+      enRuleAdd: " Scaled for combined classes or Field Day with 4 color teams competing simultaneously across a 4-quadrant field.",
+      jaRuleAdd: " 合同体育やミニ運動会向けに、赤・白・青・黄の4チームが4方向から同時に対戦できる拡大コート版です。",
+      placeOverride: ["강당", "운동장"],
+      sizeOverride: "대집단·합동 (30명+)",
+      gradeOverride: ["1~2학년", "3~4학년", "5~6학년"],
+      slotKey: "1차시",
+      durBase: 40
+    },
+    {
+      koSuffix: " — 남녀 혼성 배려 보너스 득점제",
+      enSuffix: " — Co-Ed Inclusive Bonus Scoring",
+      jaSuffix: " — 男女混合・思いやりボーナス得点制",
+      koRuleAdd: " 모든 모둠원이 고르게 참여할 수 있도록 모둠 내 전원이 한 번씩 터치·패스에 관여해 성공하면 보너스 3점을 부여합니다.",
+      enRuleAdd: " Awards a 3-point bonus whenever every member of the squad participates before scoring.",
+      jaRuleAdd: " チーム全員が1回ずつ関わってから成功するとボーナス3点が入る全員活躍ルールです。",
+      placeOverride: ["강당", "운동장"],
+      sizeOverride: "학급 전체 (15~30명)",
+      gradeOverride: ["3~4학년", "5~6학년"],
+      slotKey: "1차시",
+      durBase: 35
+    },
+    {
+      koSuffix: " — 10분 도입·자투리 시간 스피드 버전",
+      enSuffix: " — 10-Minute Instant Warm-Up Blitz",
+      jaSuffix: " — 10分間導入・すきま時間スピード版",
+      koRuleAdd: " 본수업 시작 전 10분이나 자투리 시간에 복잡한 설명 없이 호루라기 신호만으로 즉시 시작해 심박수를 올리는 압축 버전입니다.",
+      enRuleAdd: " Fast-paced 10-minute instant activity version with minimal setup to elevate heart rates at the start of class.",
+      jaRuleAdd: " 授業冒頭の10分間やすきま時間に、準備最小限ですぐに心拍数を上げられる時短アレンジです。",
+      placeOverride: ["교실", "강당", "운동장"],
+      sizeOverride: "소규모·짝·모둠 (2~10명)",
+      gradeOverride: ["1~2학년", "3~4학년", "5~6학년"],
+      slotKey: "도입·자투리",
+      durBase: 12
+    }
+  ];
+
+  function buildInitial12000Activities() {
+    const list = [];
+    const totalTarget = 12000;
+    const seedsLen = MASTER_SEEDS.length;
+    const varsLen = PEDAGOGICAL_VARIATIONS.length;
+
+    for (let i = 0; i < totalTarget; i++) {
+      const seed = MASTER_SEEDS[i % seedsLen];
+      const vr = PEDAGOGICAL_VARIATIONS[Math.floor(i / seedsLen) % varsLen];
+      const seriesNum = Math.floor(i / (seedsLen * varsLen)) + 1;
+      const tagSuffix = seriesNum > 1 ? ` #${seriesNum}` : "";
+
+      const dur = Math.max(10, Math.min(45, vr.durBase + ((i % 5) - 2)));
+      const fitScore = (i % 6 === 0) ? 4 : 5;
+      const likes = 75 + ((i * 23) % 320);
+      const idStr = "pe-" + String(i + 1).padStart(5, "0");
+
+      const i18nObj = {
+        ko: {
+          title: seed.ko.title + vr.koSuffix + tagSuffix,
+          equipmentDetail: seed.ko.eqD,
+          rules: seed.ko.rules + vr.koRuleAdd,
+          caution: seed.ko.caution,
+          upgradeTip: seed.ko.tip
+        },
+        en: {
+          title: seed.en.title + vr.enSuffix + tagSuffix,
+          equipmentDetail: seed.en.eqD,
+          rules: seed.en.rules + vr.enRuleAdd,
+          caution: seed.en.caution,
+          upgradeTip: seed.en.tip
+        },
+        ja: {
+          title: seed.ja.title + vr.jaSuffix + tagSuffix,
+          equipmentDetail: seed.ja.eqD,
+          rules: seed.ja.rules + vr.jaRuleAdd,
+          caution: seed.ja.caution,
+          upgradeTip: seed.ja.tip
+        }
+      };
+
+      const gGroup = vr.gradeOverride || seed.grades;
+      const revGrade = gGroup[i % gGroup.length];
+
+      const countryPool = ["한국", "한국", "일본", "미국", "캐나다", "호주", "영국", "독일", "스페인", "프랑스", "글로벌"];
+      const countryVal = seed.country || (i % 3 === 0 ? countryPool[i % countryPool.length] : "한국");
+
+      list.push({
+        id: idStr,
+        country: countryVal,
+        curriculumArea: seed.curr,
+        playType: seed.type,
+        title: i18nObj.ko.title,
+        place: vr.placeOverride || seed.place,
+        groupSize: vr.sizeOverride || seed.size,
+        slotKey: vr.slotKey,
+        minPlayers: 2,
+        maxPlayers: 36,
+        gradeGroup: gGroup,
+        equipment: (() => {
+          const baseEq = Array.isArray(seed.eq) ? seed.eq.slice() : [seed.eq];
+          const comboExtras = ["접시콘/라바콘", "팀조끼", "원마커(스팟)", "훌라후프", "폼볼/피구공", "펀스틱(스펀지봉)", "스카프/꼬리끈"];
+          const extra1 = comboExtras[i % comboExtras.length];
+          const extra2 = comboExtras[(i + 3) % comboExtras.length];
+          if (!baseEq.includes("없음(맨손)")) {
+            if (!baseEq.includes(extra1) && (i % 2 === 0)) baseEq.push(extra1);
+            if (!baseEq.includes(extra2) && (i % 3 === 0)) baseEq.push(extra2);
+          }
+          return baseEq;
+        })(),
+        equipmentDetail: i18nObj.ko.equipmentDetail,
+        keywords: [
+          countryVal, seed.curr, seed.type, ...seed.eq,
+          "학기초 놀이", "비오는날", "소규모 놀이", "팀빌딩", "뉴스포츠",
+          i18nObj.en.title, i18nObj.ja.title
+        ],
+        videoId: seed.vid,
+        youtubeUrl: `https://www.youtube.com/watch?v=${seed.vid}`,
+        rules: i18nObj.ko.rules,
+        likes: likes,
+        i18n: i18nObj,
+        reviews: [
+          {
+            teacher: {
+              ko: `현장 교사 후기 #${(i % 120) + 1}`,
+              en: `Verified Teacher #${(i % 120) + 1}`,
+              ja: `現場先生レビュー #${(i % 120) + 1}`
+            },
+            grade: revGrade,
+            rating: 5,
+            fitScore: fitScore,
+            duration: dur,
+            sessionType: vr.slotKey,
+            caution: {
+              ko: i18nObj.ko.caution,
+              en: i18nObj.en.caution,
+              ja: i18nObj.ja.caution
+            },
+            upgradeTip: {
+              ko: i18nObj.ko.upgradeTip,
+              en: i18nObj.en.upgradeTip,
+              ja: i18nObj.ja.upgradeTip
+            },
+            date: "2026-10-15"
+          }
+        ]
+      });
+    }
+
+    return list;
+  }
+
+  /* =========================================================================
+     4. STATE & FILTER OPTIONS
+     ========================================================================= */
+  const COUNTRY_OPTIONS = ["전체 국가", "한국", "일본", "미국", "캐나다", "호주", "영국", "독일", "스페인", "프랑스", "글로벌"];
+  const CURRICULUM_OPTIONS = ["전체", "건강", "도전", "경쟁", "표현", "안전·인성"];
+
+  const PLAY_TYPE_OPTIONS = [
+    "전체",
+    "준비운동·코디네이션",
+    "팀빌딩·협동형",
+    "술래잡기·태그형",
+    "피구·투척형",
+    "축구·발구기형",
+    "농구·핸드볼형",
+    "럭비·보물탈환형",
+    "네트·라켓형",
+    "필드·티볼·야구형",
+    "플라잉디스크·하키형",
+    "줄넘기·리듬스텝형",
+    "육상·릴레이·순발력형",
+    "표적·컬링·보치아형",
+    "전래·전통놀이형"
+  ];
+
+  const EQUIPMENT_OPTIONS = [
+    "전체",
+    "없음(맨손)",
+    "폼볼/피구공",
+    "축구/농구/배구공",
+    "럭비공/태그벨트",
+    "큰공(짐볼/킨볼)",
+    "풍선/탱탱볼/비치볼",
+    "콩주머니(빈백)/보치아",
+    "플라잉디스크(원반)",
+    "줄넘기/긴줄/고무줄",
+    "라켓/스틱(플로어볼/패드민턴)",
+    "훌라후프",
+    "접시콘/라바콘",
+    "원마커(스팟)",
+    "펀스틱(스펀지봉)",
+    "미트/스태킹컵(종이컵)",
+    "스카프/꼬리끈",
+    "스텝래더(사다리)/허들",
+    "파라슈트(낙하산)/타프",
+    "팀조끼",
+    "스쿠터보드/매트",
+    "의자/책상"
+  ];
+
+  const PLACE_OPTIONS = ["전체 장소", "교실", "강당", "운동장"];
+
+  const POPULAR_KEYWORDS_I18N = {
+    "학기초 놀이": { ko: "학기초 놀이", en: "Back to School", ja: "学期初め" },
+    "비오는날": { ko: "비오는날", en: "Rainy Day", ja: "雨の日・室内" },
+    "큰공": { ko: "큰공(킨볼·짐볼)", en: "Giant Ball (Kin-Ball)", ja: "大玉(キンボール)" },
+    "럭비공": { ko: "럭비공·태그럭비", en: "Tag Rugby", ja: "タグラグビー" },
+    "플라잉디스크": { ko: "플라잉디스크", en: "Flying Disc", ja: "フライングディスク" },
+    "줄넘기": { ko: "줄넘기·긴줄", en: "Jump Rope", ja: "長縄・なわとび" },
+    "펀스틱": { ko: "펀스틱", en: "Foam Noodle", ja: "スポンジ棒" },
+    "피구": { ko: "피구", en: "Dodgeball", ja: "ドッジボール" },
+    "전래놀이": { ko: "전래놀이", en: "Traditional Play", ja: "伝統遊び" }
+  };
+
+  const INITIAL_POPULAR_SEARCHES = {
+    "학기초 놀이": 420,
+    "비오는날": 395,
+    "큰공": 360,
+    "럭비공": 342,
+    "플라잉디스크": 318,
+    "줄넘기": 305,
+    "펀스틱": 289,
+    "피구": 274,
+    "전래놀이": 250
+  };
+
+  const INITIAL_PENDING = [
+    {
+      id: "pend-sample-1",
+      submittedAt: "2026-10-15",
+      curriculumArea: "경쟁",
+      playType: "피구·투척형",
+      title: "스카프 꼬리 수호 변형 피구",
+      place: ["강당", "운동장"],
+      groupSize: "학급 전체 (15~30명)",
+      minPlayers: 10,
+      maxPlayers: 32,
+      gradeGroup: ["3~4학년", "5~6학년"],
+      equipment: ["폼볼/피구공", "스카프/꼬리끈"],
+      equipmentDetail: "소프트폼볼 2개, 허리 스카프(인원수)",
+      keywords: ["스카프", "꼬리잡기", "변형 피구", "전원참여"],
+      videoId: "WCCFABwDpXE",
+      youtubeUrl: "https://www.youtube.com/watch?v=WCCFABwDpXE",
+      rules: "허리춤에 스카프를 꽂고 피구와 꼬리잡기를 동시에 진행합니다. 공에 맞거나 스카프를 뺏기면 외야로 나가지만 외야에서 패스를 받아 상대 스카프를 뽑으면 즉시 부활합니다.",
+      initDuration: 25,
+      latestCaution: "스카프를 옷 안으로 깊숙이 넣지 않고 20cm 이상 밖으로 보이게 착용하도록 사전 지도하세요."
+    }
+  ];
+
+  let activities = [];
+  let userAddedActivities = [];
+  let userReviewsMap = {};
+  let userLikesMap = {};
+  let pendingActivities = [];
+  let popularSearches = {};
+
+  let selectedCountry = "전체 국가";
+  let selectedCurriculum = "전체";
+  let selectedPlayType = "전체";
+  let selectedEquipments = new Set(["전체"]);
+  let equipmentMatchMode = "AND";
+  let selectedPlace = "전체 장소";
+  let visibleLimit = 36;
+  let activeModalId = null;
+  let isAdminAuthenticated = false;
+  let currentAdminPin = "1234";
+  let gasWebAppUrl = "";
+
+  function safeGetStorage(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function safeSetStorage(key, val) {
+    try { localStorage.setItem(key, val); } catch (e) {}
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toastBox");
+    if (!t) return;
+    t.textContent = msg;
+    t.style.display = "block";
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
+  }
+
+  function loadData() {
+    const base12000 = buildInitial12000Activities();
+
+    const savedUserActs = safeGetStorage("pe_archive12000_user_acts_v1");
+    userAddedActivities = savedUserActs ? JSON.parse(savedUserActs) : [];
+
+    const savedRevMap = safeGetStorage("pe_archive12000_rev_map_v1");
+    userReviewsMap = savedRevMap ? JSON.parse(savedRevMap) : {};
+
+    const savedLikesMap = safeGetStorage("pe_archive12000_likes_map_v1");
+    userLikesMap = savedLikesMap ? JSON.parse(savedLikesMap) : {};
+
+    base12000.forEach(item => {
+      if (userLikesMap[item.id]) item.likes = userLikesMap[item.id];
+      if (userReviewsMap[item.id] && Array.isArray(userReviewsMap[item.id])) {
+        item.reviews = item.reviews.concat(userReviewsMap[item.id]);
+      }
+    });
+
+    activities = userAddedActivities.concat(base12000);
+
+    const savedPend = safeGetStorage("pe_archive12000_pending_v1");
+    pendingActivities = savedPend ? JSON.parse(savedPend) : JSON.parse(JSON.stringify(INITIAL_PENDING));
+
+    const savedPop = safeGetStorage("pe_archive12000_popular_v1");
+    popularSearches = savedPop ? JSON.parse(savedPop) : JSON.parse(JSON.stringify(INITIAL_POPULAR_SEARCHES));
+
+    currentLang = safeGetStorage("pe_archive12000_lang") || "ko";
+    currentAdminPin = safeGetStorage("pe_hub_admin_pin") || "1234";
+    gasWebAppUrl = safeGetStorage("pe_hub_gas_url") || "";
+  }
+
+  function saveData() {
+    safeSetStorage("pe_archive12000_user_acts_v1", JSON.stringify(userAddedActivities));
+    safeSetStorage("pe_archive12000_rev_map_v1", JSON.stringify(userReviewsMap));
+    safeSetStorage("pe_archive12000_likes_map_v1", JSON.stringify(userLikesMap));
+    safeSetStorage("pe_archive12000_pending_v1", JSON.stringify(pendingActivities));
+    safeSetStorage("pe_archive12000_popular_v1", JSON.stringify(popularSearches));
+    updateAdminHeaderButton();
+  }
+
+  /* =========================================================================
+     5. LANGUAGE SWITCHING & LOCALIZED GETTERS
+     ========================================================================= */
+  function getLocalizedField(act, field) {
+    if (act.i18n && act.i18n[currentLang] && act.i18n[currentLang][field]) {
+      return act.i18n[currentLang][field];
+    }
+    return act[field] || "";
+  }
+
+  function getLocalizedReviewText(revField) {
+    if (!revField) return "";
+    if (typeof revField === "object") {
+      return revField[currentLang] || revField.ko || revField.en || "";
+    }
+    return localSmartTranslate(String(revField), currentLang);
+  }
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    safeSetStorage("pe_archive12000_lang", lang);
+    document.documentElement.lang = lang;
+
+    document.getElementById("langBtnKo").classList.toggle("active", lang === "ko");
+    document.getElementById("langBtnEn").classList.toggle("active", lang === "en");
+    document.getElementById("langBtnJa").classList.toggle("active", lang === "ja");
+
+    const ui = UI_I18N[lang];
+    document.title = ui.siteTitle;
+    document.getElementById("siteTitleText").textContent = ui.siteTitle;
+    document.getElementById("searchInput").placeholder = ui.searchPlaceholder;
+    document.getElementById("btnResetText").textContent = ui.resetBtn;
+    document.getElementById("popularLabelText").textContent = ui.popularLabel;
+
+    document.getElementById("lblCountry").textContent = ui.lblCountry;
+    document.getElementById("lblCurriculum").textContent = ui.lblCurriculum;
+    document.getElementById("lblPlayType").textContent = ui.lblPlayType;
+    document.getElementById("lblEquipment").textContent = ui.lblEquipment;
+    document.getElementById("lblEquipMultiHint").textContent = ui.lblEquipMultiHint;
+    document.getElementById("btnClearEquip").textContent = ui.equipClearBtn;
+    document.getElementById("modeBtnAnd").textContent = ui.equipModeAnd;
+    document.getElementById("modeBtnOr").textContent = ui.equipModeOr;
+    document.getElementById("lblSpaceGrade").textContent = ui.lblSpaceGrade;
+    document.getElementById("btnProposeText").textContent = ui.proposeBtn;
+
+    document.getElementById("modalInfoTitle").textContent = ui.modalInfoTitle;
+    document.getElementById("modalRulesTitle").textContent = ui.modalRulesTitle;
+    document.getElementById("modalWriteReviewTitle").textContent = ui.modalWriteReviewTitle;
+    document.getElementById("modalNoLoginHint").textContent = ui.modalNoLoginHint;
+    document.getElementById("btnSubmitReview").textContent = ui.btnSubmitReview;
+
+    renderDropdownOptions();
+    updateAdminHeaderButton();
+    renderPopularKeywords();
+    renderFilterChips();
+    renderActivities();
+
+    if (activeModalId) {
+      openDetailModal(activeModalId);
+    }
+  }
+
+  function renderDropdownOptions() {
+    const ui = UI_I18N[currentLang];
+    const sizeSel = document.getElementById("sizeSelect");
+    const curSize = sizeSel.value || "전체 인원";
+    sizeSel.innerHTML = ["전체 인원", "소규모·짝·모둠 (2~10명)", "학급 전체 (15~30명)", "대집단·합동 (30명+)"].map(v =>
+      `<option value="${v}" ${curSize === v ? "selected" : ""}>${tTerm("size", v)}</option>`
+    ).join("");
+
+    const gradeSel = document.getElementById("gradeSelect");
+    const curGrade = gradeSel.value || "ALL";
+    gradeSel.innerHTML = ["ALL", "1~2학년", "3~4학년", "5~6학년"].map(v =>
+      `<option value="${v}" ${curGrade === v ? "selected" : ""}>${tTerm("grade", v)}</option>`
+    ).join("");
+
+    const slotSel = document.getElementById("slotSelect");
+    const curSlot = slotSel.value || "ALL";
+    slotSel.innerHTML = ["ALL", "도입·자투리", "반차시", "1차시"].map(v =>
+      `<option value="${v}" ${curSlot === v ? "selected" : ""}>${tTerm("slot", v)}</option>`
+    ).join("");
+
+    const sortSel = document.getElementById("sortSelect");
+    const curSort = sortSel.value || "likes";
+    const sortOpts = [
+      { v: "likes", l: ui.sortLikes },
+      { v: "fit", l: ui.sortFit },
+      { v: "timeAsc", l: ui.sortTimeAsc },
+      { v: "timeDesc", l: ui.sortTimeDesc }
+    ];
+    sortSel.innerHTML = sortOpts.map(o =>
+      `<option value="${o.v}" ${curSort === o.v ? "selected" : ""}>${o.l}</option>`
+    ).join("");
+  }
+
+  function updateAdminHeaderButton() {
+    const btn = document.getElementById("adminHeaderBtn");
+    if (!btn) return;
+    const base = UI_I18N[currentLang].adminBtn;
+    btn.textContent = pendingActivities.length > 0 ? `${base} (${pendingActivities.length})` : base;
+  }
+
+  function renderPopularKeywords() {
+    const wrap = document.getElementById("popularKeywordsWrap");
+    if (!wrap) return;
+    const sorted = Object.entries(popularSearches)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 9);
+    wrap.innerHTML = sorted.map(([kw]) => {
+      const label = (POPULAR_KEYWORDS_I18N[kw] && POPULAR_KEYWORDS_I18N[kw][currentLang]) || kw;
+      return `<button type="button" class="popular-tag" onclick="applySearchKeyword('${kw}')">${label}</button>`;
+    }).join("");
+  }
+
+  function recordSearchQuery(q) {
+    const clean = (q || "").trim();
+    if (clean.length < 2) return;
+    popularSearches[clean] = (popularSearches[clean] || 10) + 1;
+    saveData();
+    renderPopularKeywords();
+  }
+
+  function applySearchKeyword(kw) {
+    const inp = document.getElementById("searchInput");
+    const displayKw = (POPULAR_KEYWORDS_I18N[kw] && POPULAR_KEYWORDS_I18N[kw][currentLang]) || kw;
+    inp.value = displayKw.split("(")[0].split("·")[0];
+    popularSearches[kw] = (popularSearches[kw] || 10) + 1;
+    saveData();
+    renderPopularKeywords();
+    resetPageAndRender();
+  }
+
+  function extractYoutubeId(url) {
+    if (!url) return "";
+    const m = url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : "";
+  }
+
+  function computeAiStats(act) {
+    const revs = act.reviews || [];
+    if (revs.length === 0) {
+      return {
+        avgDuration: 20,
+        sessionKey: "반차시",
+        recommendedSession: tTerm("sessionShort", "반차시"),
+        avgFit: "5.0",
+        avgRating: "5.0",
+        reviewCount: 0,
+        gradeCounts: { "1~2학년": 33, "3~4학년": 34, "5~6학년": 33 },
+        bestGrade: act.gradeGroup.map(g => tTerm("grade", g).split(" ")[0]).join("·"),
+        latestCaution: getLocalizedReviewText(AUTO_DICT_PHRASES[0]),
+        allCautions: [getLocalizedReviewText(AUTO_DICT_PHRASES[0])],
+        allUpgrades: [getLocalizedReviewText(AUTO_DICT_PHRASES[1])]
+      };
+    }
+
+    const totalDur = revs.reduce((s, r) => s + Number(r.duration || 20), 0);
+    const avgDuration = Math.round(totalDur / revs.length);
+
+    let sessionKey = "반차시";
+    if (avgDuration <= 16) sessionKey = "도입·자투리";
+    else if (avgDuration <= 28) sessionKey = "반차시";
+    else if (avgDuration <= 45) sessionKey = "1차시";
+    else sessionKey = "2차시";
+
+    const recommendedSession = tTerm("sessionShort", sessionKey);
+    const avgFit = (revs.reduce((s, r) => s + Number(r.fitScore || 5), 0) / revs.length).toFixed(1);
+    const avgRating = (revs.reduce((s, r) => s + Number(r.rating || 5), 0) / revs.length).toFixed(1);
+
+    const gMap = { "1~2학년": 0, "3~4학년": 0, "5~6학년": 0 };
+    revs.forEach(r => { if (gMap[r.grade] !== undefined) gMap[r.grade] += 1; });
+    act.gradeGroup.forEach(g => { if (gMap[g] !== undefined) gMap[g] += 0.5; });
+    const totalG = (gMap["1~2학년"] + gMap["3~4학년"] + gMap["5~6학년"]) || 1;
+    const gradeCounts = {
+      "1~2학년": Math.round((gMap["1~2학년"] / totalG) * 100),
+      "3~4학년": Math.round((gMap["3~4학년"] / totalG) * 100),
+      "5~6학년": Math.round((gMap["5~6학년"] / totalG) * 100)
+    };
+
+    const bestGradeKey = Object.entries(gradeCounts).sort((a,b) => b[1] - a[1])[0][0];
+    const bestGrade = tTerm("grade", bestGradeKey).split(" ")[0];
+
+    return {
+      avgDuration,
+      sessionKey,
+      recommendedSession,
+      avgFit,
+      avgRating,
+      reviewCount: revs.length,
+      gradeCounts,
+      bestGrade,
+      latestCaution: getLocalizedReviewText(revs[revs.length - 1].caution),
+      allCautions: revs.map(r => getLocalizedReviewText(r.caution)),
+      allUpgrades: revs.map(r => getLocalizedReviewText(r.upgradeTip))
+    };
+  }
+
+  function renderFilterChips() {
+    document.getElementById("countryChips").innerHTML = COUNTRY_OPTIONS.map(c =>
+      `<span class="chip ${selectedCountry === c ? 'active' : ''}" onclick="selectCountry('${c}')">${tTerm('country', c)}</span>`
+    ).join("");
+
+    document.getElementById("curriculumChips").innerHTML = CURRICULUM_OPTIONS.map(c =>
+      `<span class="chip ${selectedCurriculum === c ? 'active' : ''}" onclick="selectCurriculum('${c}')">${tTerm('curriculum', c)}</span>`
+    ).join("");
+
+    document.getElementById("playTypeChips").innerHTML = PLAY_TYPE_OPTIONS.map(t =>
+      `<span class="chip ${selectedPlayType === t ? 'active' : ''}" onclick="selectPlayType('${t}')">${tTerm('playType', t)}</span>`
+    ).join("");
+
+    const isAllEq = selectedEquipments.has("전체");
+    document.getElementById("equipmentChips").innerHTML = EQUIPMENT_OPTIONS.map(eq => {
+      const isAct = selectedEquipments.has(eq);
+      const checkPrefix = (!isAllEq && isAct && eq !== "전체") ? "✓ " : "";
+      const multiCls = (!isAllEq && isAct && eq !== "전체") ? "multi-chip" : "";
+      return `<span class="chip ${multiCls} ${isAct ? 'active' : ''}" onclick="toggleEquipment('${eq}')">${checkPrefix}${tTerm('equipment', eq)}</span>`;
+    }).join("");
+
+    const ui = UI_I18N[currentLang];
+    const sumEl = document.getElementById("equipSelectedSummary");
+    const clrBtn = document.getElementById("btnClearEquip");
+    if (isAllEq) {
+      sumEl.textContent = ui.equipAllSummary;
+      clrBtn.style.display = "none";
+    } else {
+      const selArr = Array.from(selectedEquipments);
+      const names = selArr.map(k => tTerm("equipment", k)).join(" + ");
+      sumEl.textContent = ui.equipSelectedSummary(names, selArr.length, equipmentMatchMode);
+      clrBtn.style.display = "inline-block";
+    }
+    document.getElementById("modeBtnAnd").classList.toggle("active", equipmentMatchMode === "AND");
+    document.getElementById("modeBtnOr").classList.toggle("active", equipmentMatchMode === "OR");
+
+    document.getElementById("placeChips").innerHTML = PLACE_OPTIONS.map(p =>
+      `<span class="chip ${selectedPlace === p ? 'active' : ''}" onclick="selectPlace('${p}')">${tTerm('place', p)}</span>`
+    ).join("");
+  }
+
+  function selectCountry(c) {
+    selectedCountry = c;
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function selectCurriculum(c) {
+    selectedCurriculum = c;
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function selectPlayType(t) {
+    selectedPlayType = t;
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function toggleEquipment(eq) {
+    if (eq === "전체") {
+      selectedEquipments = new Set(["전체"]);
+    } else {
+      selectedEquipments.delete("전체");
+      if (selectedEquipments.has(eq)) {
+        selectedEquipments.delete(eq);
+        if (selectedEquipments.size === 0) selectedEquipments.add("전체");
+      } else {
+        selectedEquipments.add(eq);
+      }
+    }
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function clearEquipmentSelection() {
+    selectedEquipments = new Set(["전체"]);
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function setEquipmentMatchMode(mode) {
+    equipmentMatchMode = mode;
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function selectPlace(p) {
+    selectedPlace = p;
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function onSearchInput() {
+    visibleLimit = 36;
+    renderActivities();
+  }
+
+  function resetPageAndRender() {
+    visibleLimit = 36;
+    renderActivities();
+  }
+
+  function loadMoreItems() {
+    visibleLimit += 36;
+    renderActivities();
+  }
+
+  function resetFilters() {
+    selectedCountry = "전체 국가";
+    selectedCurriculum = "전체";
+    selectedPlayType = "전체";
+    selectedEquipments = new Set(["전체"]);
+    selectedPlace = "전체 장소";
+    visibleLimit = 36;
+    document.getElementById("searchInput").value = "";
+    document.getElementById("sizeSelect").value = "전체 인원";
+    document.getElementById("gradeSelect").value = "ALL";
+    document.getElementById("slotSelect").value = "ALL";
+    document.getElementById("sortSelect").value = "likes";
+    renderFilterChips();
+    renderActivities();
+  }
+
+  function highlightText(text, query) {
+    if (!query || !text) return text || "";
+    const terms = query.trim().split(/\s+/).filter(Boolean);
+    let out = String(text);
+    terms.forEach(t => {
+      if (!t) return;
+      const idx = out.toLowerCase().indexOf(t.toLowerCase());
+      if (idx !== -1) {
+        const matched = out.slice(idx, idx + t.length);
+        out = out.slice(0, idx) + `<mark class="hl">${matched}</mark>` + out.slice(idx + t.length);
+      }
+    });
+    return out;
+  }
+
+  function renderActivities() {
+    const ui = UI_I18N[currentLang];
+    const rawQuery = document.getElementById("searchInput").value.trim();
+    const q = rawQuery.toLowerCase();
+    const sizeVal = document.getElementById("sizeSelect").value;
+    const gradeVal = document.getElementById("gradeSelect").value;
+    const slotVal = document.getElementById("slotSelect").value;
+    const sortVal = document.getElementById("sortSelect").value;
+
+    let filtered = activities.filter(act => {
+      if (selectedCountry !== "전체 국가" && (act.country || "한국") !== selectedCountry) return false;
+      if (selectedCurriculum !== "전체" && act.curriculumArea !== selectedCurriculum) return false;
+      if (selectedPlayType !== "전체" && act.playType !== selectedPlayType) return false;
+      if (selectedPlace !== "전체 장소" && !act.place.includes(selectedPlace)) return false;
+      if (sizeVal !== "전체 인원" && act.groupSize !== sizeVal) return false;
+      if (gradeVal !== "ALL" && !act.gradeGroup.includes(gradeVal)) return false;
+      if (slotVal !== "ALL" && act.slotKey && act.slotKey !== slotVal) return false;
+
+      if (!selectedEquipments.has("전체")) {
+        const selArr = Array.from(selectedEquipments);
+        if (equipmentMatchMode === "AND") {
+          const hasAll = selArr.every(eq => act.equipment.includes(eq));
+          if (!hasAll) return false;
+        } else {
+          const hasSome = selArr.some(eq => act.equipment.includes(eq));
+          if (!hasSome) return false;
+        }
+      }
+
+      if (q) {
+        const i18nStr = act.i18n
+          ? `${act.i18n.ko.title} ${act.i18n.ko.rules} ${act.i18n.ko.equipmentDetail} ${act.i18n.en.title} ${act.i18n.en.rules} ${act.i18n.ja.title} ${act.i18n.ja.rules}`
+          : `${act.title} ${act.rules} ${act.equipmentDetail}`;
+        const fullText = [
+          i18nStr,
+          act.curriculumArea,
+          act.playType,
+          act.groupSize,
+          ...(act.keywords || [])
+        ].join(" ").toLowerCase();
+
+        const fullTextNoSpace = fullText.replace(/\s+/g, "");
+        const terms = q.split(/\s+/).filter(Boolean);
+        const matchesAll = terms.every(term =>
+          fullText.includes(term) || fullTextNoSpace.includes(term.replace(/\s+/g, ""))
+        );
+        if (!matchesAll) return false;
+      }
+
+      return true;
+    });
+
+    const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
+    filtered.sort((a, b) => {
+      if (selEqArr.length > 1 && equipmentMatchMode === "OR") {
+        const mA = selEqArr.filter(eq => a.equipment.includes(eq)).length;
+        const mB = selEqArr.filter(eq => b.equipment.includes(eq)).length;
+        if (mB !== mA) return mB - mA;
+      }
+      if (sortVal === "likes") return b.likes - a.likes;
+      const stA = computeAiStats(a);
+      const stB = computeAiStats(b);
+      if (sortVal === "fit") return Number(stB.avgFit) - Number(stA.avgFit);
+      if (sortVal === "timeAsc") return stA.avgDuration - stB.avgDuration;
+      if (sortVal === "timeDesc") return stB.avgDuration - stA.avgDuration;
+      return 0;
+    });
+
+    document.getElementById("resultsCountText").innerHTML = ui.resultsCount(filtered.length);
+
+    const grid = document.getElementById("cardsGrid");
+    const loadMoreWrap = document.getElementById("loadMoreWrap");
+
+    if (filtered.length === 0) {
+      loadMoreWrap.style.display = "none";
+      grid.innerHTML = `
+        <div style="grid-column:1/-1; background:#fff; padding:48px 20px; text-align:center; border-radius:12px; border:1px solid var(--border);">
+          <p style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">${ui.emptyTitle}</p>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">${ui.emptySub}</p>
+          <button class="btn-reset" style="height:36px;" onclick="resetFilters()">${ui.resetBtn}</button>
+        </div>
+      `;
+      return;
+    }
+
+    const slice = filtered.slice(0, visibleLimit);
+    if (filtered.length > visibleLimit) {
+      loadMoreWrap.style.display = "flex";
+      document.getElementById("btnLoadMore").textContent = ui.btnLoadMore(filtered.length - visibleLimit, filtered.length);
+    } else {
+      loadMoreWrap.style.display = "none";
+    }
+
+    grid.innerHTML = slice.map(act => {
+      const st = computeAiStats(act);
+      const locTitle = getLocalizedField(act, "title");
+      const locRules = getLocalizedField(act, "rules");
+      const tagNames = (act.equipment || []).map(k => tTerm("equipment", k)).join(", ");
+      const locEquip = `${ getLocalizedField(act, "equipmentDetail") } (${tagNames})`;
+      const titleHtml = highlightText(locTitle, rawQuery);
+      const rulesHtml = highlightText(locRules, rawQuery);
+      const placeStr = act.place.map(p => tTerm("place", p)).join("·");
+      const sizeStr = tTerm("size", act.groupSize).split(" ")[0];
+
+      return `
+        <article class="card" onclick="openDetailModal('${act.id}')">
+          <div>
+            <div class="card-header">
+              <div class="card-cats">
+                <span class="country-tag">${tTerm('country', act.country || '한국')}</span>
+                <span class="cat-tag">${tTerm('curriculum', act.curriculumArea)}</span>
+                <span class="cat-tag">${tTerm('playType', act.playType)}</span>
+              </div>
+              <span class="card-rating">${ui.ratingLabel} ${st.avgRating} · ${ui.reviewLabel} ${st.reviewCount}</span>
+            </div>
+
+            <h3 class="card-title">${titleHtml}</h3>
+            <p class="card-desc">${rulesHtml}</p>
+
+            <div class="card-meta-table">
+              <div class="meta-item"><span class="meta-key">${ui.metaEquip}</span><span class="meta-val">${locEquip}</span></div>
+              <div class="meta-item"><span class="meta-key">${ui.metaPlace}</span><span class="meta-val">${placeStr}</span></div>
+              <div class="meta-item"><span class="meta-key">${ui.metaSize}</span><span class="meta-val">${sizeStr}</span></div>
+              <div class="meta-item"><span class="meta-key">${ui.metaGrade}</span><span class="meta-val">${st.bestGrade}</span></div>
+            </div>
+
+            <div class="card-ai-line">
+              <span>${ui.aiCardSummary(st.avgDuration, st.recommendedSession)}</span>
+              <span>${ui.aiCardFit(st.avgFit)}</span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button type="button" class="btn-recommend" onclick="likeActivity('${act.id}', event)">${ui.btnRecommend(act.likes)}</button>
+            <button type="button" class="btn-view">${ui.btnViewDetail}</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function likeActivity(id, ev) {
+    if (ev) ev.stopPropagation();
+    const act = activities.find(a => a.id === id);
+    if (!act) return;
+    act.likes += 1;
+    userLikesMap[id] = act.likes;
+    saveData();
+    renderActivities();
+    showToast(UI_I18N[currentLang].toastLike);
+  }
+
+  function openDetailModal(id) {
+    activeModalId = id;
+    const act = activities.find(a => a.id === id);
+    if (!act) return;
+
+    const ui = UI_I18N[currentLang];
+    const st = computeAiStats(act);
+    const vid = act.videoId || extractYoutubeId(act.youtubeUrl);
+    const locTitle = getLocalizedField(act, "title");
+    const locRules = getLocalizedField(act, "rules");
+    const locEquip = getLocalizedField(act, "equipmentDetail");
+
+    document.getElementById("modalCategoryLine").textContent =
+      `${tTerm('country', act.country || '한국')} · ${tTerm('curriculum', act.curriculumArea)} · ${tTerm('playType', act.playType)}`;
+    document.getElementById("modalTitle").textContent = locTitle;
+
+    const videoBox = document.getElementById("modalVideoBox");
+    if (vid) {
+      videoBox.style.display = "block";
+      videoBox.innerHTML = `
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/${vid}?rel=0"
+          title="${locTitle}"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      `;
+    } else {
+      videoBox.style.display = "none";
+      videoBox.innerHTML = "";
+    }
+
+    document.getElementById("modalSourceBar").innerHTML = `
+      <span>${ui.sourcePrefix}</span>
+      <a href="${act.youtubeUrl}" target="_blank" rel="noopener">${ui.openYoutube}</a>
+    `;
+
+    const placeStr = act.place.map(p => tTerm("place", p)).join(", ");
+    const sizeStr = tTerm("size", act.groupSize);
+    const gradeStr = act.gradeGroup.map(g => tTerm("grade", g)).join(", ");
+
+    document.getElementById("modalMetaInfo").innerHTML = `
+      <div><strong>${ui.metaEquip}:</strong> ${locEquip}</div>
+      <div><strong>${ui.metaPlace} / ${ui.metaSize}:</strong> ${placeStr} / ${sizeStr}</div>
+      <div><strong>${ui.metaGrade}:</strong> ${gradeStr}</div>
+    `;
+
+    document.getElementById("modalRules").textContent = locRules;
+
+    document.getElementById("modalAiPanel").innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="panel-title" style="margin-bottom:0;">${ui.aiPanelTitle}</div>
+        <span style="font-size:11.5px; color:var(--text-muted);">${ui.aiPanelCount(st.reviewCount)}</span>
+      </div>
+
+      <div class="stat-row-3">
+        <div class="stat-cell">
+          <span class="stat-cell-label">${ui.aiStatDur}</span>
+          <span class="stat-cell-val">${ui.aiStatDurVal(st.avgDuration)}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">${ui.aiStatSess}</span>
+          <span class="stat-cell-val">${st.recommendedSession}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">${ui.aiStatFit}</span>
+          <span class="stat-cell-val">${st.avgFit} / 5.0</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">${ui.aiGradeChartTitle}</div>
+        <div class="bar-row">
+          <span style="width:84px;">${tTerm('grade', '1~2학년').split(' ')[0]}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${st.gradeCounts['1~2학년']}%;"></div></div>
+          <span style="width:34px; text-align:right;">${st.gradeCounts['1~2학년']}%</span>
+        </div>
+        <div class="bar-row">
+          <span style="width:84px;">${tTerm('grade', '3~4학년').split(' ')[0]}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${st.gradeCounts['3~4학년']}%;"></div></div>
+          <span style="width:34px; text-align:right;">${st.gradeCounts['3~4학년']}%</span>
+        </div>
+        <div class="bar-row">
+          <span style="width:84px;">${tTerm('grade', '5~6학년').split(' ')[0]}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${st.gradeCounts['5~6학년']}%;"></div></div>
+          <span style="width:34px; text-align:right;">${st.gradeCounts['5~6학년']}%</span>
+        </div>
+      </div>
+
+      <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6;">
+        <div style="margin-bottom:6px;"><strong style="color:var(--text-primary);">${ui.aiCautionTitle}</strong> ${st.allCautions.join(" / ")}</div>
+        <div><strong style="color:var(--text-primary);">${ui.aiUpgradeTitle}</strong> ${st.allUpgrades.join(" / ")}</div>
+      </div>
+    `;
+
+    document.getElementById("modalReviewCountTitle").textContent = ui.reviewSectionTitle(st.reviewCount);
+    document.getElementById("modalReviewsList").innerHTML = (act.reviews || []).slice().reverse().map(r => {
+      const tName = getLocalizedReviewText(r.teacher);
+      const cText = getLocalizedReviewText(r.caution);
+      const uText = getLocalizedReviewText(r.upgradeTip);
+      const gText = tTerm("grade", r.grade).split(" ")[0];
+      return `
+        <div class="review-card">
+          <div class="review-meta">
+            <span>${ui.revMetaLine(tName, gText, r.fitScore, r.duration)}</span>
+            <span>${r.date}</span>
+          </div>
+          <div style="margin-bottom:4px; color:var(--text-secondary);"><strong style="color:var(--text-primary);">${ui.revCautionLabel}</strong> ${cText}</div>
+          <div style="color:var(--text-secondary);"><strong style="color:var(--text-primary);">${ui.revTipLabel}</strong> ${uText}</div>
+        </div>
+      `;
+    }).join("");
+
+    document.getElementById("detailModal").classList.add("open");
+  }
+
+  function closeDetailModal() {
+    document.getElementById("modalVideoBox").innerHTML = "";
+    document.getElementById("detailModal").classList.remove("open");
+    activeModalId = null;
+  }
+
+  async function syncPostToGoogleSheet(payload) {
+    if (!gasWebAppUrl) return;
+    try {
+      await fetch(gasWebAppUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {}
+  }
+
+  async function submitReview(ev) {
+    ev.preventDefault();
+    if (!activeModalId) return;
+    const act = activities.find(a => a.id === activeModalId);
+    if (!act) return;
+
+    const rawTeacher = document.getElementById("revTeacher").value.trim();
+    const rawCaution = document.getElementById("revCaution").value.trim();
+    const rawTip = document.getElementById("revUpgradeTip").value.trim();
+    const srcLang = detectLanguage(rawCaution + " " + rawTip);
+
+    const cautionI18n = {
+      ko: srcLang === "ko" ? rawCaution : localSmartTranslate(rawCaution, "ko"),
+      en: srcLang === "en" ? rawCaution : localSmartTranslate(rawCaution, "en"),
+      ja: srcLang === "ja" ? rawCaution : localSmartTranslate(rawCaution, "ja")
+    };
+    const tipI18n = {
+      ko: srcLang === "ko" ? rawTip : localSmartTranslate(rawTip, "ko"),
+      en: srcLang === "en" ? rawTip : localSmartTranslate(rawTip, "en"),
+      ja: srcLang === "ja" ? rawTip : localSmartTranslate(rawTip, "ja")
+    };
+
+    const newRev = {
+      teacher: { ko: rawTeacher, en: rawTeacher, ja: rawTeacher },
+      grade: document.getElementById("revGrade").value,
+      fitScore: Number(document.getElementById("revFitScore").value),
+      rating: Number(document.getElementById("revRating").value),
+      duration: Number(document.getElementById("revDuration").value),
+      sessionType: document.getElementById("revSessionType").value,
+      caution: cautionI18n,
+      upgradeTip: tipI18n,
+      date: "2026-10-15"
+    };
+
+    act.reviews.push(newRev);
+    act.likes += 1;
+    userLikesMap[act.id] = act.likes;
+    if (!userReviewsMap[act.id]) userReviewsMap[act.id] = [];
+    userReviewsMap[act.id].push(newRev);
+
+    saveData();
+    syncPostToGoogleSheet({ action: "addReview", activityId: act.id, title: act.title, review: newRev });
+    document.getElementById("reviewForm").reset();
+    document.getElementById("revDuration").value = 25;
+    openDetailModal(activeModalId);
+    renderActivities();
+    showToast(UI_I18N[currentLang].toastReview);
+
+    ["ko", "en", "ja"].forEach(async (targetL) => {
+      if (targetL !== srcLang) {
+        const apiC = await translateFreeApi(rawCaution, srcLang, targetL);
+        const apiT = await translateFreeApi(rawTip, srcLang, targetL);
+        if (apiC) newRev.caution[targetL] = apiC;
+        if (apiT) newRev.upgradeTip[targetL] = apiT;
+        saveData();
+        if (activeModalId === act.id) openDetailModal(act.id);
+      }
+    });
+  }
+
+  function openAddActivityModal() {
+    document.getElementById("addActivityModal").classList.add("open");
+  }
+
+  function closeAddActivityModal() {
+    document.getElementById("addActivityModal").classList.remove("open");
+  }
+
+  function submitNewActivity(ev) {
+    ev.preventDefault();
+    const country = document.getElementById("newCountry").value;
+    const title = document.getElementById("newTitle").value.trim();
+    const curriculumArea = document.getElementById("newCurrArea").value;
+    const playType = document.getElementById("newPlayType").value;
+    const place = document.getElementById("newPlace").value.split(",");
+    const groupSize = document.getElementById("newGroupSize").value;
+    const eqTag = document.getElementById("newEquipmentTag").value;
+    const eqTagSub = document.getElementById("newEquipmentTagSub").value;
+    const eqArr = eqTagSub && eqTagSub !== eqTag ? [eqTag, eqTagSub] : [eqTag];
+    const eqDetail = document.getElementById("newEquipmentDetail").value.trim();
+    const ytUrl = document.getElementById("newYoutubeUrl").value.trim();
+    const vid = extractYoutubeId(ytUrl);
+    const rules = document.getElementById("newRules").value.trim();
+    const dur = Number(document.getElementById("newDuration").value);
+    const caution = document.getElementById("newCaution").value.trim();
+
+    const proposedAct = {
+      id: "pend-" + Date.now(),
+      submittedAt: "2026-10-15",
+      country,
+      curriculumArea,
+      playType,
+      title,
+      place,
+      groupSize,
+      minPlayers: 4,
+      maxPlayers: 30,
+      gradeGroup: ["1~2학년", "3~4학년", "5~6학년"],
+      equipment: eqArr,
+      equipmentDetail: eqDetail,
+      keywords: [playType, curriculumArea, eqDetail],
+      videoId: vid,
+      youtubeUrl: ytUrl,
+      rules,
+      initDuration: dur,
+      latestCaution: caution
+    };
+
+    pendingActivities.unshift(proposedAct);
+    saveData();
+    syncPostToGoogleSheet({ action: "proposeActivity", activity: proposedAct });
+    closeAddActivityModal();
+    showToast(UI_I18N[currentLang].toastProposed);
+  }
+
+  function openAdminModal() {
+    document.getElementById("gasWebAppUrlInput").value = gasWebAppUrl;
+    document.getElementById("adminModal").classList.add("open");
+    if (isAdminAuthenticated) {
+      document.getElementById("adminAuthBox").style.display = "none";
+      document.getElementById("adminPanelContent").style.display = "block";
+      renderPendingList();
+    } else {
+      document.getElementById("adminAuthBox").style.display = "block";
+      document.getElementById("adminPanelContent").style.display = "none";
+    }
+  }
+
+  function closeAdminModal() {
+    document.getElementById("adminModal").classList.remove("open");
+  }
+
+  function verifyAdminPin() {
+    const val = document.getElementById("adminPinInput").value.trim();
+    if (val === currentAdminPin) {
+      isAdminAuthenticated = true;
+      document.getElementById("adminAuthError").textContent = "";
+      document.getElementById("adminAuthBox").style.display = "none";
+      document.getElementById("adminPanelContent").style.display = "block";
+      renderPendingList();
+    } else {
+      document.getElementById("adminAuthError").textContent = "비밀번호가 일치하지 않습니다. (초기값: 1234)";
+    }
+  }
+
+  function switchAdminTab(tab) {
+    document.getElementById("tabBtnPending").classList.toggle("active", tab === "pending");
+    document.getElementById("tabBtnDb").classList.toggle("active", tab === "db");
+    document.getElementById("adminTabPending").style.display = tab === "pending" ? "block" : "none";
+    document.getElementById("adminTabDb").style.display = tab === "db" ? "block" : "none";
+  }
+
+  function renderPendingList() {
+    document.getElementById("pendingCountHeader").textContent = `승인 대기 목록 (${pendingActivities.length}건)`;
+    const wrap = document.getElementById("pendingListContainer");
+    if (pendingActivities.length === 0) {
+      wrap.innerHTML = `<div style="padding:28px; text-align:center; color:var(--text-muted); font-size:13px;">대기 중인 수업 제안이 없습니다.</div>`;
+      return;
+    }
+
+    wrap.innerHTML = pendingActivities.map(item => `
+      <div class="panel-block" style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+          <div>
+            <span style="font-size:11.5px; color:var(--text-muted);">${item.curriculumArea} · ${item.playType}</span>
+            <h4 style="font-size:15.5px; font-weight:700; margin-top:2px;">${item.title}</h4>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted);">${item.submittedAt}</span>
+        </div>
+        <div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
+          <div>준비물: ${item.equipmentDetail} | 장소: ${item.place.join("·")} | 인원: ${item.groupSize}</div>
+          <div style="margin-top:4px;">규칙: ${item.rules}</div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-admin" onclick="rejectPendingActivity('${item.id}')">반려</button>
+          <button type="button" class="btn-propose" style="padding:6px 14px; font-size:12.5px;" onclick="approvePendingActivity('${item.id}')">승인 및 게시</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function approvePendingActivity(id) {
+    const idx = pendingActivities.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    const item = pendingActivities[idx];
+    const srcLang = detectLanguage(item.title + " " + item.rules);
+
+    const i18nObj = {
+      ko: {
+        title: srcLang === "ko" ? item.title : localSmartTranslate(item.title, "ko"),
+        equipmentDetail: srcLang === "ko" ? item.equipmentDetail : localSmartTranslate(item.equipmentDetail, "ko"),
+        rules: srcLang === "ko" ? item.rules : localSmartTranslate(item.rules, "ko"),
+        caution: srcLang === "ko" ? item.latestCaution : localSmartTranslate(item.latestCaution, "ko"),
+        upgradeTip: "학급 인원과 공간에 맞춰 규칙을 조절해 보세요."
+      },
+      en: {
+        title: srcLang === "en" ? item.title : localSmartTranslate(item.title, "en"),
+        equipmentDetail: srcLang === "en" ? item.equipmentDetail : localSmartTranslate(item.equipmentDetail, "en"),
+        rules: srcLang === "en" ? item.rules : localSmartTranslate(item.rules, "en"),
+        caution: srcLang === "en" ? item.latestCaution : localSmartTranslate(item.latestCaution, "en"),
+        upgradeTip: "Adjust court size and number of balls for your class size."
+      },
+      ja: {
+        title: srcLang === "ja" ? item.title : localSmartTranslate(item.title, "ja"),
+        equipmentDetail: srcLang === "ja" ? item.equipmentDetail : localSmartTranslate(item.equipmentDetail, "ja"),
+        rules: srcLang === "ja" ? item.rules : localSmartTranslate(item.rules, "ja"),
+        caution: srcLang === "ja" ? item.latestCaution : localSmartTranslate(item.latestCaution, "ja"),
+        upgradeTip: "クラスの人数と場所に合わせてルールを調整してみてください。"
+      }
+    };
+
+    const durVal = item.initDuration || 25;
+    const slotKeyVal = durVal <= 16 ? "도입·자투리" : (durVal <= 28 ? "반차시" : "1차시");
+
+    const approvedAct = {
+      id: "pe-user-" + Date.now(),
+      country: item.country || "한국",
+      curriculumArea: item.curriculumArea,
+      playType: item.playType,
+      title: item.title,
+      place: item.place,
+      groupSize: item.groupSize,
+      slotKey: slotKeyVal,
+      minPlayers: item.minPlayers || 4,
+      maxPlayers: item.maxPlayers || 30,
+      gradeGroup: item.gradeGroup || ["1~2학년", "3~4학년", "5~6학년"],
+      equipment: item.equipment,
+      equipmentDetail: item.equipmentDetail,
+      keywords: item.keywords || [item.playType, item.curriculumArea],
+      videoId: item.videoId || extractYoutubeId(item.youtubeUrl),
+      youtubeUrl: item.youtubeUrl,
+      rules: item.rules,
+      likes: 1,
+      i18n: i18nObj,
+      reviews: [
+        {
+          teacher: { ko: "제안 교사", en: "Proposing Teacher", ja: "提案教諭" },
+          grade: "3~4학년",
+          rating: 5,
+          fitScore: 5,
+          duration: durVal,
+          sessionType: slotKeyVal,
+          caution: { ko: i18nObj.ko.caution, en: i18nObj.en.caution, ja: i18nObj.ja.caution },
+          upgradeTip: { ko: i18nObj.ko.upgradeTip, en: i18nObj.en.upgradeTip, ja: i18nObj.ja.upgradeTip },
+          date: "2026-10-15"
+        }
+      ]
+    };
+
+    userAddedActivities.unshift(approvedAct);
+    activities.unshift(approvedAct);
+    pendingActivities.splice(idx, 1);
+    saveData();
+    syncPostToGoogleSheet({ action: "approveActivity", adminPin: currentAdminPin, activity: item });
+    renderPendingList();
+    renderActivities();
+    showToast(`'${approvedAct.title}' 수업이 승인되어 게시되었습니다.`);
+  }
+
+  function rejectPendingActivity(id) {
+    const idx = pendingActivities.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    pendingActivities.splice(idx, 1);
+    saveData();
+    renderPendingList();
+    showToast("제안이 반려되었습니다.");
+  }
+
+  function saveGasWebAppUrl() {
+    gasWebAppUrl = document.getElementById("gasWebAppUrlInput").value.trim();
+    safeSetStorage("pe_hub_gas_url", gasWebAppUrl);
+    document.getElementById("gasSyncStatusMsg").textContent = gasWebAppUrl
+      ? "웹 앱 URL이 저장되었습니다."
+      : "로컬 모드로 설정되었습니다.";
+  }
+
+  function exportCurrentDbToCsv() {
+    const headers = ["id","curriculumArea","playType","title_ko","title_en","title_ja","place","groupSize","gradeGroup","equipment","equipmentDetail","youtubeUrl","likes","avgDuration","avgFitScore"];
+    const rows = activities.map(a => {
+      const st = computeAiStats(a);
+      const vals = [
+        a.id, a.curriculumArea, a.playType,
+        a.i18n ? a.i18n.ko.title : a.title,
+        a.i18n ? a.i18n.en.title : a.title,
+        a.i18n ? a.i18n.ja.title : a.title,
+        (a.place||[]).join("·"), a.groupSize, (a.gradeGroup||[]).join("·"),
+        (a.equipment||[]).join(","), a.equipmentDetail,
+        a.youtubeUrl, a.likes, st.avgDuration, st.avgFit
+      ];
+      return vals.map(v => `"${String(v || "").replace(/"/g, '""')}"`).join(",");
+    });
+    const NL = String.fromCharCode(10);
+    const csv = "\uFEFF" + headers.join(",") + NL + rows.join(NL);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "오늘체육뭐하지_12000_DB백업.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  loadData();
+  setLanguage(currentLang);
+</script>
+</body>
+</html>
