@@ -24,7 +24,8 @@ const TABS = {
       'title_ko', 'rules_ko', 'caution_ko', 'tip_ko', 'equip_ko',
       'title_en', 'rules_en', 'caution_en', 'tip_en', 'equip_en',
       'title_ja', 'rules_ja', 'caution_ja', 'tip_ja', 'equip_ja',
-      'createdAt', 'updatedAt']
+      'createdAt', 'updatedAt',
+      'source', 'channel', 'videoTitle', 'evidence', 'confidence', 'ai_ko', 'ai_en', 'ai_ja']
   },
   reviews: {
     name: '후기',
@@ -88,6 +89,7 @@ function doPost(e) {
     if (a === 'rejectEdit') return json_(withLock_(() => setStatus_('edits', 'editId', body.editId, '반려')));
     if (a === 'changePin') return json_(changePin_(body.newPin));
     if (a === 'seedActivities') return json_(withLock_(() => seedActivities_(body.rows || [], !!body.force)));
+    if (a === 'importActivities') return json_(withLock_(() => importActivities_(body.items || [])));
 
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
@@ -230,6 +232,7 @@ function approveProposal_(proposalId) {
     videoId: youtubeId_(p.youtubeUrl),
     youtubeUrl: p.youtubeUrl,
     defaultDur: dur,
+    source: '교사 제안',
     createdAt: now_(),
     updatedAt: now_()
   };
@@ -295,6 +298,121 @@ function approveEdit_(editId) {
   at.sheet.getRange(aIdx + 2, 1, 1, row.length).setValues([row.map(safeCell_)]);
   et.sheet.getRange(eIdx + 2, et.col.status + 1).setValue('승인');
   return { ok: true };
+}
+
+/* ----------------------------- AI 수집 자료 일괄 등록 ----------------------------- */
+
+const ALLOWED = {
+  curriculumArea: ['건강', '도전', '경쟁', '표현', '안전·인성'],
+  playType: ['준비운동·코디네이션', '팀빌딩·협동형', '술래잡기·태그형', '피구·투척형', '축구·발구기형', '농구·핸드볼형',
+    '럭비·보물탈환형', '네트·라켓형', '필드·티볼·야구형', '플라잉디스크·하키형', '줄넘기·리듬스텝형',
+    '육상·릴레이·순발력형', '표적·컬링·보치아형', '전래·전통놀이형'],
+  place: ['교실', '강당', '운동장'],
+  groupSize: ['소규모·짝·모둠 (2~10명)', '학급 전체 (15~30명)', '대집단·합동 (30명+)'],
+  grades: ['1~2학년', '3~4학년', '5~6학년'],
+  equipment: ['없음(맨손)', '폼볼/피구공', '축구/농구/배구공', '럭비공/태그벨트', '큰공(짐볼/킨볼)', '풍선/탱탱볼/비치볼',
+    '콩주머니(빈백)/보치아', '플라잉디스크(원반)', '줄넘기/긴줄/고무줄', '라켓/스틱(플로어볼/패드민턴)', '훌라후프',
+    '접시콘/라바콘', '원마커(스팟)', '펀스틱(스펀지봉)', '미트/스태킹컵(종이컵)', '스카프/꼬리끈', '스텝래더(사다리)/허들',
+    '파라슈트(낙하산)/타프', '팀조끼', '스쿠터보드/매트', '의자/책상'],
+  country: ['한국', '일본', '미국', '캐나다', '호주', '영국', '독일', '스페인', '프랑스', '글로벌', '미확인'],
+  confidence: ['높음', '중간', '낮음']
+};
+
+/**
+ * 하네스(argon-harness.txt) 형식의 항목 배열을 받아
+ * 1) 형식·허용값 검사 2) 시트 안 중복 검사 3) 유튜브에 영상이 실제로 있는지 확인
+ * 을 모두 통과한 것만 번역해서 '수업' 탭에 추가한다.
+ */
+function importActivities_(items) {
+  if (!Array.isArray(items) || !items.length) return { ok: false, error: '등록할 항목이 없습니다.' };
+  if (items.length > 15) return { ok: false, error: '한 번에 15개까지만 등록할 수 있습니다. (번역 시간 때문)' };
+
+  const at = readTab_('activities');
+  const usedVideos = {};
+  at.rows.forEach(r => { const v = String(r[at.col.videoId] || ''); if (v) usedVideos[v] = true; });
+
+  const results = [];
+  const toAdd = [];
+  items.forEach((it, i) => {
+    const vid = String((it && it.videoId) || '').trim();
+    const res = { index: i, videoId: vid, title: clean_(it && it.title_ko, 200) };
+    const problems = validateImportItem_(it);
+    if (!problems.length && usedVideos[vid]) problems.push('이미 등록된 영상');
+    if (!problems.length) {
+      const yt = youtubeLookup_(vid);
+      if (!yt) problems.push('유튜브에 없는 영상');
+      else { res.channel = yt.author_name; res.videoTitle = yt.title; }
+    }
+    if (problems.length) { res.ok = false; res.problems = problems; results.push(res); return; }
+    usedVideos[vid] = true;
+    res.ok = true;
+    results.push(res);
+    toAdd.push({ it: it, yt: { channel: res.channel, title: res.videoTitle } });
+  });
+
+  toAdd.forEach((x, n) => {
+    const it = x.it;
+    const act = {
+      id: 'pe-' + it.videoId,
+      status: '게시',
+      country: it.country,
+      curriculumArea: it.curriculumArea,
+      playType: it.playType,
+      place: it.place.join(','),
+      groupSize: it.groupSize,
+      slotKey: '',
+      gradeGroup: it.grades.join(','),
+      equipment: it.equipment.join(','),
+      videoId: it.videoId,
+      youtubeUrl: 'https://www.youtube.com/watch?v=' + it.videoId,
+      defaultDur: '',
+      source: 'AI 수집',
+      channel: x.yt.channel,          // 유튜브에서 직접 확인한 값
+      videoTitle: x.yt.title,         // 유튜브에서 직접 확인한 값
+      evidence: (it.quotes || []).map(q => clean_(q, 300)).join('\n'),
+      confidence: it.confidence,
+      createdAt: now_(),
+      updatedAt: now_()
+    };
+    const fields = { title: it.title_ko, rules: it.rules_ko, caution: it.caution_ko, tip: it.tip_ko, equip: it.equipment_ko };
+    Object.keys(fields).forEach(f => {
+      const tr = translateAll_(clean_(fields[f], 3000), 'ko');
+      LANGS.forEach(l => { act[f + '_' + l] = tr[l]; });
+    });
+    const ideas = (it.aiIdeas || []).map(s => clean_(s, 300)).filter(Boolean).join('\n');
+    const trIdeas = translateAll_(ideas, 'ko');
+    LANGS.forEach(l => { act['ai_' + l] = trIdeas[l]; });
+    appendObj_('activities', act);
+  });
+
+  return { ok: true, added: toAdd.length, rejected: results.filter(r => !r.ok).length, results: results };
+}
+
+function validateImportItem_(it) {
+  const p = [];
+  if (!it || typeof it !== 'object') return ['항목 형식이 아님'];
+  if (!/^[A-Za-z0-9_-]{11}$/.test(String(it.videoId || ''))) p.push('videoId 형식 오류');
+  ['title_ko', 'rules_ko', 'channel', 'videoTitle'].forEach(k => { if (!String(it[k] || '').trim()) p.push(k + ' 비어 있음'); });
+  if (!Array.isArray(it.quotes) || it.quotes.filter(q => String(q || '').trim()).length < 2) p.push('자막 근거(quotes) 2개 미만');
+  ['curriculumArea', 'playType', 'groupSize', 'country', 'confidence'].forEach(k => {
+    if (ALLOWED[k].indexOf(it[k]) < 0) p.push(k + ' 허용값 아님: ' + it[k]);
+  });
+  ['place', 'grades', 'equipment'].forEach(k => {
+    if (!Array.isArray(it[k]) || !it[k].length) p.push(k + ' 비어 있음');
+    else it[k].forEach(v => { if (ALLOWED[k].indexOf(v) < 0) p.push(k + ' 허용값 아님: ' + v); });
+  });
+  return p;
+}
+
+function youtubeLookup_(videoId) {
+  try {
+    const res = UrlFetchApp.fetch('https://www.youtube.com/oembed?format=json&url=' +
+      encodeURIComponent('https://www.youtube.com/watch?v=' + videoId), { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) return null;
+    return JSON.parse(res.getContentText());
+  } catch (e) {
+    return null;
+  }
 }
 
 /* ----------------------------- 관리자 ----------------------------- */
@@ -465,4 +583,5 @@ function translateAll_(text, src) {
 function setup() {
   Object.keys(TABS).forEach(getTab_);
   LanguageApp.translate('안녕하세요', 'ko', 'en');
+  UrlFetchApp.fetch('https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=IpcjL_xvkQY');
 }

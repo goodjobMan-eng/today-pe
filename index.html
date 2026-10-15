@@ -1027,6 +1027,12 @@
           <p id="modalRules" style="font-size:13.5px; color:var(--text-primary); line-height:1.65; white-space:pre-line;"></p>
         </div>
 
+        <details class="panel-block" id="modalEvidencePanel" style="display:none;">
+          <summary class="panel-title" id="modalEvidenceTitle" style="cursor:pointer; margin-bottom:0;">영상 자막 근거</summary>
+          <p id="modalEvidenceNote" style="font-size:11.5px; color:var(--text-muted); margin:8px 0 8px;"></p>
+          <div id="modalEvidenceList" style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; white-space:pre-line;"></div>
+        </details>
+
         <details class="panel-block variants-block" id="modalVariantsPanel">
           <summary class="panel-title" id="modalVariantsTitle" style="cursor:pointer; margin-bottom:0;">학년·상황별 응용 아이디어</summary>
           <p id="modalVariantsNote" style="font-size:11.5px; color:var(--text-muted); margin:8px 0 10px;"></p>
@@ -1354,6 +1360,7 @@
       <div class="admin-tabs" style="flex-wrap:wrap;">
         <button class="admin-tab active" id="tabBtnPending" onclick="switchAdminTab('pending')">새 수업 승인</button>
         <button class="admin-tab" id="tabBtnEdits" onclick="switchAdminTab('edits')">수정 제안 승인</button>
+        <button class="admin-tab" id="tabBtnImport" onclick="switchAdminTab('import')">AI 자료 등록</button>
         <button class="admin-tab" id="tabBtnSecurity" onclick="switchAdminTab('security')">비밀번호</button>
         <button class="admin-tab" id="tabBtnDb" onclick="switchAdminTab('db')">시트 DB</button>
       </div>
@@ -1366,6 +1373,28 @@
       <div id="adminTabEdits" style="display:none;">
         <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">승인하면 시트 '수업' 탭의 해당 칸이 바뀌고, 나머지 두 언어는 자동 번역되어 함께 바뀝니다.</p>
         <div id="editListContainer"></div>
+      </div>
+
+      <div id="adminTabImport" style="display:none;">
+        <div class="panel-block" style="background:var(--bg);">
+          <div class="panel-title">아르곤 수집 결과 등록</div>
+          <ol style="font-size:12.5px; color:var(--text-secondary); line-height:1.7; padding-left:18px; margin-bottom:10px;">
+            <li>아래 <strong>하네스 복사</strong>를 눌러 아르곤에게 붙여 넣고 작업을 시킵니다.</li>
+            <li>아르곤이 낸 <strong>```json 블록</strong>을 통째로 복사해 아래 칸에 붙여 넣고 <strong>검사</strong>를 누릅니다.</li>
+            <li>통과한 항목만 체크된 채로 보입니다. <strong>등록</strong>을 누르면 유튜브에서 영상이 실제로 있는지 한 번 더 확인한 뒤 번역해서 시트에 올립니다.</li>
+          </ol>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-admin" onclick="copyHarness(this)">하네스 복사</button>
+            <a class="btn-admin" href="argon-harness.txt" target="_blank" rel="noopener" style="text-decoration:none;">하네스 보기</a>
+          </div>
+        </div>
+        <textarea id="importInput" class="input-box" rows="8" placeholder="아르곤이 낸 JSON을 여기에 붙여 넣으세요" style="font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px;"></textarea>
+        <div style="display:flex; gap:8px; margin:8px 0 12px;">
+          <button type="button" class="btn-admin" onclick="checkImport()">검사</button>
+          <button type="button" class="btn-propose" id="btnDoImport" onclick="doImport()" disabled>등록</button>
+        </div>
+        <div id="importSummary" style="font-size:12.5px; font-weight:600; margin-bottom:8px;"></div>
+        <div id="importPreview"></div>
       </div>
 
       <div id="adminTabSecurity" style="display:none;">
@@ -1454,6 +1483,8 @@
       aiGradeNoData: "후기가 쌓이면 학년군별 적합도가 표시됩니다.",
       btnProposeEdit: "설명 수정 제안",
       variantsTitle: "학년·상황별 응용 아이디어",
+      evidenceTitle: "영상 자막 근거",
+      evidenceNote: (c) => `활동 설명의 근거가 된 영상 자막입니다. AI 정리 확신도: ${c}`,
       variantsNote: "AI가 제안한 일반적인 응용 방법입니다. 영상에 나오는 내용은 아니니 학급 상황에 맞게 골라 쓰세요.",
       noReviewsYet: "아직 후기가 없습니다. 첫 후기를 남겨 주세요.",
       submitting: "보내는 중…",
@@ -1540,6 +1571,8 @@
       aiGradeNoData: "Grade suitability will appear once reviews are added.",
       btnProposeEdit: "Suggest an Edit",
       variantsTitle: "Adaptations by Grade & Situation",
+      evidenceTitle: "Video Transcript Evidence",
+      evidenceNote: (c) => `Transcript lines the description is based on. AI confidence: ${c}`,
       variantsNote: "General adaptation ideas suggested by AI. They are not shown in the video; pick what fits your class.",
       noReviewsYet: "No reviews yet. Be the first to share one.",
       submitting: "Sending…",
@@ -1626,6 +1659,8 @@
       aiGradeNoData: "レビューが集まると学年群別の適合度が表示されます。",
       btnProposeEdit: "説明の修正を提案",
       variantsTitle: "学年・場面別のアレンジ案",
+      evidenceTitle: "動画字幕の根拠",
+      evidenceNote: (c) => `説明の根拠となった動画の字幕です。AI整理の確信度: ${c}`,
       variantsNote: "AIが提案した一般的なアレンジ方法です。動画の内容ではないので、学級に合わせて選んでください。",
       noReviewsYet: "まだレビューがありません。最初のレビューをお願いします。",
       submitting: "送信中…",
@@ -3043,8 +3078,9 @@
       videoBox.innerHTML = "";
     }
 
+    const srcInfo = act.channel ? `${escapeHtml(act.channel)}${act.videoTitle ? " · " + escapeHtml(act.videoTitle) : ""}` : ui.sourcePrefix;
     document.getElementById("modalSourceBar").innerHTML = `
-      <span>${ui.sourcePrefix}</span>
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:8px;">${srcInfo}</span>
       <a href="${escapeHtml(act.youtubeUrl)}" target="_blank" rel="noopener">${ui.openYoutube}</a>
     `;
 
@@ -3061,8 +3097,20 @@
     document.getElementById("modalRules").textContent = locRules;
     document.getElementById("modalVariantsTitle").textContent = ui.variantsTitle;
     document.getElementById("modalVariantsNote").textContent = ui.variantsNote;
-    document.getElementById("modalVariantsList").innerHTML = getVariantIdeas()
-      .map(v => `<li style="margin-bottom:6px;"><strong style="color:var(--text-primary);">${escapeHtml(v.label)}</strong><br>${escapeHtml(v.text)}</li>`).join("");
+    const ownIdeas = act.aiIdeas && (act.aiIdeas[currentLang] || act.aiIdeas.ko);
+    document.getElementById("modalVariantsList").innerHTML = ownIdeas
+      ? ownIdeas.split("\n").filter(Boolean).map(t => `<li style="margin-bottom:6px;">${escapeHtml(t)}</li>`).join("")
+      : getVariantIdeas().map(v => `<li style="margin-bottom:6px;"><strong style="color:var(--text-primary);">${escapeHtml(v.label)}</strong><br>${escapeHtml(v.text)}</li>`).join("");
+
+    const evPanel = document.getElementById("modalEvidencePanel");
+    if (act.evidence) {
+      evPanel.style.display = "block";
+      document.getElementById("modalEvidenceTitle").textContent = ui.evidenceTitle;
+      document.getElementById("modalEvidenceNote").textContent = ui.evidenceNote(act.confidence || "-");
+      document.getElementById("modalEvidenceList").textContent = act.evidence;
+    } else {
+      evPanel.style.display = "none";
+    }
 
     document.getElementById("modalAiPanel").innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -3208,6 +3256,12 @@
         caution: { ko: i18n.ko.caution, en: i18n.en.caution, ja: i18n.ja.caution },
         upgradeTip: { ko: i18n.ko.upgradeTip, en: i18n.en.upgradeTip, ja: i18n.ja.upgradeTip }
       },
+      source: o.source || "",
+      channel: o.channel || "",
+      videoTitle: o.videoTitle || "",
+      evidence: String(o.evidence || ""),
+      confidence: o.confidence || "",
+      aiIdeas: o.ai_ko ? { ko: String(o.ai_ko), en: String(o.ai_en || o.ai_ko), ja: String(o.ai_ja || o.ai_ko) } : null,
       reviews: []
     };
   }
@@ -3545,7 +3599,7 @@
   }
 
   function switchAdminTab(tab) {
-    ["pending", "edits", "security", "db"].forEach(t => {
+    ["pending", "edits", "import", "security", "db"].forEach(t => {
       const cap = t.charAt(0).toUpperCase() + t.slice(1);
       document.getElementById("tabBtn" + cap).classList.toggle("active", t === tab);
       document.getElementById("adminTab" + cap).style.display = t === tab ? "block" : "none";
@@ -3721,6 +3775,165 @@
       updateSeedStatus();
     } catch (e) {
       el.textContent = "올리지 못했습니다: " + e.message;
+    }
+  }
+
+  /* ---------- AI 수집 자료 일괄 등록 ---------- */
+  let importItems = [];
+
+  const IMPORT_ALLOWED = {
+    curriculumArea: CURRICULUM_OPTIONS.filter(v => v !== "전체"),
+    playType: PLAY_TYPE_OPTIONS.filter(v => v !== "전체"),
+    place: ["교실", "강당", "운동장"],
+    groupSize: ["소규모·짝·모둠 (2~10명)", "학급 전체 (15~30명)", "대집단·합동 (30명+)"],
+    grades: ["1~2학년", "3~4학년", "5~6학년"],
+    equipment: EQUIPMENT_OPTIONS.filter(v => v !== "전체"),
+    country: COUNTRY_OPTIONS.filter(v => v !== "전체 국가").concat(["미확인"]),
+    confidence: ["높음", "중간", "낮음"]
+  };
+
+  async function copyHarness(btn) {
+    try {
+      const res = await fetch("argon-harness.txt", { cache: "no-store" });
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      showToast("하네스를 복사했습니다. 아르곤에 붙여 넣으세요.");
+    } catch (e) {
+      showToast("복사하지 못했습니다. '하네스 보기'를 눌러 직접 복사해 주세요.");
+    }
+  }
+
+  // 아르곤 답변을 통째로 붙여 넣어도 JSON 배열만 골라낸다
+  function parseImportText(text) {
+    const blocks = [];
+    const fence = /```(?:json)?\s*([\s\S]*?)```/gi;
+    let m;
+    while ((m = fence.exec(text))) blocks.push(m[1]);
+    if (!blocks.length) blocks.push(text);
+    const items = [];
+    for (const b of blocks) {
+      const t = b.trim();
+      if (!t) continue;
+      let parsed;
+      try { parsed = JSON.parse(t); }
+      catch (e) {
+        const a = t.indexOf("["), z = t.lastIndexOf("]");
+        if (a < 0 || z < a) throw new Error("JSON을 읽을 수 없습니다. ```json 블록을 그대로 붙여 넣어 주세요.");
+        parsed = JSON.parse(t.slice(a, z + 1));
+      }
+      if (Array.isArray(parsed)) items.push(...parsed);
+      else if (parsed && Array.isArray(parsed.items)) items.push(...parsed.items);
+      else if (parsed && typeof parsed === "object") items.push(parsed);
+    }
+    return items;
+  }
+
+  function validateImportItem(it, seen) {
+    const p = [], warn = [];
+    if (!it || typeof it !== "object") return { problems: ["항목 형식이 아님"], warn };
+    const vid = String(it.videoId || "");
+    if (!/^[A-Za-z0-9_-]{11}$/.test(vid)) p.push("videoId 형식 오류");
+    ["title_ko", "rules_ko", "channel", "videoTitle"].forEach(k => { if (!String(it[k] || "").trim()) p.push(`${k} 비어 있음`); });
+    const quotes = Array.isArray(it.quotes) ? it.quotes.filter(q => String(q || "").trim()) : [];
+    if (quotes.length < 2) p.push("자막 근거(quotes) 2개 미만");
+    ["curriculumArea", "playType", "groupSize", "country", "confidence"].forEach(k => {
+      if (!IMPORT_ALLOWED[k].includes(it[k])) p.push(`${k} 허용값 아님: ${it[k] === undefined ? "(없음)" : it[k]}`);
+    });
+    ["place", "grades", "equipment"].forEach(k => {
+      if (!Array.isArray(it[k]) || !it[k].length) p.push(`${k} 비어 있음`);
+      else it[k].forEach(v => { if (!IMPORT_ALLOWED[k].includes(v)) p.push(`${k} 허용값 아님: ${v}`); });
+    });
+    if (vid && activities.some(a => a.videoId === vid)) p.push("이미 사이트에 있는 영상");
+    if (vid && seen.has(vid)) p.push("붙여 넣은 목록 안에서 중복");
+    if (vid) seen.add(vid);
+    if (it.confidence === "낮음") warn.push("확신도 낮음 — 영상 확인 후 등록 권장");
+    if (/자막 없음|확인 필요/.test(String(it.rules_ko || ""))) warn.push("활동 설명이 자막에 근거하지 않음");
+    return { problems: p, warn };
+  }
+
+  function checkImport() {
+    const sumEl = document.getElementById("importSummary");
+    const prev = document.getElementById("importPreview");
+    let items;
+    try { items = parseImportText(document.getElementById("importInput").value); }
+    catch (e) { sumEl.textContent = e.message; sumEl.style.color = "#b91c1c"; prev.innerHTML = ""; importItems = []; updateImportButton(); return; }
+    const seen = new Set();
+    importItems = items.map(it => {
+      const v = validateImportItem(it, seen);
+      return { it, problems: v.problems, warn: v.warn, selected: v.problems.length === 0 && v.warn.length === 0 };
+    });
+    const okN = importItems.filter(x => !x.problems.length).length;
+    sumEl.style.color = "var(--text-primary)";
+    sumEl.textContent = `${importItems.length}개 중 통과 ${okN}개 · 탈락 ${importItems.length - okN}개`;
+    renderImportPreview();
+  }
+
+  function renderImportPreview() {
+    const prev = document.getElementById("importPreview");
+    prev.innerHTML = importItems.map((x, i) => {
+      const it = x.it || {};
+      const bad = x.problems.length > 0;
+      const quotes = Array.isArray(it.quotes) ? it.quotes.slice(0, 2) : [];
+      return `
+        <div class="panel-block" style="margin-bottom:8px; ${bad ? "background:#fef2f2; border-color:#fecaca;" : ""}">
+          <label style="display:flex; gap:10px; align-items:flex-start; cursor:${bad ? "default" : "pointer"};">
+            <input type="checkbox" ${x.selected ? "checked" : ""} ${bad ? "disabled" : ""} onchange="toggleImportItem(${i}, this.checked)" style="margin-top:3px;" />
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:14px; font-weight:700;">${escapeHtml(it.title_ko || "(제목 없음)")}</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin:2px 0 6px;">
+                ${escapeHtml(it.country || "")} · ${escapeHtml(it.playType || "")} · 확신도 ${escapeHtml(it.confidence || "-")} ·
+                <a href="https://www.youtube.com/watch?v=${encodeURIComponent(it.videoId || "")}" target="_blank" rel="noopener" style="color:var(--blue);">${escapeHtml(it.channel || "")} — ${escapeHtml(it.videoTitle || "")}</a>
+              </div>
+              <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.55;">${escapeHtml(String(it.rules_ko || "").slice(0, 220))}</div>
+              ${quotes.length ? `<div style="font-size:11.5px; color:var(--text-muted); margin-top:6px; white-space:pre-line;">근거: ${escapeHtml(quotes.join("\n"))}</div>` : ""}
+              ${bad ? `<div style="font-size:12px; color:#b91c1c; font-weight:600; margin-top:6px;">탈락: ${escapeHtml(x.problems.join(" / "))}</div>` : ""}
+              ${x.warn.length ? `<div style="font-size:12px; color:#b45309; font-weight:600; margin-top:6px;">확인 필요: ${escapeHtml(x.warn.join(" / "))}</div>` : ""}
+            </div>
+          </label>
+        </div>`;
+    }).join("");
+    updateImportButton();
+  }
+
+  function toggleImportItem(i, on) {
+    if (importItems[i]) importItems[i].selected = on;
+    updateImportButton();
+  }
+
+  function updateImportButton() {
+    const n = importItems.filter(x => x.selected && !x.problems.length).length;
+    const btn = document.getElementById("btnDoImport");
+    btn.disabled = n === 0;
+    btn.textContent = n ? `선택한 ${n}개 등록` : "등록";
+  }
+
+  async function doImport() {
+    const chosen = importItems.filter(x => x.selected && !x.problems.length).map(x => x.it);
+    if (!chosen.length) return;
+    if (chosen.length > 15) { showToast("한 번에 15개까지만 등록할 수 있습니다. 나눠서 올려 주세요."); return; }
+    const btn = document.getElementById("btnDoImport");
+    const sumEl = document.getElementById("importSummary");
+    btn.disabled = true;
+    btn.textContent = "유튜브 확인·번역 중… (1개에 몇 초씩 걸립니다)";
+    try {
+      const res = await apiPost({ action: "importActivities", pin: adminPin, items: chosen });
+      if (!res || !res.ok) throw new Error((res && res.error) || "등록하지 못했습니다.");
+      const rejected = (res.results || []).filter(r => !r.ok);
+      sumEl.style.color = "var(--text-primary)";
+      sumEl.innerHTML = `${res.added}개 등록 완료` + (rejected.length
+        ? ` · 서버 검사에서 ${rejected.length}개 탈락<br><span style="color:#b91c1c;">${rejected.map(r => escapeHtml(`${r.title || r.videoId}: ${(r.problems || []).join(", ")}`)).join("<br>")}</span>`
+        : "");
+      if (res.added) {
+        document.getElementById("importInput").value = "";
+        importItems = [];
+        document.getElementById("importPreview").innerHTML = "";
+        await syncFromSheet(true);
+      }
+    } catch (e) {
+      sumEl.style.color = "#b91c1c";
+      sumEl.textContent = e.message;
+    } finally {
+      updateImportButton();
     }
   }
 
