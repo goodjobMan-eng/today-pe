@@ -5,6 +5,8 @@
  *   수업        : 사이트에 보이는 모든 수업. status 칸을 "숨김"으로 바꾸면 사이트에서 사라짐
  *   후기        : 선생님 후기. 등록 즉시 공개. deleted 칸이 Y면 숨김(관리자 삭제)
  *   추천        : 수업별 추천 수
+ *   저장        : 수업별 저장 수
+ *   반응기록    : 기기별 추천·저장 기록 (한 기기당 수업마다 추천 1번, 저장 1번. 취소하면 줄이 지워짐)
  *   새수업제안  : 새 수업 제안 (관리자 승인 후 수업 탭으로 이동)
  *   수정제안    : 기존 수업 설명 수정 제안 (관리자 승인 후 수업 탭에 반영)
  *
@@ -35,6 +37,14 @@ const TABS = {
   likes: {
     name: '추천',
     headers: ['activityId', 'count', 'updatedAt']
+  },
+  saves: {
+    name: '저장',
+    headers: ['activityId', 'count', 'updatedAt']
+  },
+  reactions: {
+    name: '반응기록',
+    headers: ['deviceId', 'activityId', 'kind', 'createdAt']
   },
   proposals: {
     name: '새수업제안',
@@ -75,6 +85,7 @@ function doPost(e) {
     // 누구나 가능
     if (a === 'addReview') return json_(withLock_(() => addReview_(body)));
     if (a === 'like') return json_(withLock_(() => like_(body.activityId)));
+    if (a === 'react') return json_(withLock_(() => react_(body)));
     if (a === 'proposeActivity') return json_(withLock_(() => proposeActivity_(body.activity || {})));
     if (a === 'proposeEdit') return json_(withLock_(() => proposeEdit_(body.edit || {})));
     if (a === 'checkPin') return json_({ ok: checkPin_(body.pin) });
@@ -106,16 +117,13 @@ function publicData_() {
   const revs = readTab_('reviews');
   const revRows = revs.rows.filter(r => filled_(revs, r, 'reviewId') && String(r[revs.col.deleted] || '').trim().toUpperCase() !== 'Y');
 
-  const likes = readTab_('likes');
-  const likeMap = {};
-  likes.rows.filter(r => filled_(likes, r, 'activityId')).forEach(r => { likeMap[r[likes.col.activityId]] = Number(r[likes.col.count]) || 0; });
-
   return {
     ok: true,
     at: now_(),
     activities: { h: acts.headers, r: actRows },
     reviews: { h: revs.headers, r: revRows },
-    likes: likeMap
+    likes: countMap_('likes'),
+    saves: countMap_('saves')
   };
 }
 
@@ -160,7 +168,7 @@ function deleteReview_(reviewId) {
   return { ok: true };
 }
 
-/* ----------------------------- 추천 ----------------------------- */
+/* ----------------------------- 추천 (이전 버전 사이트용, 기기 기록 없음) ----------------------------- */
 
 function like_(activityId) {
   activityId = clean_(activityId, 40);
@@ -177,6 +185,70 @@ function like_(activityId) {
     t.sheet.getRange(idx + 2, t.col.updatedAt + 1).setValue(now_());
   }
   return { ok: true, count: count };
+}
+
+/* ----------------------------- 추천·저장 (기기당 1번, 취소 가능) ----------------------------- */
+
+const REACT_TABS = { like: 'likes', save: 'saves' };
+
+/**
+ * body: { kind: 'like'|'save', activityId, deviceId, on: true|false, legacy?: true }
+ * 같은 기기가 같은 수업에 두 번 눌러도 한 번만 셉니다. 취소하면 기록을 지우고 1 줄입니다.
+ * legacy: 기기 기록이 생기기 전(이전 버전)에 누른 추천을 취소할 때만 씁니다.
+ */
+function react_(b) {
+  const kind = String(b.kind || '');
+  const countKey = REACT_TABS[kind];
+  const activityId = clean_(b.activityId, 40);
+  const deviceId = String(b.deviceId || '').trim();
+  if (!countKey || !activityId || !/^[A-Za-z0-9-]{8,64}$/.test(deviceId)) return { ok: false, error: 'bad request' };
+  const on = b.on === true;
+
+  const t = readTab_('reactions');
+  const idx = t.rows.findIndex(r =>
+    String(r[t.col.deviceId]) === deviceId && String(r[t.col.activityId]) === activityId && String(r[t.col.kind]) === kind);
+
+  if (on) {
+    if (idx >= 0) return { ok: true, on: true, count: getCount_(countKey, activityId) };
+    appendObj_('reactions', { deviceId: deviceId, activityId: activityId, kind: kind, createdAt: now_() });
+    return { ok: true, on: true, count: addCount_(countKey, activityId, 1) };
+  }
+
+  if (idx >= 0) {
+    t.sheet.deleteRow(idx + 2);
+    return { ok: true, on: false, count: addCount_(countKey, activityId, -1) };
+  }
+  if (kind === 'like' && b.legacy === true) {
+    return { ok: true, on: false, count: addCount_(countKey, activityId, -1) };
+  }
+  return { ok: true, on: false, count: getCount_(countKey, activityId) };
+}
+
+function countMap_(key) {
+  const t = readTab_(key);
+  const map = {};
+  t.rows.filter(r => filled_(t, r, 'activityId')).forEach(r => { map[r[t.col.activityId]] = Number(r[t.col.count]) || 0; });
+  return map;
+}
+
+function getCount_(key, activityId) {
+  const t = readTab_(key);
+  const row = t.rows.find(r => String(r[t.col.activityId]) === activityId);
+  return row ? (Number(row[t.col.count]) || 0) : 0;
+}
+
+function addCount_(key, activityId, delta) {
+  const t = readTab_(key);
+  const idx = t.rows.findIndex(r => String(r[t.col.activityId]) === activityId);
+  if (idx < 0) {
+    const count = Math.max(0, delta);
+    appendObj_(key, { activityId: activityId, count: count, updatedAt: now_() });
+    return count;
+  }
+  const count = Math.max(0, (Number(t.rows[idx][t.col.count]) || 0) + delta);
+  t.sheet.getRange(idx + 2, t.col.count + 1).setValue(count);
+  t.sheet.getRange(idx + 2, t.col.updatedAt + 1).setValue(now_());
+  return count;
 }
 
 /* ----------------------------- 새 수업 제안 ----------------------------- */

@@ -341,6 +341,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .results-count {
@@ -860,6 +861,45 @@
       background: var(--blue-soft);
     }
 
+    .btn-recommend.saved {
+      color: #b45309;
+      border-color: #fde68a;
+      background: #fffbeb;
+    }
+
+    .btn-recommend[aria-busy="true"] {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .card-react {
+      display: flex;
+      gap: 6px;
+    }
+
+    .modal-react {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .btn-saved-filter {
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .btn-saved-filter.active {
+      color: #b45309;
+      border-color: #fbbf24;
+      background: #fffbeb;
+    }
+
     .review-del-btn {
       margin-left: 6px;
       padding: 1px 7px;
@@ -986,6 +1026,7 @@
     <div class="results-left">
       <div class="results-count" id="resultsCountText">검색된 체육 수업 <span>0</span>건</div>
       <select id="sortSelect" class="sort-select" onchange="resetPageAndRender()"></select>
+      <button type="button" class="btn-saved-filter" id="btnSavedFilter" onclick="toggleSavedOnly()" aria-pressed="false"></button>
       <span id="syncStatus" class="sync-status"></span>
     </div>
     <button class="btn-propose" id="btnProposeText" onclick="openAddActivityModal()">새 체육 수업 제안 신청</button>
@@ -1005,6 +1046,7 @@
       <div>
         <div id="modalCategoryLine" style="font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px;"></div>
         <h2 id="modalTitle" style="font-size:20px; font-weight:800;"></h2>
+        <div class="modal-react" id="modalReactBar"></div>
       </div>
       <button class="btn-close" onclick="closeDetailModal()">✕</button>
     </div>
@@ -1533,6 +1575,15 @@
       sourcePrefix: "수업 참고 영상 (YouTube 공식 임베드)",
       openYoutube: "원본 영상 보기 ↗",
       toastLike: "추천이 반영되었습니다.",
+      toastUnlike: "추천을 취소했습니다.",
+      toastSave: "내 저장 목록에 담았습니다.",
+      toastUnsave: "저장을 취소했습니다.",
+      btnSave: (n) => `저장 ${n}`,
+      sortSaves: "저장 많은순",
+      savedFilterBtn: (n) => `★ 내 저장 ${n}`,
+      savedEmptyTitle: "아직 저장한 수업이 없습니다.",
+      savedEmptySub: "마음에 드는 수업에서 '저장'을 누르면 여기에 모입니다. 저장 목록은 이 기기에 보관됩니다.",
+      savedShowAll: "전체 수업 보기",
       toastReview: "후기가 등록되어 한국어·영어·일본어로 자동 번역되었습니다.",
       toastProposed: "수업 제안이 접수되었습니다. 관리자 승인 후 게시됩니다."
     },
@@ -1621,6 +1672,15 @@
       sourcePrefix: "Reference Video (Official YouTube Embed)",
       openYoutube: "Watch on YouTube ↗",
       toastLike: "Recommendation added.",
+      toastUnlike: "Recommendation removed.",
+      toastSave: "Saved to your list.",
+      toastUnsave: "Removed from your list.",
+      btnSave: (n) => `Save ${n}`,
+      sortSaves: "Most Saved",
+      savedFilterBtn: (n) => `★ My Saved ${n}`,
+      savedEmptyTitle: "You haven't saved any lessons yet.",
+      savedEmptySub: "Tap 'Save' on a lesson you like and it will appear here. Your list is kept on this device.",
+      savedShowAll: "Show all lessons",
       toastReview: "Review submitted and auto-translated into KO/EN/JA.",
       toastProposed: "Lesson proposal submitted for admin approval."
     },
@@ -1709,6 +1769,15 @@
       sourcePrefix: "授業参考動画 (YouTube公式埋め込み)",
       openYoutube: "元動画を開く ↗",
       toastLike: "おすすめが反映されました。",
+      toastUnlike: "おすすめを取り消しました。",
+      toastSave: "保存リストに追加しました。",
+      toastUnsave: "保存を取り消しました。",
+      btnSave: (n) => `保存 ${n}`,
+      sortSaves: "保存が多い順",
+      savedFilterBtn: (n) => `★ 保存リスト ${n}`,
+      savedEmptyTitle: "まだ保存した授業がありません。",
+      savedEmptySub: "気に入った授業で「保存」を押すとここに集まります。保存リストはこの端末に保管されます。",
+      savedShowAll: "すべての授業を見る",
       toastReview: "レビューが登録され、日・韓・英に自動翻訳されました。",
       toastProposed: "新しい授業の提案が送信されました。管理者承認後に公開されます。"
     }
@@ -2296,6 +2365,7 @@
         rules: i18nObj.ko.rules,
         defaultDur: 0,
         likes: 0,
+        saves: 0,
         i18n: i18nObj,
         seedGuide: {
           caution: { ko: i18nObj.ko.caution, en: i18nObj.en.caution, ja: i18nObj.ja.caution },
@@ -2385,11 +2455,19 @@
   const GAS_DEFAULT_URL = "https://script.google.com/macros/s/AKfycbwH8ParKOTqjbi1RuDj6LX-RYWRD6aH_9_WZ7nkxICsg_6XYrhJzAKm0t1Uid4XyFq3FA/exec";
   const DB_CACHE_KEY = "pe_hub_db_cache_v1";
   const LIKED_KEY = "pe_hub_liked_v1";
+  const SAVED_KEY = "pe_hub_saved_v1";
+  const DEVICE_KEY = "pe_hub_device_v1";
+  const LEGACY_LIKED_KEY = "pe_hub_liked_legacy_v1";
   const ADMIN_SESSION_KEY = "pe_hub_admin_session";
 
   let activities = [];
   let popularSearches = {};
   let likedSet = new Set();
+  let savedSet = new Set();
+  let legacyLikedSet = new Set();
+  let deviceId = "";
+  let showSavedOnly = false;
+  const reactPending = new Set();
   let pendingProposals = [];
   let pendingEdits = [];
   let serverHasActivities = false;
@@ -2431,6 +2509,11 @@
     window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
   }
 
+  function makeDeviceId() {
+    try { if (crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return "d-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  }
+
   function loadData() {
     BASE_COUNT = MASTER_SEEDS.length;
     gasWebAppUrl = safeGetStorage("pe_hub_gas_url_v2") || GAS_DEFAULT_URL;
@@ -2446,6 +2529,15 @@
     }
 
     try { likedSet = new Set(JSON.parse(safeGetStorage(LIKED_KEY) || "[]")); } catch (e) { likedSet = new Set(); }
+    try { savedSet = new Set(JSON.parse(safeGetStorage(SAVED_KEY) || "[]")); } catch (e) { savedSet = new Set(); }
+    deviceId = safeGetStorage(DEVICE_KEY) || "";
+    if (!/^[A-Za-z0-9-]{8,64}$/.test(deviceId)) {
+      // 기기 번호가 없던 예전 버전에서 누른 추천은 서버에 기기 기록이 없으므로 따로 표시해 둠 (취소할 때 사용)
+      if (likedSet.size) safeSetStorage(LEGACY_LIKED_KEY, JSON.stringify(Array.from(likedSet)));
+      deviceId = makeDeviceId();
+      safeSetStorage(DEVICE_KEY, deviceId);
+    }
+    try { legacyLikedSet = new Set(JSON.parse(safeGetStorage(LEGACY_LIKED_KEY) || "[]")); } catch (e) { legacyLikedSet = new Set(); }
 
     const savedPop = safeGetStorage("pe_hub_popular_v2");
     popularSearches = savedPop ? JSON.parse(savedPop) : JSON.parse(JSON.stringify(INITIAL_POPULAR_SEARCHES));
@@ -2550,6 +2642,7 @@
     const curSort = sortSel.value || "likes";
     const sortOpts = [
       { v: "likes", l: ui.sortLikes },
+      { v: "saves", l: ui.sortSaves },
       { v: "fit", l: ui.sortFit },
       { v: "timeAsc", l: ui.sortTimeAsc },
       { v: "timeDesc", l: ui.sortTimeDesc }
@@ -2790,6 +2883,7 @@
   }
 
   function resetFilters() {
+    showSavedOnly = false;
     selectedCountry = "전체 국가";
     selectedCurriculum = "전체";
     selectedPlayType = "전체";
@@ -2910,6 +3004,7 @@
     const matchScoreMap = {};
 
     let filtered = activities.filter(act => {
+      if (showSavedOnly && !savedSet.has(act.id)) return false;
       if (selectedCountry !== "전체 국가" && (act.country || "한국") !== selectedCountry) return false;
       if (selectedCurriculum !== "전체" && act.curriculumArea !== selectedCurriculum) return false;
       if (selectedPlayType !== "전체" && act.playType !== selectedPlayType) return false;
@@ -2948,7 +3043,7 @@
 
     const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
     const statCache = new Map();
-    if (sortVal !== "likes") filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
+    if (sortVal !== "likes" && sortVal !== "saves") filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
     filtered.sort((a, b) => {
       if (termCandidates.length > 0) {
         const sA = matchScoreMap[a.id] || 0;
@@ -2961,6 +3056,7 @@
         if (mB !== mA) return mB - mA;
       }
       if (sortVal === "likes") return b.likes - a.likes;
+      if (sortVal === "saves") return (b.saves || 0) - (a.saves || 0);
       const stA = statCache.get(a.id);
       const stB = statCache.get(b.id);
       if (sortVal === "fit") return (stB.avgFit === "-" ? -1 : Number(stB.avgFit)) - (stA.avgFit === "-" ? -1 : Number(stA.avgFit));
@@ -2970,9 +3066,22 @@
     });
 
     document.getElementById("resultsCountText").innerHTML = ui.resultsCount(filtered.length);
+    updateSavedFilterButton();
 
     const grid = document.getElementById("cardsGrid");
     const loadMoreWrap = document.getElementById("loadMoreWrap");
+
+    if (filtered.length === 0 && showSavedOnly && savedSet.size === 0) {
+      loadMoreWrap.style.display = "none";
+      grid.innerHTML = `
+        <div style="grid-column:1/-1; background:#fff; padding:48px 20px; text-align:center; border-radius:12px; border:1px solid var(--border);">
+          <p style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">${ui.savedEmptyTitle}</p>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">${ui.savedEmptySub}</p>
+          <button class="btn-reset" style="height:36px;" onclick="toggleSavedOnly()">${ui.savedShowAll}</button>
+        </div>
+      `;
+      return;
+    }
 
     if (filtered.length === 0) {
       loadMoreWrap.style.display = "none";
@@ -3039,7 +3148,7 @@
           </div>
 
           <div class="card-footer">
-            <button type="button" class="btn-recommend${likedSet.has(act.id) ? ' liked' : ''}" onclick="likeActivity('${act.id}', event)">${likedSet.has(act.id) ? '✓ ' : ''}${ui.btnRecommend(act.likes)}</button>
+            <div class="card-react">${reactButtonsHtml(act)}</div>
             <button type="button" class="btn-view">${ui.btnViewDetail}</button>
           </div>
         </article>
@@ -3062,6 +3171,7 @@
     document.getElementById("modalCategoryLine").textContent =
       `${tTerm('country', act.country || '한국')} · ${tTerm('curriculum', act.curriculumArea)} · ${tTerm('playType', act.playType)}`;
     document.getElementById("modalTitle").textContent = locTitle;
+    document.getElementById("modalReactBar").innerHTML = reactButtonsHtml(act);
 
     const videoBox = document.getElementById("modalVideoBox");
     if (vid) {
@@ -3252,6 +3362,7 @@
       rules: i18n.ko.rules,
       defaultDur: Number(o.defaultDur) || 25,
       likes: 0,
+      saves: 0,
       i18n,
       seedGuide: {
         caution: { ko: i18n.ko.caution, en: i18n.en.caution, ja: i18n.ja.caution },
@@ -3316,7 +3427,11 @@
     serverHasActivities = rows.length > 0;
     const list = serverHasActivities ? rows.map(rowToActivity) : buildBaseActivities();
     const byId = {};
-    list.forEach(a => { byId[a.id] = a; a.likes = Number((data.likes || {})[a.id]) || 0; });
+    list.forEach(a => {
+      byId[a.id] = a;
+      a.likes = Number((data.likes || {})[a.id]) || 0;
+      a.saves = Number((data.saves || {})[a.id]) || 0;
+    });
     tableToObjects(data.reviews).forEach(o => {
       const act = byId[String(o.activityId)];
       if (act) act.reviews.push(rowToReview(o));
@@ -3354,30 +3469,110 @@
   /* =========================================================================
      8. LIKES · REVIEWS · PROPOSALS (shared through the sheet)
      ========================================================================= */
-  function likeActivity(id, ev) {
+  // 추천·저장: 한 기기당 수업마다 한 번씩. 다시 누르면 취소.
+  const REACT = {
+    like: { set: () => likedSet, key: LIKED_KEY, field: "likes", toastOn: "toastLike", toastOff: "toastUnlike" },
+    save: { set: () => savedSet, key: SAVED_KEY, field: "saves", toastOn: "toastSave", toastOff: "toastUnsave" }
+  };
+
+  function reactButtonsHtml(act) {
+    const ui = UI_I18N[currentLang];
+    const liked = likedSet.has(act.id);
+    const saved = savedSet.has(act.id);
+    const busyL = reactPending.has("like:" + act.id);
+    const busyS = reactPending.has("save:" + act.id);
+    return `
+      <button type="button" class="btn-recommend${liked ? ' liked' : ''}" aria-pressed="${liked}"${busyL ? ' aria-busy="true"' : ''} onclick="likeActivity('${act.id}', event)">${liked ? '✓ ' : ''}${ui.btnRecommend(act.likes || 0)}</button>
+      <button type="button" class="btn-recommend${saved ? ' saved' : ''}" aria-pressed="${saved}"${busyS ? ' aria-busy="true"' : ''} onclick="saveActivity('${act.id}', event)">${saved ? '★' : '☆'} ${ui.btnSave(act.saves || 0)}</button>
+    `;
+  }
+
+  function refreshReactViews() {
+    renderActivities();
+    if (activeModalId) {
+      const act = activities.find(a => a.id === activeModalId);
+      const bar = document.getElementById("modalReactBar");
+      if (act && bar) bar.innerHTML = reactButtonsHtml(act);
+    }
+  }
+
+  function updateSavedFilterButton() {
+    const btn = document.getElementById("btnSavedFilter");
+    if (!btn) return;
+    btn.textContent = UI_I18N[currentLang].savedFilterBtn(savedSet.size);
+    btn.classList.toggle("active", showSavedOnly);
+    btn.setAttribute("aria-pressed", String(showSavedOnly));
+  }
+
+  function toggleSavedOnly() {
+    showSavedOnly = !showSavedOnly;
+    visibleLimit = 36;
+    renderActivities();
+  }
+
+  function likeActivity(id, ev) { toggleReaction("like", id, ev); }
+  function saveActivity(id, ev) { toggleReaction("save", id, ev); }
+
+  function setLocalReaction(kind, id, on) {
+    const cfg = REACT[kind];
+    const set = cfg.set();
+    if (on) set.add(id); else set.delete(id);
+    safeSetStorage(cfg.key, JSON.stringify(Array.from(set)));
+  }
+
+  function toggleReaction(kind, id, ev) {
     if (ev) ev.stopPropagation();
+    const pendKey = kind + ":" + id;
+    if (reactPending.has(pendKey)) return; // 응답 오기 전 연속 클릭은 무시
+    const cfg = REACT[kind];
     const ui = UI_I18N[currentLang];
     const act = activities.find(a => a.id === id);
     if (!act) return;
-    if (likedSet.has(id)) { showToast(ui.toastAlreadyLiked); return; }
-    likedSet.add(id);
-    safeSetStorage(LIKED_KEY, JSON.stringify(Array.from(likedSet)));
-    act.likes += 1;
-    renderActivities();
-    showToast(ui.toastLike);
-    apiPost({ action: "like", activityId: id })
+
+    const wasOn = cfg.set().has(id);
+    const on = !wasOn;
+    const legacy = kind === "like" && !on && legacyLikedSet.has(id);
+    const before = act[cfg.field] || 0;
+
+    setLocalReaction(kind, id, on);
+    act[cfg.field] = Math.max(0, before + (on ? 1 : -1));
+    reactPending.add(pendKey);
+    refreshReactViews();
+    showToast(ui[on ? cfg.toastOn : cfg.toastOff]);
+
+    const payload = { action: "react", kind, activityId: id, on, deviceId };
+    if (legacy) payload.legacy = true;
+
+    apiPost(payload)
       .then(res => {
         if (res && res.ok && typeof res.count === "number") {
-          act.likes = res.count;
-          renderActivities();
+          act[cfg.field] = res.count;
+          if (legacy) {
+            legacyLikedSet.delete(id);
+            safeSetStorage(LEGACY_LIKED_KEY, JSON.stringify(Array.from(legacyLikedSet)));
+          }
+          return;
         }
+        // 시트 쪽 스크립트가 아직 예전 버전인 경우 (예전 버전은 모르는 요청에 "auth"로 답함)
+        if (res && (res.error === "unknown action" || res.error === "auth")) {
+          if (kind === "save") { act[cfg.field] = before; return; } // 저장 목록은 이 기기에 그대로 두고, 숫자만 원래대로
+          if (kind === "like" && on) {
+            return apiPost({ action: "like", activityId: id }).then(r2 => {
+              if (r2 && r2.ok && typeof r2.count === "number") act.likes = r2.count;
+              else throw new Error("like failed");
+            });
+          }
+        }
+        throw new Error((res && res.error) || "bad response");
       })
       .catch(() => {
-        act.likes = Math.max(0, act.likes - 1);
-        likedSet.delete(id);
-        safeSetStorage(LIKED_KEY, JSON.stringify(Array.from(likedSet)));
-        renderActivities();
+        setLocalReaction(kind, id, wasOn);
+        act[cfg.field] = before;
         showToast(ui.toastSendFail);
+      })
+      .finally(() => {
+        reactPending.delete(pendKey);
+        refreshReactViews();
       });
   }
 
@@ -3959,7 +4154,7 @@
   }
 
   function exportCurrentDbToCsv() {
-    const headers = ["id","curriculumArea","playType","title_ko","title_en","title_ja","place","groupSize","gradeGroup","equipment","equipmentDetail","youtubeUrl","likes","reviews","avgDuration","avgFitScore"];
+    const headers = ["id","curriculumArea","playType","title_ko","title_en","title_ja","place","groupSize","gradeGroup","equipment","equipmentDetail","youtubeUrl","likes","saves","reviews","avgDuration","avgFitScore"];
     const rows = activities.map(a => {
       const st = computeAiStats(a);
       const vals = [
@@ -3969,7 +4164,7 @@
         a.i18n ? a.i18n.ja.title : a.title,
         (a.place||[]).join("·"), a.groupSize, (a.gradeGroup||[]).join("·"),
         (a.equipment||[]).join(","), a.equipmentDetail,
-        a.youtubeUrl, a.likes, st.reviewCount, st.avgDuration === null ? "" : st.avgDuration, st.avgFit
+        a.youtubeUrl, a.likes, a.saves || 0, st.reviewCount, st.avgDuration === null ? "" : st.avgDuration, st.avgFit
       ];
       return vals.map(v => `"${String(v === undefined || v === null ? "" : v).replace(/"/g, '""')}"`).join(",");
     });
