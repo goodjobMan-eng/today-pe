@@ -3517,8 +3517,7 @@
     _urlHandled = true;
     let params;
     try { params = new URL(location.href).searchParams; } catch (e) { return; }
-    const pack = params.get("pack");
-    if (pack) { openSharedPack(pack, params.get("m") || "", params.get("t") || ""); return; }
+    if (params.get("pack")) setUrlParam("pack", null), setUrlParam("m", null), setUrlParam("t", null);
     const id = params.get("id");
     if (id && activities.some(a => a.id === id)) openDetailModal(id);
   }
@@ -3546,7 +3545,6 @@
     const inPack = packHas(act.id);
     document.getElementById("modalTools").innerHTML = `
       <button type="button" class="tool-btn" onclick="shareActivity('${act.id}')">${x.share}</button>
-      <button type="button" class="tool-btn${inPack ? " on" : ""}" onclick="togglePack('${act.id}')">${inPack ? x.packIn : x.packAdd}</button>
       ${drawMode ? `<button type="button" class="tool-btn draw" onclick="drawActivity()">${x.drawAgain}</button>` : ""}`;
     const bar = document.getElementById("modalSourceBar");
     if (bar && act.videoId && !bar.querySelector(".video-report-btn")) {
@@ -3764,8 +3762,8 @@
   function renderPackBar() {
     const bar = document.getElementById("packBar");
     if (!bar) return;
-    const n = pack.items.length;
-    bar.hidden = n === 0;
+    const n = 0; // 꾸러미 기능은 쓰지 않기로 함(2026-10-17). 코드는 남겨 두고 화면에서만 숨김
+    bar.hidden = true;
     bar.textContent = xui().packBar(n, packTotal(pack));
     document.body.classList.toggle("has-pack", n > 0);
   }
