@@ -927,8 +927,15 @@ function rowToObj_(t, row) {
   return o;
 }
 
+// 시트에 '2026-10-17 18:02' 같은 글자를 넣으면 시트가 자기 시간대로 날짜로 바꿔 저장한다.
+// 그래서 읽을 때도 시트의 시간대로 풀어야 쓴 그대로 돌아온다(서울로 풀면 시트 시간대 차이만큼 밀림).
+let SHEET_TZ_ = null;
+function sheetTz_() {
+  if (!SHEET_TZ_) { try { SHEET_TZ_ = ss_().getSpreadsheetTimeZone() || TZ; } catch (e) { SHEET_TZ_ = TZ; } }
+  return SHEET_TZ_;
+}
 function cellOut_(v) {
-  if (v instanceof Date) return Utilities.formatDate(v, TZ, 'yyyy-MM-dd HH:mm');
+  if (v instanceof Date) return Utilities.formatDate(v, sheetTz_(), 'yyyy-MM-dd HH:mm');
   return v;
 }
 

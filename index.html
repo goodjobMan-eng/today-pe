@@ -4731,6 +4731,14 @@
       (data.hidden || []).forEach(id => hiddenReviews.add(String(id)));
       const byId = new Map(activities.map(a => [a.id, a]));
       recentReviews = tableToObjects(data.reviews);
+      // 발행 파일에 이미 들어간 후기는 다시 세지 않도록, 해당 활동의 후기 묶음에서 번호를 먼저 확인
+      const published = new Set();
+      const needBuckets = new Set();
+      recentReviews.forEach(o => { const a = byId.get(String(o.activityId)); if (a && a.rs && a.rs[0] > 0) needBuckets.add(bucketOf(a.id)); });
+      await Promise.all([...needBuckets].map(b => fetchJson(STATIC_BASE + `reviews/${String(b).padStart(2, "0")}.json?v=` + encodeURIComponent(staticMeta.sv))
+        .then(d => Object.values((d && d.acts) || {}).forEach(rows => rows.forEach(r => published.add(String(r[0])))))
+        .catch(() => {})));
+      recentReviews = recentReviews.filter(o => !published.has(String(o.reviewId)));
       recentReviews.forEach(o => {
         const a = byId.get(String(o.activityId));
         if (!a || hiddenReviews.has(String(o.reviewId)) || (a._revSeen && a._revSeen.has(String(o.reviewId)))) return;
