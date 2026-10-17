@@ -1,0 +1,36 @@
+name: 사이트 데이터 발행
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # 매시 17분 (구글 시트 → data/*.json)
+  workflow_dispatch: {}    # 저장소 Actions 탭에서 'Run workflow'로 바로 실행
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 시트에서 데이터 받아 나누기
+        run: node scripts/build-data.mjs
+      - name: 바뀐 데이터만 커밋
+        run: |
+          if [ -n "$(git status --porcelain data)" ]; then
+            git config user.name "today-pe-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data
+            git commit -m "데이터 발행 $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          else
+            echo "변경 없음"
+          fi

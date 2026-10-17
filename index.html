@@ -1019,6 +1019,7 @@
       color: var(--blue); background: var(--blue-soft); border: 1px solid #bfdbfe;
       border-radius: 999px; cursor: pointer; white-space: nowrap; font-family: inherit;
     }
+    .loading-box { grid-column: 1 / -1; padding: 56px 20px; text-align: center; color: var(--text-muted); font-size: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
     .chip-count { margin-left: 5px; font-size: 11px; font-weight: 500; opacity: 0.6; }
     .af-chip .af-x { font-size: 11px; opacity: 0.75; }
     .af-clear { background: none; border: none; color: var(--text-muted); font-size: 12.5px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 5px 4px; font-family: inherit; white-space: nowrap; }
@@ -2809,15 +2810,9 @@
     BASE_COUNT = MASTER_SEEDS.length;
     gasWebAppUrl = safeGetStorage("pe_hub_gas_url_v2") || GAS_DEFAULT_URL;
 
-    // 지난번에 시트에서 받아둔 내용이 있으면 먼저 보여주고, 시트에서 새로 받아오면 교체
-    let cached = null;
-    try { cached = JSON.parse(safeGetStorage(DB_CACHE_KEY) || "null"); } catch (e) { cached = null; }
-    if (cached && cached.ok) {
-      applyServerData(cached);
-      lastSyncAt = cached.at || "";
-    } else {
-      activities = buildBaseActivities();
-    }
+    // 예전에는 시트 전체를 브라우저에 저장해 두었지만(수 MB) 이제는 정적 파일을 브라우저 캐시로 받으므로 지운다
+    try { localStorage.removeItem(DB_CACHE_KEY); } catch (e) {}
+    activities = [];
 
     try { likedSet = new Set(JSON.parse(safeGetStorage(LIKED_KEY) || "[]")); } catch (e) { likedSet = new Set(); }
     try { savedSet = new Set(JSON.parse(safeGetStorage(SAVED_KEY) || "[]")); } catch (e) { savedSet = new Set(); }
@@ -2911,6 +2906,12 @@
 
     if (activeModalId) {
       openDetailModal(activeModalId);
+    }
+    if (staticMode && !loadedLists.has(lang)) {
+      loadStaticList(lang).then(() => {
+        renderActivities();
+        if (activeModalId) openDetailModal(activeModalId);
+      }).catch(() => {});
     }
   }
 
@@ -3172,9 +3173,9 @@
 
   // ===== 필터 사이드바(휴대폰에서는 서랍) + 선택한 조건 칩 =====
   const FILTER_UI = {
-    ko: { filter: "필터", close: "닫기", show: n => `${n.toLocaleString()}건 보기`, clearAll: "모두 지우기", search: q => `“${q}”`, saved: "★ 내 저장만" },
-    en: { filter: "Filters", close: "Close", show: n => `Show ${n.toLocaleString()} results`, clearAll: "Clear all", search: q => `“${q}”`, saved: "★ Saved only" },
-    ja: { filter: "絞り込み", close: "閉じる", show: n => `${n.toLocaleString()}件を表示`, clearAll: "すべて解除", search: q => `「${q}」`, saved: "★ 保存のみ" }
+    ko: { loading: "체육 수업을 불러오는 중…", filter: "필터", close: "닫기", show: n => `${n.toLocaleString()}건 보기`, clearAll: "모두 지우기", search: q => `“${q}”`, saved: "★ 내 저장만" },
+    en: { loading: "Loading PE lessons…", filter: "Filters", close: "Close", show: n => `Show ${n.toLocaleString()} results`, clearAll: "Clear all", search: q => `“${q}”`, saved: "★ Saved only" },
+    ja: { loading: "体育授業を読み込み中…", filter: "絞り込み", close: "閉じる", show: n => `${n.toLocaleString()}件を表示`, clearAll: "すべて解除", search: q => `「${q}」`, saved: "★ 保存のみ" }
   };
   const mqDesktop = window.matchMedia("(min-width: 1024px)");
 
@@ -3368,6 +3369,11 @@
   function renderActivities() {
     if (_equipCountCache.n !== activities.length) renderFilterChips(); // 데이터가 새로 들어오면 교구 개수·순서 갱신
     const ui = UI_I18N[currentLang];
+    if (!dataReady) {
+      document.getElementById("cardsGrid").innerHTML = `<div class="loading-box" role="status">${(FILTER_UI[currentLang] || FILTER_UI.ko).loading}</div>`;
+      document.getElementById("loadMoreWrap").style.display = "none";
+      return;
+    }
     const rawQuery = document.getElementById("searchInput").value.trim();
     const q = rawQuery.toLowerCase();
     const sizeVal = document.getElementById("sizeSelect").value;
@@ -3545,6 +3551,9 @@
     activeModalId = id;
     const act = activities.find(a => a.id === id);
     if (!act) return;
+    if (staticMode && !act._detail) {
+      ensureDetail(id).then(() => { if (activeModalId === id) openDetailModal(id); }).catch(() => {});
+    }
 
     const ui = UI_I18N[currentLang];
     const st = computeAiStats(act);
@@ -3689,8 +3698,8 @@
   /* =========================================================================
      7. GOOGLE SHEET DB SYNC
      ========================================================================= */
-  async function apiGet() {
-    const res = await fetch(gasWebAppUrl + (gasWebAppUrl.includes("?") ? "&" : "?") + "action=data&t=" + Date.now());
+  async function apiGet(action) {
+    const res = await fetch(gasWebAppUrl + (gasWebAppUrl.includes("?") ? "&" : "?") + "action=" + (action || "data") + "&t=" + Date.now());
     if (!res.ok) throw new Error("HTTP " + res.status);
     return res.json();
   }
@@ -3829,6 +3838,126 @@
       if (act) act.reviews.push(rowToReview(o));
     });
     activities = list;
+    dataReady = true;
+    staticMode = false;
+  }
+
+  /* ---------- 정적 데이터(data/*.json) : 목록은 언어별 파일, 상세는 64묶음, 추천·후기는 시트 ---------- */
+  const STATIC_BASE = "data/";
+  let staticMeta = null;
+  let staticMode = false;
+  let dataReady = false;
+  const loadedLists = new Set();
+  const loadedDetail = new Map(); // 묶음 번호 → Promise
+
+  async function fetchJson(url, opts) {
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+  function staticUrl(path) { return STATIC_BASE + path + "?v=" + encodeURIComponent(staticMeta.v); }
+
+  function bucketOf(id) {
+    let h = 5381;
+    for (const ch of String(id)) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0;
+    return h % ((staticMeta && staticMeta.buckets) || 64);
+  }
+
+  async function loadStaticList(lang) {
+    if (loadedLists.has(lang)) return;
+    const rows = tableToObjects(await fetchJson(staticUrl(`list-${lang}.json`))).filter(o => o.id);
+    if (!staticMode) {
+      activities = rows.map(rowToActivity);
+      serverHasActivities = activities.length > 0;
+      staticMode = true;
+    } else {
+      const byId = new Map(activities.map(a => [a.id, a]));
+      rows.forEach(o => {
+        const a = byId.get(String(o.id));
+        if (!a) return;
+        const t = a.i18n[lang];
+        if (o["title_" + lang]) t.title = String(o["title_" + lang]);
+        if (o["rules_" + lang]) t.rules = String(o["rules_" + lang]);
+        if (o["equip_" + lang]) t.equipmentDetail = String(o["equip_" + lang]);
+        if (lang === "ko") { a.rules = t.rules; a.equipmentDetail = t.equipmentDetail; }
+        delete a._searchIdx;
+      });
+    }
+    loadedLists.add(lang);
+  }
+
+  // 상세 화면을 열 때 그 수업이 든 묶음(약 100~160건)만 받아 유의점·팁·근거를 채운다
+  function ensureDetail(id) {
+    if (!staticMode) return Promise.resolve(false);
+    const b = bucketOf(id);
+    if (!loadedDetail.has(b)) {
+      const p = fetchJson(staticUrl(`detail/${String(b).padStart(2, "0")}.json`)).then(map => {
+        const byId = new Map(activities.map(a => [a.id, a]));
+        Object.entries(map).forEach(([aid, d]) => {
+          const a = byId.get(aid);
+          if (!a) return;
+          ["ko", "en", "ja"].forEach(l => {
+            a.i18n[l].caution = d["caution_" + l] || d.caution_ko || "";
+            a.i18n[l].upgradeTip = d["tip_" + l] || d.tip_ko || "";
+          });
+          a.seedGuide = {
+            caution: { ko: a.i18n.ko.caution, en: a.i18n.en.caution, ja: a.i18n.ja.caution },
+            upgradeTip: { ko: a.i18n.ko.upgradeTip, en: a.i18n.en.upgradeTip, ja: a.i18n.ja.upgradeTip }
+          };
+          a.source = d.source || a.source || "";
+          a.videoTitle = d.videoTitle || a.videoTitle || "";
+          a.evidence = String(d.evidence || "");
+          a.confidence = d.confidence || "";
+          a.aiIdeas = d.ai_ko ? { ko: String(d.ai_ko), en: String(d.ai_en || d.ai_ko), ja: String(d.ai_ja || d.ai_ko) } : null;
+          a._detail = true;
+        });
+        return true;
+      }).catch(e => { loadedDetail.delete(b); throw e; });
+      loadedDetail.set(b, p);
+    }
+    return loadedDetail.get(b);
+  }
+
+  function applySocial(data) {
+    const byId = new Map(activities.map(a => [a.id, a]));
+    activities.forEach(a => {
+      a.likes = Number((data.likes || {})[a.id]) || 0;
+      a.saves = Number((data.saves || {})[a.id]) || 0;
+      a.reviews = [];
+    });
+    tableToObjects(data.reviews).forEach(o => {
+      const a = byId.get(String(o.activityId));
+      if (a) a.reviews.push(rowToReview(o));
+    });
+  }
+
+  // 추천·저장·후기는 시트에서 가볍게 받는다. (Apps Script를 새로 배포하기 전이면 예전 방식으로 받아 그 부분만 씀)
+  async function loadSocial() {
+    try {
+      let data = await apiGet("social");
+      if (!data || !data.ok) data = await apiGet("data");
+      if (!data || !data.ok) throw new Error("bad response");
+      applySocial(data);
+      refreshReactViews();
+    } catch (e) {}
+  }
+
+  async function bootData() {
+    setSyncStatus("loading");
+    try {
+      staticMeta = await fetchJson(STATIC_BASE + "meta.json?t=" + Date.now(), { cache: "no-store" });
+      await loadStaticList(currentLang);
+      dataReady = true;
+      lastSyncAt = staticMeta.at || "";
+      setSyncStatus("ok");
+      renderActivities();
+    } catch (e) {
+      // 정적 파일이 아직 없거나 받지 못하면 예전처럼 시트에서 전부 받는다
+      await syncFromSheet(true);
+      if (!dataReady) { activities = buildBaseActivities(); dataReady = true; renderActivities(); }
+      return;
+    }
+    loadSocial();
   }
 
   async function syncFromSheet(silent) {
@@ -3836,7 +3965,6 @@
     try {
       const data = await apiGet();
       if (!data || !data.ok) throw new Error((data && data.error) || "bad response");
-      safeSetStorage(DB_CACHE_KEY, JSON.stringify(data));
       applyServerData(data);
       lastSyncAt = data.at || "";
       setSyncStatus("ok");
@@ -4589,7 +4717,7 @@
 
   loadData();
   setLanguage(currentLang);
-  syncFromSheet(true);
+  bootData();
 </script>
 </body>
 </html>

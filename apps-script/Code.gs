@@ -71,6 +71,7 @@ function doGet(e) {
   try {
     const action = (e && e.parameter && e.parameter.action) || 'data';
     if (action === 'data') return json_(publicData_());
+    if (action === 'social') return json_(socialData_()); // 추천·저장·후기만 (수업 내용은 사이트의 data/*.json)
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -121,6 +122,19 @@ function publicData_() {
     ok: true,
     at: now_(),
     activities: { h: acts.headers, r: actRows },
+    reviews: { h: revs.headers, r: revRows },
+    likes: countMap_('likes'),
+    saves: countMap_('saves')
+  };
+}
+
+// 사이트가 매번 받는 가벼운 데이터: 수업 내용은 빼고 추천·저장 수와 후기만
+function socialData_() {
+  const revs = readTab_('reviews');
+  const revRows = revs.rows.filter(r => filled_(revs, r, 'reviewId') && String(r[revs.col.deleted] || '').trim().toUpperCase() !== 'Y');
+  return {
+    ok: true,
+    at: now_(),
     reviews: { h: revs.headers, r: revRows },
     likes: countMap_('likes'),
     saves: countMap_('saves')
