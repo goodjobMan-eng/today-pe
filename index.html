@@ -3299,23 +3299,63 @@
   };
   const mqDesktop = window.matchMedia("(min-width: 1024px)");
 
+  /* ---------- 뒤로가기: 열린 창(활동 상세·꾸러미·필터·제안)을 닫고 목록으로 ----------
+     창을 열 때 기록을 하나 쌓고, 뒤로가기를 누르면 그 기록을 지우며 창만 닫는다. */
+  let _ignorePop = 0;
+  function urlWith(params) {
+    const u = new URL(location.href);
+    Object.entries(params || {}).forEach(([k, v]) => { if (v === null || v === undefined || v === "") u.searchParams.delete(k); else u.searchParams.set(k, v); });
+    return u.pathname + (u.searchParams.toString() ? "?" + u.searchParams.toString() : "") + u.hash;
+  }
+  function pushOverlay(name, params) {
+    try { history.pushState({ ov: name }, "", urlWith(params)); } catch (e) {}
+  }
+  function replaceOverlay(name, params) {
+    try { history.replaceState({ ov: name }, "", urlWith(params)); } catch (e) {}
+  }
+  // 화면의 ✕·바깥 누르기로 닫을 때: 쌓아 둔 기록이 있으면 하나 되돌린다(이때 생기는 popstate는 무시)
+  function popOverlayHistory(name) {
+    if (history.state && history.state.ov === name) { _ignorePop++; history.back(); }
+  }
+  window.addEventListener("popstate", () => {
+    if (_ignorePop > 0) { _ignorePop--; return; }
+    const open = id => document.getElementById(id) && document.getElementById(id).classList.contains("open");
+    if (open("packModal")) closePackModal(true);
+    else if (open("addActivityModal")) closeAddActivityModal(true);
+    else if (open("detailModal")) closeDetailModal(true);
+    else if (document.body.classList.contains("filters-open")) closeFilterPanel(true);
+    // 주소에 남은 활동·꾸러미 표시는 지운다(공유 링크로 들어온 경우)
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.has("id") || u.searchParams.has("pack")) history.replaceState(history.state, "", urlWith({ id: null, pack: null, m: null, t: null }));
+    } catch (e) {}
+  });
+
   function openFilterPanel() {
     if (mqDesktop.matches) return;
+    if (!document.body.classList.contains("filters-open")) pushOverlay("filters");
     document.body.classList.add("filters-open");
     document.getElementById("btnOpenFilters").setAttribute("aria-expanded", "true");
     const title = document.getElementById("filterPanelTitle");
     if (title) setTimeout(() => title.focus({ preventScroll: true }), 50);
   }
 
-  function closeFilterPanel() {
+  function closeFilterPanel(fromBack) {
     if (!document.body.classList.contains("filters-open")) return;
     document.body.classList.remove("filters-open");
+    if (fromBack !== true) popOverlayHistory("filters");
     const btn = document.getElementById("btnOpenFilters");
     btn.setAttribute("aria-expanded", "false");
     if (!mqDesktop.matches) btn.focus({ preventScroll: true });
   }
 
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeFilterPanel(); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    const open = id => document.getElementById(id) && document.getElementById(id).classList.contains("open");
+    if (open("packModal")) closePackModal();
+    else if (open("detailModal")) closeDetailModal();
+    else closeFilterPanel();
+  });
   mqDesktop.addEventListener("change", e => { if (e.matches) document.body.classList.remove("filters-open"); });
 
   function getActiveFilterList() {
@@ -3487,7 +3527,6 @@
   let drawMode = false;
   function renderModalExtras(act) {
     const x = xui();
-    setUrlParam("id", act.id);
     const inPack = packHas(act.id);
     document.getElementById("modalTools").innerHTML = `
       <button type="button" class="tool-btn" onclick="shareActivity('${act.id}')">${x.share}</button>
@@ -3708,10 +3747,30 @@
     bar.textContent = xui().packBar(n, packTotal(pack));
     document.body.classList.toggle("has-pack", n > 0);
   }
-  function openPackModal() { packView = null; renderPackModal(); document.getElementById("packModal").classList.add("open"); }
-  function closePackModal() {
-    document.getElementById("packModal").classList.remove("open");
-    if (packView) { packView = null; setUrlParam("pack", null); setUrlParam("m", null); setUrlParam("t", null); }
+  function openPackModal() {
+    packView = null; renderPackModal();
+    const el = document.getElementById("packModal");
+    if (!el.classList.contains("open")) pushOverlay("pack");
+    el.classList.add("open");
+  }
+  function closePackModal(fromBack) {
+    const el = document.getElementById("packModal");
+    if (!el.classList.contains("open")) return;
+    el.classList.remove("open");
+    const wasShared = !!packView;
+    packView = null;
+    if (fromBack !== true) {
+      if (history.state && history.state.ov === "pack") popOverlayHistory("pack");
+      else if (wasShared) setUrlParam("pack", null), setUrlParam("m", null), setUrlParam("t", null);
+    }
+  }
+  // 꾸러미 안에서 활동을 누르면: 꾸러미 기록을 활동 기록으로 바꿔서, 뒤로가기 한 번에 목록으로
+  function openFromPack(id) {
+    const el = document.getElementById("packModal");
+    el.classList.remove("open");
+    packView = null;
+    if (history.state && history.state.ov === "pack") replaceOverlay("pack-to-detail", { pack: null, m: null, t: null });
+    openDetailModal(id);
   }
   function openSharedPack(idsStr, minsStr, targetStr) {
     const ids = idsStr.split(",").map(s => s.trim()).filter(Boolean).slice(0, 30);
@@ -3720,6 +3779,7 @@
     const items = ids.map((id, i) => ({ id, m: Number.isFinite(mins[i]) && mins[i] > 0 ? Math.min(80, mins[i]) : defaultMinutes(known.get(id)) })).filter(i => known.has(i.id));
     packView = { items, target: Number(targetStr) || 40, missing: ids.length - items.length };
     renderPackModal();
+    pushOverlay("pack");
     document.getElementById("packModal").classList.add("open");
   }
   function renderPackModal() {
@@ -3743,7 +3803,7 @@
       if (!a) return "";
       return `<li class="pack-item">
         <div class="pack-item-main">
-          <button type="button" class="pack-item-title" onclick="closePackModal(); openDetailModal('${a.id}')">${escapeHtml(getLocalizedField(a, "title"))}</button>
+          <button type="button" class="pack-item-title" onclick="openFromPack('${a.id}')">${escapeHtml(getLocalizedField(a, "title"))}</button>
           <div class="pack-item-meta">${tTerm("playType", a.playType)} · ${escapeHtml(getLocalizedField(a, "equipmentDetail"))}</div>
           <div class="pack-item-rules">${escapeHtml(getLocalizedField(a, "rules"))}</div>
         </div>
@@ -3782,7 +3842,8 @@
     pack.target = packView.target || pack.target;
     savePack();
     packView = null;
-    setUrlParam("pack", null); setUrlParam("m", null); setUrlParam("t", null);
+    if (history.state && history.state.ov === "pack") replaceOverlay("pack", { pack: null, m: null, t: null });
+    else { setUrlParam("pack", null); setUrlParam("m", null); setUrlParam("t", null); }
     showToast(xui().packTaken);
     renderPackModal();
   }
@@ -4260,16 +4321,27 @@
       `;
     }).join("");
 
-    document.getElementById("detailModal").classList.add("open");
+    const modalEl = document.getElementById("detailModal");
+    const wasOpen = modalEl.classList.contains("open");
+    modalEl.classList.add("open");
+    if (!wasOpen) {
+      if (history.state && history.state.ov === "pack-to-detail") replaceOverlay("detail", { id: act.id });
+      else pushOverlay("detail", { id: act.id });
+    } else if (history.state && history.state.ov === "detail") replaceOverlay("detail", { id: act.id });
+    else setUrlParam("id", act.id);
     renderModalExtras(act);
   }
 
-  function closeDetailModal() {
+  function closeDetailModal(fromBack) {
+    if (!document.getElementById("detailModal").classList.contains("open")) return;
     document.getElementById("modalVideoBox").innerHTML = "";
     document.getElementById("detailModal").classList.remove("open");
     activeModalId = null;
     drawMode = false;
-    setUrlParam("id", null);
+    if (fromBack !== true) {
+      if (history.state && history.state.ov === "detail") popOverlayHistory("detail");
+      else setUrlParam("id", null);
+    }
   }
 
   /* =========================================================================
@@ -4755,11 +4827,16 @@
 
   function openAddActivityModal() {
     renderProposalEquipmentOptions();
-    document.getElementById("addActivityModal").classList.add("open");
+    const el = document.getElementById("addActivityModal");
+    if (!el.classList.contains("open")) pushOverlay("propose");
+    el.classList.add("open");
   }
 
-  function closeAddActivityModal() {
-    document.getElementById("addActivityModal").classList.remove("open");
+  function closeAddActivityModal(fromBack) {
+    const el = document.getElementById("addActivityModal");
+    if (!el.classList.contains("open")) return;
+    el.classList.remove("open");
+    if (fromBack !== true) popOverlayHistory("propose");
   }
 
   async function submitNewActivity(ev) {
