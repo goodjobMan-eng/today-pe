@@ -2,6 +2,8 @@
 //   data/meta.json            : 버전(만든 시각)·건수
 //   data/list-{ko,en,ja}.json : 목록·검색용 (언어별 제목·활동 방법·준비물 + 분류)
 //   data/detail/NN.json       : 상세 화면용 (유의점·팁·근거 등), 수업 id로 64묶음
+//   data/social.json          : 추천·저장 수와 활동별 후기 요약(개수·평균) — 목록 카드·인기순용
+//   data/reviews/NN.json      : 후기 본문, 활동 id로 64묶음 (상세 화면을 열 때만 받음). 활동당 최신 200개
 //   data/video-status.json    : 영상 점검 기록(유튜브 oEmbed). 두 번 연속 안 나오면 목록에서 뺀다
 //   a/{id}.html                : 활동별 공유 미리보기 페이지(카톡용). 검색엔진에는 안 나오게 함(noindex) —
 //                                검색 손님은 원래 영상(제작자)으로 가야 하므로
@@ -134,15 +136,71 @@ async function main() {
   }
 
   await writeSharePages(visible, val);
+  const social = await buildSocial(new Set(visible.map(o => String(o.id).trim())));
 
-  // 내용이 그대로면 버전을 바꾸지 않는다(불필요한 커밋·캐시 무효화 방지)
+  // 내용이 그대로면 버전을 바꾸지 않는다(불필요한 커밋·캐시 무효화 방지). 목록과 후기는 버전을 따로 둔다
   const sig = JSON.stringify(visible).length + ":" + visible.length + ":" + simpleHash(JSON.stringify(visible));
   let prev = null;
   try { prev = JSON.parse(await readFile(new URL("meta.json", OUT), "utf8")); } catch (e) {}
-  if (prev && prev.sig === sig) { console.log(`수업 ${visible.length}건, 변경 없음 (버전 ${prev.v})`); return; }
-  const v = new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "");
-  await writeFile(new URL("meta.json", OUT), JSON.stringify({ v, n: visible.length, at: data.at || "", buckets: BUCKETS, sig, hidden }));
-  console.log(`수업 ${visible.length}건, 새 버전 ${v}`);
+  const listSame = prev && prev.sig === sig;
+  const socialSame = !social ? true : (prev && prev.ssig === social.sig);
+  if (listSame && socialSame) { console.log(`수업 ${visible.length}건, 변경 없음 (버전 ${prev.v})`); return; }
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "");
+  const meta = {
+    v: listSame ? prev.v : stamp, n: visible.length, at: listSame ? prev.at : (data.at || ""), buckets: BUCKETS, sig, hidden,
+    social: !!(social || (prev && prev.social)),
+    sv: social ? (socialSame && prev ? prev.sv : stamp) : (prev && prev.sv) || "",
+    sAt: social ? (socialSame && prev ? prev.sAt : social.since) : (prev && prev.sAt) || "",
+    ssig: social ? social.sig : (prev && prev.ssig) || ""
+  };
+  await writeFile(new URL("meta.json", OUT), JSON.stringify(meta));
+  console.log(`수업 ${visible.length}건, 목록 버전 ${meta.v}, 후기 버전 ${meta.sv || "-"}`);
+}
+
+// 추천·저장 수와 후기를 받아 요약 파일과 후기 묶음 파일을 만든다. Apps Script가 예전 버전이면 건너뜀(null)
+async function buildSocial(ids) {
+  const counts = await getJson(gas("action=counts")).catch(() => null);
+  if (!counts || !counts.ok) { console.log("후기 요약: Apps Script 새 버전 배포 전이라 건너뜀"); return null; }
+  // 발행 시작 시각(한국 시간, 시트의 createdAt과 같은 형식). 사이트는 이 시각 이후 후기만 시트에서 따로 받는다
+  const kst = new Date(Date.now() + 9 * 3600 * 1000 - 5 * 60 * 1000).toISOString().slice(0, 16).replace("T", " ");
+  const all = [];
+  let total = 1;
+  for (let off = 0; off < total; off += 2000) {
+    const page = await getJson(gas(`action=reviewsPage&offset=${off}&limit=2000`));
+    if (!page.ok) throw new Error(page.error || "후기 읽기 실패");
+    total = page.total;
+    all.push(...page.r.map(r => Object.fromEntries(page.h.map((k, i) => [k, r[i]]))));
+  }
+  const H = ["reviewId", "activityId", "teacher", "grade", "fitScore", "rating", "duration", "sessionType",
+    "caution_ko", "caution_en", "caution_ja", "tip_ko", "tip_en", "tip_ja", "createdAt"];
+  const stats = {}, byAct = {};
+  for (const r of all) {
+    const a = String(r.activityId || "").trim();
+    if (!ids.has(a)) continue;
+    const st = stats[a] || (stats[a] = [0, 0, 0, 0, 0, 0, 0]); // 개수, 평점합, 적합도합, 시간합, 1~2·3~4·5~6학년
+    st[0]++; st[1] += Number(r.rating) || 5; st[2] += Number(r.fitScore) || 5; st[3] += Number(r.duration) || 25;
+    const gi = ["1~2학년", "3~4학년", "5~6학년"].indexOf(String(r.grade));
+    if (gi >= 0) st[4 + gi]++;
+    (byAct[a] = byAct[a] || []).push(H.map(k => r[k] === undefined || r[k] === null ? "" : r[k]));
+  }
+  const keep = id => ids.has(id);
+  const likes = Object.fromEntries(Object.entries(counts.likes || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
+  const saves = Object.fromEntries(Object.entries(counts.saves || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
+  const socialJson = JSON.stringify({ likes, saves, stats });
+  await writeFile(new URL("social.json", OUT), socialJson);
+
+  await rm(new URL("reviews/", OUT), { recursive: true, force: true });
+  await mkdir(new URL("reviews/", OUT), { recursive: true });
+  const buckets = Array.from({ length: BUCKETS }, () => ({}));
+  for (const [a, list] of Object.entries(byAct)) buckets[bucketOf(a)][a] = list.slice(-200);
+  let bsig = "";
+  for (let i = 0; i < BUCKETS; i++) {
+    const txt = JSON.stringify({ h: H, acts: buckets[i] });
+    bsig += simpleHash(txt);
+    await writeFile(new URL(`reviews/${String(i).padStart(2, "0")}.json`, OUT), txt);
+  }
+  console.log(`후기 ${all.length}개, 추천 ${Object.keys(likes).length}·저장 ${Object.keys(saves).length}개 활동`);
+  return { sig: simpleHash(socialJson + bsig), since: kst };
 }
 
 async function readJson(url, def) {

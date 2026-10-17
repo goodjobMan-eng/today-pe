@@ -79,6 +79,9 @@ function doGet(e) {
     if (action === 'videoReports') return json_(videoReports_()); // 데이터 발행 때 먼저 확인할 영상
     if (action === 'actTabs') return json_(actTabs_());             // 데이터 발행용: 수업 탭 목록과 줄 수
     if (action === 'acts') return json_(actsPage_(e.parameter));    // 데이터 발행용: 탭 하나를 나눠 받기
+    if (action === 'reviewsPage') return json_(reviewsPage_(e.parameter)); // 데이터 발행용: 후기를 나눠 받기
+    if (action === 'counts') return json_({ ok: true, at: now_(), likes: countMap_('likes'), saves: countMap_('saves') });
+    if (action === 'recent') return json_(recentReviews_(e.parameter)); // 사이트용: 마지막 발행 이후 새 후기만
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -171,6 +174,48 @@ function readAllActs_() {
   return { headers: headers, col: col, rows: rows, where: where };
 }
 
+// 시트의 마지막 n줄만 읽는다(후기처럼 아래로 계속 쌓이는 탭용)
+function readLastRows_(key, n) {
+  const sh = getTab_(key);
+  const lastRow = sh.getLastRow(), lastCol = Math.max(sh.getLastColumn(), 1);
+  const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const col = {};
+  headers.forEach((h, i) => { if (h) col[h] = i; });
+  const start = Math.max(2, lastRow - n + 1);
+  const rows = lastRow >= 2 ? sh.getRange(start, 1, lastRow - start + 1, lastCol).getValues().map(r => r.map(cellOut_)) : [];
+  return { sheet: sh, headers: headers, col: col, rows: rows, start: start };
+}
+
+function visibleReview_(t, r, hidden) {
+  return String(r[t.col.reviewId] || '').trim() && String(r[t.col.deleted] || '').trim().toUpperCase() !== 'Y' && !hidden[String(r[t.col.reviewId])];
+}
+
+// 데이터 발행용: 공개 후기를 2,000줄씩 (기기 번호 제외)
+function reviewsPage_(p) {
+  const sh = getTab_('reviews');
+  const lastRow = sh.getLastRow(), lastCol = Math.max(sh.getLastColumn(), 1);
+  const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const col = {};
+  headers.forEach((h, i) => { if (h) col[h] = i; });
+  const total = Math.max(lastRow - 1, 0);
+  const offset = Math.max(0, Number(p && p.offset) || 0);
+  const limit = Math.min(3000, Math.max(1, Number(p && p.limit) || 2000));
+  const n = Math.max(0, Math.min(limit, total - offset));
+  const t = { col: col };
+  const hidden = hiddenReviewIds_();
+  const rows = n > 0 ? sh.getRange(2 + offset, 1, n, lastCol).getValues().map(r => r.map(cellOut_)).filter(r => visibleReview_(t, r, hidden)) : [];
+  return Object.assign({ ok: true, total: total, offset: offset }, publicTable_(headers, rows, ['deviceId']));
+}
+
+// 사이트용: since(마지막 발행 시각) 이후에 쓴 후기만. 최근 500줄만 보므로 후기가 아무리 많아도 가볍다
+function recentReviews_(p) {
+  const since = String((p && p.since) || '').trim();
+  const t = readLastRows_('reviews', 500);
+  const hidden = hiddenReviewIds_();
+  const rows = t.rows.filter(r => visibleReview_(t, r, hidden) && (!since || String(r[t.col.createdAt] || '') >= since));
+  return { ok: true, at: now_(), hidden: Object.keys(hidden), reviews: publicTable_(t.headers, rows, ['deviceId']) };
+}
+
 function appendAct_(obj) {
   const tabs = activityTabs_();
   const sh = tabs[tabs.length - 1];
@@ -239,10 +284,10 @@ function addReview_(b) {
   const lang = LANGS.indexOf(r.lang) >= 0 ? r.lang : 'ko';
   const deviceId = /^[A-Za-z0-9-]{8,64}$/.test(String(b.deviceId || '')) ? String(b.deviceId) : '';
 
-  // 같은 기기에서 하루(24시간)에 쓸 수 있는 후기는 5개까지
+  // 같은 기기에서 하루(24시간)에 쓸 수 있는 후기는 5개까지 (후기가 많아져도 빠르게: 최근 2,000줄만 확인)
   if (deviceId) {
     const since = Utilities.formatDate(new Date(Date.now() - 24 * 3600 * 1000), TZ, 'yyyy-MM-dd HH:mm');
-    const t = readTab_('reviews');
+    const t = readLastRows_('reviews', 2000);
     const recent = t.rows.filter(x => String(x[t.col.deviceId] || '') === deviceId && String(x[t.col.createdAt] || '') >= since).length;
     if (recent >= REVIEW_DAILY_LIMIT) return { ok: false, error: '후기는 하루에 ' + REVIEW_DAILY_LIMIT + '개까지 쓸 수 있습니다. 내일 다시 써 주세요.' };
   }
@@ -383,18 +428,27 @@ function react_(b) {
   if (!countKey || !activityId || !/^[A-Za-z0-9-]{8,64}$/.test(deviceId)) return { ok: false, error: 'bad request' };
   const on = b.on === true;
 
-  const t = readTab_('reactions');
-  const idx = t.rows.findIndex(r =>
-    String(r[t.col.deviceId]) === deviceId && String(r[t.col.activityId]) === activityId && String(r[t.col.kind]) === kind);
+  // 기록이 많아져도 빠르게: 기기 번호 칸에서 그 기기의 줄만 찾아 확인한다
+  const sh = getTab_('reactions');
+  const hdr = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const cDev = hdr.indexOf('deviceId') + 1, cAct = hdr.indexOf('activityId') + 1, cKind = hdr.indexOf('kind') + 1;
+  let rowNum = -1;
+  if (sh.getLastRow() > 1) {
+    const hits = sh.getRange(2, cDev, sh.getLastRow() - 1, 1).createTextFinder(deviceId).matchEntireCell(true).findAll();
+    for (const h of hits) {
+      const r = h.getRow();
+      if (String(sh.getRange(r, cAct).getValue()) === activityId && String(sh.getRange(r, cKind).getValue()) === kind) { rowNum = r; break; }
+    }
+  }
 
   if (on) {
-    if (idx >= 0) return { ok: true, on: true, count: getCount_(countKey, activityId) };
+    if (rowNum > 0) return { ok: true, on: true, count: getCount_(countKey, activityId) };
     appendObj_('reactions', { deviceId: deviceId, activityId: activityId, kind: kind, createdAt: now_() });
     return { ok: true, on: true, count: addCount_(countKey, activityId, 1) };
   }
 
-  if (idx >= 0) {
-    t.sheet.deleteRow(idx + 2);
+  if (rowNum > 0) {
+    sh.deleteRow(rowNum);
     return { ok: true, on: false, count: addCount_(countKey, activityId, -1) };
   }
   if (kind === 'like' && b.legacy === true) {
