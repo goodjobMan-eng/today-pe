@@ -77,6 +77,8 @@ function doGet(e) {
     if (action === 'data') return json_(publicData_());
     if (action === 'social') return json_(socialData_()); // 추천·저장·후기만 (수업 내용은 사이트의 data/*.json)
     if (action === 'videoReports') return json_(videoReports_()); // 데이터 발행 때 먼저 확인할 영상
+    if (action === 'actTabs') return json_(actTabs_());             // 데이터 발행용: 수업 탭 목록과 줄 수
+    if (action === 'acts') return json_(actsPage_(e.parameter));    // 데이터 발행용: 탭 하나를 나눠 받기
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -118,9 +120,84 @@ function doPost(e) {
 
 /* ----------------------------- 공개 데이터 ----------------------------- */
 
+/* ---------- 수업 탭 여러 개: 「수업」(1~5000), 「수업2」(5001~10000), 「수업3」… ----------
+   이름이 '수업' 또는 '수업' + 숫자인 탭을 모두 수업 데이터로 읽는다. 새 수업(승인·등록)은 마지막 탭에 붙는다. */
+const ACT_TAB_RE = /^수업(\d*)$/;
+
+function activityTabs_() {
+  const list = ss_().getSheets()
+    .map(sh => ({ sh: sh, m: sh.getName().trim().match(ACT_TAB_RE) }))
+    .filter(x => x.m)
+    .map(x => ({ sh: x.sh, n: x.m[1] ? Number(x.m[1]) : 1 }))
+    .sort((a, b) => a.n - b.n)
+    .map(x => x.sh);
+  if (!list.length) list.push(getTab_('activities'));
+  return list;
+}
+
+// 머리글이 비어 있으면 updatedAt 뒤 두 칸을 channel, transcriptVerified로 본다(납품 32열 양식)
+function actHeaders_(sh) {
+  const lastCol = Math.max(sh.getLastColumn(), 1);
+  const h = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(x => String(x).trim());
+  const u = h.indexOf('updatedAt');
+  if (u >= 0 && h.indexOf('channel') < 0) {
+    if (u + 1 < h.length && !h[u + 1]) h[u + 1] = 'channel';
+    if (u + 2 < h.length && !h[u + 2] && h.indexOf('transcriptVerified') < 0) h[u + 2] = 'transcriptVerified';
+  }
+  return h;
+}
+
+// 모든 수업 탭을 하나로 합쳐 읽는다. where[i] = { sh, row(시트 줄 번호), h(그 탭의 머리글) }
+function readAllActs_() {
+  const headers = [];
+  const parts = activityTabs_().map(sh => {
+    const h = actHeaders_(sh);
+    h.forEach(x => { if (x && headers.indexOf(x) < 0) headers.push(x); });
+    const lastRow = sh.getLastRow();
+    const values = lastRow > 1 ? sh.getRange(2, 1, lastRow - 1, h.length).getValues() : [];
+    return { sh: sh, h: h, values: values };
+  });
+  const col = {};
+  headers.forEach((x, i) => { col[x] = i; });
+  const rows = [], where = [];
+  parts.forEach(p => {
+    p.values.forEach((v, i) => {
+      const r = headers.map(() => '');
+      p.h.forEach((x, j) => { if (x) r[col[x]] = cellOut_(v[j]); });
+      rows.push(r);
+      where.push({ sh: p.sh, row: i + 2, h: p.h });
+    });
+  });
+  return { headers: headers, col: col, rows: rows, where: where };
+}
+
+function appendAct_(obj) {
+  const tabs = activityTabs_();
+  const sh = tabs[tabs.length - 1];
+  const h = actHeaders_(sh);
+  sh.appendRow(h.map(x => safeCell_(!x || obj[x] === undefined || obj[x] === null ? '' : obj[x])));
+}
+
+function actTabs_() {
+  return { ok: true, tabs: activityTabs_().map(sh => ({ name: sh.getName(), rows: Math.max(sh.getLastRow() - 1, 0) })) };
+}
+
+function actsPage_(p) {
+  const name = String((p && p.tab) || '').trim();
+  const sh = activityTabs_().find(x => x.getName() === name);
+  if (!sh) return { ok: false, error: '탭을 찾을 수 없습니다: ' + name };
+  const total = Math.max(sh.getLastRow() - 1, 0);
+  const offset = Math.max(0, Number(p.offset) || 0);
+  const limit = Math.min(3000, Math.max(1, Number(p.limit) || 2000));
+  const n = Math.max(0, Math.min(limit, total - offset));
+  const h = actHeaders_(sh);
+  const r = n > 0 ? sh.getRange(2 + offset, 1, n, h.length).getValues().map(row => row.map(cellOut_)) : [];
+  return { ok: true, tab: name, total: total, offset: offset, h: h, r: r };
+}
+
 function publicData_() {
-  const acts = readTab_('activities');
-  const actRows = acts.rows.filter(r => filled_(acts, r, 'id') && String(r[acts.col.status] || '').trim() !== '숨김');
+  const acts = readAllActs_();
+  const actRows = acts.rows.filter(r => String(r[acts.col.id] || '').trim() && String(r[acts.col.status] || '').trim() !== '숨김');
 
   const revs = readTab_('reviews');
   const hidden = hiddenReviewIds_();
@@ -417,7 +494,7 @@ function approveProposal_(proposalId) {
   });
   LANGS.forEach(l => { act['tip_' + l] = DEFAULT_TIP[l]; });
 
-  appendObj_('activities', act);
+  appendAct_(act);
   t.sheet.getRange(idx + 2, t.col.status + 1).setValue('승인');
   t.sheet.getRange(idx + 2, t.col.resultActivityId + 1).setValue(id);
   return { ok: true, activityId: id };
@@ -455,21 +532,25 @@ function approveEdit_(editId) {
   const ed = rowToObj_(et, et.rows[eIdx]);
   if (ed.status !== '대기') return { ok: false, error: '이미 처리된 제안입니다.' };
 
-  const at = readTab_('activities');
+  const at = readAllActs_();
   const aIdx = at.rows.findIndex(r => String(r[at.col.id]) === String(ed.activityId));
   if (aIdx < 0) return { ok: false, error: '수업 탭에서 해당 수업을 찾을 수 없습니다. 먼저 기본 수업을 시트에 올려 주세요.' };
 
+  // 그 수업이 들어 있는 탭의 줄을 그대로 읽어 고친다(탭마다 칸 순서가 달라도 머리글 이름으로 찾음)
+  const w = at.where[aIdx];
+  const tcol = {};
+  w.h.forEach((x, i) => { if (x) tcol[x] = i; });
   const lang = LANGS.indexOf(ed.lang) >= 0 ? ed.lang : 'ko';
-  const row = at.rows[aIdx].slice();
+  const row = w.sh.getRange(w.row, 1, 1, w.h.length).getValues()[0];
   EDIT_FIELDS.forEach(f => {
     const val = String(ed[f] || '').trim();
-    if (!val) return;
-    if (String(row[at.col[f + '_' + lang]] || '') === val) return; // 바뀐 칸만 반영
+    if (!val || tcol[f + '_' + lang] === undefined) return;
+    if (String(row[tcol[f + '_' + lang]] || '') === val) return; // 바뀐 칸만 반영
     const tr = translateAll_(val, lang);
-    LANGS.forEach(l => { row[at.col[f + '_' + l]] = safeCell_(tr[l]); });
+    LANGS.forEach(l => { if (tcol[f + '_' + l] !== undefined) row[tcol[f + '_' + l]] = safeCell_(tr[l]); });
   });
-  row[at.col.updatedAt] = now_();
-  at.sheet.getRange(aIdx + 2, 1, 1, row.length).setValues([row.map(safeCell_)]);
+  if (tcol.updatedAt !== undefined) row[tcol.updatedAt] = now_();
+  w.sh.getRange(w.row, 1, 1, row.length).setValues([row.map(safeCell_)]);
   et.sheet.getRange(eIdx + 2, et.col.status + 1).setValue('승인');
   return { ok: true };
 }
@@ -501,7 +582,7 @@ function importActivities_(items) {
   if (!Array.isArray(items) || !items.length) return { ok: false, error: '등록할 항목이 없습니다.' };
   if (items.length > 15) return { ok: false, error: '한 번에 15개까지만 등록할 수 있습니다. (번역 시간 때문)' };
 
-  const at = readTab_('activities');
+  const at = readAllActs_();
   const usedVideos = {};
   at.rows.forEach(r => { const v = String(r[at.col.videoId] || ''); if (v) usedVideos[v] = true; });
 
@@ -556,7 +637,7 @@ function importActivities_(items) {
     const ideas = (it.aiIdeas || []).map(s => clean_(s, 300)).filter(Boolean).join('\n');
     const trIdeas = translateAll_(ideas, 'ko');
     LANGS.forEach(l => { act['ai_' + l] = trIdeas[l]; });
-    appendObj_('activities', act);
+    appendAct_(act);
   });
 
   return { ok: true, added: toAdd.length, rejected: results.filter(r => !r.ok).length, results: results };

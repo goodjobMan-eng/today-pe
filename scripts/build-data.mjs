@@ -41,16 +41,46 @@ function headersOf(tbl) {
   return h;
 }
 
-async function main() {
-  const res = await fetch(GAS_URL + (GAS_URL.includes("?") ? "&" : "?") + "action=data&t=" + Date.now(), { redirect: "follow" });
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  const data = await res.json();
-  if (!data || !data.ok || !data.activities) throw new Error("시트 응답이 올바르지 않습니다: " + JSON.stringify(data).slice(0, 200));
+const gas = (q) => GAS_URL + (GAS_URL.includes("?") ? "&" : "?") + q + "&t=" + Date.now();
+async function getJson(url) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(120000) });
+      if (r.ok) return await r.json();
+    } catch (e) {}
+    await new Promise(res => setTimeout(res, 3000 * (i + 1)));
+  }
+  throw new Error("시트에서 받지 못했습니다: " + url.split("?")[1]);
+}
+const toObjs = tbl => { const h = headersOf(tbl); return tbl.r.map(r => Object.fromEntries(h.map((k, i) => [k, r[i]]).filter(([k]) => k))); };
 
-  const h = headersOf(data.activities);
-  const rows = data.activities.r
-    .map(r => Object.fromEntries(h.map((k, i) => [k, r[i]]).filter(([k]) => k)))
-    .filter(o => String(o.id || "").trim());
+// 수업 탭(수업, 수업2, 수업3…)을 탭마다 2,000줄씩 나눠 받는다. Apps Script가 예전 버전이면 한 번에 받는다.
+async function fetchActivities() {
+  const tabs = await getJson(gas("action=actTabs")).catch(() => null);
+  if (tabs && tabs.ok && Array.isArray(tabs.tabs)) {
+    const all = [];
+    for (const t of tabs.tabs) {
+      for (let off = 0; off < t.rows; off += 2000) {
+        const page = await getJson(gas(`action=acts&tab=${encodeURIComponent(t.name)}&offset=${off}&limit=2000`));
+        if (!page.ok) throw new Error(page.error || "탭 읽기 실패");
+        all.push(...toObjs(page));
+      }
+      console.log(`탭 「${t.name}」 ${t.rows}줄`);
+    }
+    return { rows: all, at: new Date().toISOString().slice(0, 16).replace("T", " ") };
+  }
+  const data = await getJson(gas("action=data"));
+  if (!data || !data.ok || !data.activities) throw new Error("시트 응답이 올바르지 않습니다: " + JSON.stringify(data).slice(0, 200));
+  return { rows: toObjs(data.activities), at: data.at || "" };
+}
+
+async function main() {
+  const got = await fetchActivities();
+  const data = { at: got.at };
+  const seen = new Set();
+  const rows = got.rows
+    .filter(o => String(o.id || "").trim() && String(o.status || "").trim() !== "숨김")
+    .filter(o => { const id = String(o.id).trim(); if (seen.has(id)) { console.log("id 중복으로 뒤의 것 제외: " + id); return false; } seen.add(id); return true; });
   if (rows.length < 10) throw new Error("수업이 " + rows.length + "건뿐이라 발행을 멈춥니다(시트 확인 필요).");
 
   // ---- 영상 점검: 신고된 영상 → 처음 보는 영상 → 오래전에 본 영상 순으로 일부씩 확인 ----
