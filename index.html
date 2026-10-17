@@ -1146,6 +1146,10 @@
     .tool-btn.draw { color: #fff; background: #0f766e; border-color: #0f766e; }
     .video-report-btn, .review-report-btn { background: none; border: none; padding: 2px 4px; font-size: 11.5px; font-family: inherit; color: var(--text-muted); text-decoration: underline; cursor: pointer; white-space: nowrap; }
     .video-report-btn.armed, .review-report-btn.armed { color: #b91c1c; font-weight: 700; }
+    .saved-tools { margin: 0 0 14px; padding: 12px 14px; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); }
+    .saved-tools[hidden] { display: none; }
+    .saved-tools-note { font-size: 12.5px; color: #92400e; margin-bottom: 8px; line-height: 1.5; }
+    .saved-tools-btns { display: flex; gap: 6px; flex-wrap: wrap; }
     .similar-list { display: grid; gap: 6px; }
     .similar-item { display: flex; flex-direction: column; gap: 2px; text-align: left; width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; }
     .similar-item:hover { border-color: var(--border-strong); background: var(--surface); }
@@ -1322,6 +1326,14 @@
     </div>
 
     <div class="active-filters" id="activeFilters" hidden></div>
+
+    <div class="saved-tools" id="savedTools" hidden>
+      <p class="saved-tools-note" id="savedToolsNote"></p>
+      <div class="saved-tools-btns">
+        <button type="button" class="tool-btn" id="btnSavedLink" onclick="copySavedLink()"></button>
+        <button type="button" class="tool-btn" id="btnSavedFile" onclick="downloadSavedList()"></button>
+      </div>
+    </div>
 
     <section class="cards-grid" id="cardsGrid"></section>
 
@@ -3452,6 +3464,10 @@
       packAdded: "꾸러미에 담았어요.", packFirst: "꾸러미에 담았어요. 아래 「수업 꾸러미」를 누르면 담은 활동을 40분 수업으로 이어 보고, 링크로 나누거나 인쇄할 수 있어요.", packRemoved: "꾸러미에서 뺐어요.", min: "분", up: "위로", down: "아래로", remove: "빼기",
       packMissing: n => `${n}개 활동은 지금 목록에 없어 빠졌어요.`, target: "목표",
       moreReviews: n => `후기 더 보기 (${n}개 남음)`, loadingReviews: "후기를 불러오는 중…",
+      savedNote: "내 저장은 이 기기 브라우저에만 남아요. 휴대폰을 바꾸거나 인터넷 기록을 지우면 사라지니 옮겨 두세요.",
+      savedLink: "다른 기기로 옮기기(링크)", savedFile: "목록 파일로 받기", savedLinkTitle: n => `오늘 체육 뭐 하지? 내 저장 ${n}개`,
+      savedCsvHead: ["활동명", "국가", "놀이 유형", "준비물", "사이트 링크", "영상 링크", "채널"], savedFileName: "오늘체육_내저장",
+      savedNothingNew: "이미 모두 저장되어 있어요.", savedImportAsk: n => `링크에 담긴 활동 ${n}개를 내 저장에 더할까요?`, savedImported: n => `내 저장에 ${n}개를 더했어요.`,
       footerCopyright: "영상과 영상 속 내용의 저작권은 각 유튜브 제작자에게 있습니다. 이 사이트는 유튜브 공식 플레이어로 영상을 소개하며, 놀이 방법은 영상을 보고 새로 정리한 글입니다.",
       footerTakedown: "제작자께서 내리기를 원하시면 알려 주세요. 바로 내리겠습니다.", takedownBtn: "삭제 요청하기",
       takedownLabel: "영상 주소(또는 채널 이름)와 연락받을 방법을 적어 주세요.", takedownSend: "보내기", takedownDone: "요청을 받았어요. 확인하는 대로 내리겠습니다."
@@ -3474,6 +3490,10 @@
       packAdded: "Added to your plan.", packFirst: "Added. Tap “Lesson plan” at the bottom to line activities up into a 40-min lesson, share it, or print it.", packRemoved: "Removed from your plan.", min: "min", up: "Move up", down: "Move down", remove: "Remove",
       packMissing: n => `${n} activities are no longer listed and were left out.`, target: "Target",
       moreReviews: n => `Show more reviews (${n} left)`, loadingReviews: "Loading reviews…",
+      savedNote: "Your saved list lives only in this browser. Changing phones or clearing browsing data erases it, so move it somewhere safe.",
+      savedLink: "Move to another device (link)", savedFile: "Download as a file", savedLinkTitle: n => `What to Teach in PE: ${n} saved`,
+      savedCsvHead: ["Activity", "Country", "Type", "Equipment", "Site link", "Video link", "Channel"], savedFileName: "PE_saved",
+      savedNothingNew: "They're all saved already.", savedImportAsk: n => `Add ${n} activities from this link to your saved list?`, savedImported: n => `Added ${n} to your saved list.`,
       footerCopyright: "Videos and their content belong to their YouTube creators. This site shows them through YouTube's official player, and the activity steps are our own write-ups.",
       footerTakedown: "Creators: if you'd like your video removed, tell us and we'll take it down right away.", takedownBtn: "Request removal",
       takedownLabel: "Enter the video link (or channel name) and how we can reach you.", takedownSend: "Send", takedownDone: "Request received. We'll remove it as soon as we check."
@@ -3496,6 +3516,10 @@
       packAdded: "授業セットに追加しました。", packFirst: "追加しました。下の「授業セット」を押すと、活動を40分の授業に並べて共有・印刷できます。", packRemoved: "授業セットから外しました。", min: "分", up: "上へ", down: "下へ", remove: "外す",
       packMissing: n => `${n}件の活動は一覧にないため除きました。`, target: "目標",
       moreReviews: n => `レビューをもっと見る（残り${n}件）`, loadingReviews: "レビューを読み込み中…",
+      savedNote: "保存リストはこの端末のブラウザにだけ残ります。機種変更や閲覧データの削除で消えるので、移しておきましょう。",
+      savedLink: "別の端末に移す（リンク）", savedFile: "ファイルでダウンロード", savedLinkTitle: n => `今日の体育 保存 ${n}件`,
+      savedCsvHead: ["活動名", "国", "遊びの種類", "準備物", "サイトのリンク", "動画のリンク", "チャンネル"], savedFileName: "今日の体育_保存",
+      savedNothingNew: "すべて保存済みです。", savedImportAsk: n => `リンクの活動${n}件を保存リストに追加しますか？`, savedImported: n => `保存リストに${n}件追加しました。`,
       footerCopyright: "動画と動画の内容の著作権は各YouTube制作者にあります。本サイトはYouTube公式プレーヤーで動画を紹介し、活動の方法は動画を見て新たにまとめた文章です。",
       footerTakedown: "制作者の方で掲載停止をご希望の場合はお知らせください。すぐに削除します。", takedownBtn: "削除を依頼する",
       takedownLabel: "動画のURL（またはチャンネル名）と連絡先をご記入ください。", takedownSend: "送信", takedownDone: "依頼を受け付けました。確認後すぐに削除します。"
@@ -3518,6 +3542,8 @@
     let params;
     try { params = new URL(location.href).searchParams; } catch (e) { return; }
     if (params.get("pack")) setUrlParam("pack", null), setUrlParam("m", null), setUrlParam("t", null);
+    const savedParam = params.get("saved");
+    if (savedParam) { setUrlParam("saved", null); importSavedFromUrl(savedParam); return; }
     const id = params.get("id");
     if (id && activities.some(a => a.id === id)) openDetailModal(id);
   }
@@ -4839,6 +4865,67 @@
     btn.textContent = UI_I18N[currentLang].savedFilterBtn(savedSet.size);
     btn.classList.toggle("active", showSavedOnly);
     btn.setAttribute("aria-pressed", String(showSavedOnly));
+    // 내 저장을 보고 있을 때만: 다른 기기로 옮기기·목록 파일 받기
+    const tools = document.getElementById("savedTools");
+    if (tools) {
+      const x = xui();
+      tools.hidden = !(showSavedOnly && savedSet.size > 0);
+      document.getElementById("savedToolsNote").textContent = x.savedNote;
+      document.getElementById("btnSavedLink").textContent = x.savedLink;
+      document.getElementById("btnSavedFile").textContent = x.savedFile;
+    }
+  }
+
+  /* ---------- 내 저장 옮기기: 저장 목록은 이 기기 브라우저에만 있으므로, 링크나 파일로 꺼내 둔다 ---------- */
+  // pe-00993 → 993 처럼 줄여서 주소에 담는다(그 밖의 id는 그대로)
+  function packSavedIds(ids) {
+    return ids.map(id => /^pe-0*(\d+)$/.test(id) ? id.replace(/^pe-0*/, "") : "~" + id).join(".");
+  }
+  function unpackSavedIds(str) {
+    return String(str || "").split(".").filter(Boolean).map(t => t.startsWith("~") ? t.slice(1) : (/^\d+$/.test(t) ? "pe-" + t.padStart(5, "0") : t));
+  }
+  function savedIdsInOrder() {
+    const known = new Set(activities.map(a => a.id));
+    return Array.from(savedSet).filter(id => known.has(id));
+  }
+  function copySavedLink() {
+    const ids = savedIdsInOrder();
+    if (!ids.length) return;
+    const base = location.href.split(/[?#]/)[0];
+    shareLink(`${base}?saved=${packSavedIds(ids)}`, xui().savedLinkTitle(ids.length));
+  }
+  function downloadSavedList() {
+    const ids = savedIdsInOrder();
+    if (!ids.length) return;
+    const x = xui();
+    const byId = new Map(activities.map(a => [a.id, a]));
+    const q = v => `"${String(v === undefined || v === null ? "" : v).replace(/"/g, '""')}"`;
+    const rows = [x.savedCsvHead.map(q).join(",")].concat(ids.map(id => {
+      const a = byId.get(id);
+      return [getLocalizedField(a, "title"), tTerm("country", a.country || "한국"), tTerm("playType", a.playType),
+        getLocalizedField(a, "equipmentDetail"), shareUrlFor(id), a.youtubeUrl, a.channel || ""].map(q).join(",");
+    }));
+    const blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${x.savedFileName}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { URL.revokeObjectURL(link.href); link.remove(); }, 1000);
+  }
+  function importSavedFromUrl(str) {
+    const known = new Set(activities.map(a => a.id));
+    const ids = unpackSavedIds(str).filter(id => known.has(id));
+    const fresh = ids.filter(id => !savedSet.has(id));
+    const x = xui();
+    if (!fresh.length) { showToast(x.savedNothingNew); return; }
+    if (!confirm(x.savedImportAsk(fresh.length))) return;
+    fresh.forEach(id => savedSet.add(id));
+    safeSetStorage(SAVED_KEY, JSON.stringify(Array.from(savedSet)));
+    showSavedOnly = true;
+    visibleLimit = 36;
+    renderActivities();
+    showToast(x.savedImported(fresh.length));
   }
 
   function toggleSavedOnly() {
