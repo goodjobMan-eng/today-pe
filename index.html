@@ -957,7 +957,8 @@
     .search-input { width: 100%; height: 42px; padding-left: 38px; font-size: 15px; -webkit-appearance: none; appearance: none; }
     .search-input::-webkit-search-cancel-button { cursor: pointer; }
     .btn-search { height: 42px; padding: 0 18px; }
-    .btn-reset { height: 42px; }
+    .btn-reset { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; line-height: 1.2; }
+    .search-bar-wrap .btn-reset, .search-bar-wrap .btn-search { height: 42px; flex-shrink: 0; min-width: max-content; }
     .btn-open-filters { display: none; }
 
     /* 본문: 왼쪽 필터 사이드바 + 오른쪽 결과 */
@@ -1045,7 +1046,7 @@
       .site-title { grid-area: title; font-size: 18px; overflow: hidden; text-overflow: ellipsis; }
       .header-right { grid-area: right; gap: 6px; }
       .search-bar-wrap { grid-area: search; max-width: none; gap: 8px; }
-      .btn-search, .btn-reset { display: none; }
+      .search-bar-wrap .btn-search, .search-bar-wrap .btn-reset { display: none; }
       .btn-open-filters {
         display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 14px;
         font-size: 14px; font-weight: 700; color: var(--text-primary); background: var(--surface);
@@ -4028,7 +4029,23 @@
     }
   }
 
+  // 제안 화면의 교구 선택지도 필터와 같은 분류·같은 순서(많이 쓰는 순)로 채운다
+  function renderProposalEquipmentOptions() {
+    const opts = getSortedEquipmentOptions().filter(e => e !== "전체");
+    const main = document.getElementById("newEquipmentTag");
+    const sub = document.getElementById("newEquipmentTagSub");
+    if (!main || !sub) return;
+    const curMain = main.value || "없음(맨손)";
+    const curSub = sub.value || "";
+    const noneLabel = sub.dataset.noneLabel || (sub.options[0] ? sub.options[0].textContent : "");
+    sub.dataset.noneLabel = noneLabel;
+    const optHtml = cur => opts.map(v => `<option value="${escapeHtml(v)}" ${cur === v ? "selected" : ""}>${escapeHtml(tTerm("equipment", v))}</option>`).join("");
+    main.innerHTML = optHtml(curMain);
+    sub.innerHTML = `<option value="">${escapeHtml(noneLabel)}</option>` + optHtml(curSub);
+  }
+
   function openAddActivityModal() {
+    renderProposalEquipmentOptions();
     document.getElementById("addActivityModal").classList.add("open");
   }
 
