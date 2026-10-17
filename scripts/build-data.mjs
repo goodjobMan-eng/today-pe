@@ -163,13 +163,18 @@ async function buildSocial(ids) {
   if (!counts || !counts.ok) { console.log("후기 요약: Apps Script 새 버전 배포 전이라 건너뜀"); return null; }
   // 발행 시작 시각(한국 시간, 시트의 createdAt과 같은 형식). 사이트는 이 시각 이후 후기만 시트에서 따로 받는다
   const kst = new Date(Date.now() + 9 * 3600 * 1000 - 5 * 60 * 1000).toISOString().slice(0, 16).replace("T", " ");
+  // 지금 파일 + 연도별 보관 파일(2026, 2027…)의 후기를 모두 모은다
+  const srcs = await getJson(gas("action=reviewSources")).catch(() => null);
+  const sources = srcs && srcs.ok ? srcs.sources : [{ src: "main", rows: null }];
   const all = [];
-  let total = 1;
-  for (let off = 0; off < total; off += 2000) {
-    const page = await getJson(gas(`action=reviewsPage&offset=${off}&limit=2000`));
-    if (!page.ok) throw new Error(page.error || "후기 읽기 실패");
-    total = page.total;
-    all.push(...page.r.map(r => Object.fromEntries(page.h.map((k, i) => [k, r[i]]))));
+  for (const src of sources) {
+    let total = src.rows === null ? 1 : src.rows;
+    for (let off = 0; off < total; off += 2000) {
+      const page = await getJson(gas(`action=reviewsPage&src=${encodeURIComponent(src.src)}&offset=${off}&limit=2000`));
+      if (!page.ok) throw new Error(page.error || "후기 읽기 실패");
+      total = page.total;
+      all.push(...page.r.map(r => Object.fromEntries(page.h.map((k, i) => [k, r[i]]))));
+    }
   }
   const H = ["reviewId", "activityId", "teacher", "grade", "fitScore", "rating", "duration", "sessionType",
     "caution_ko", "caution_en", "caution_ja", "tip_ko", "tip_en", "tip_ja", "createdAt"];

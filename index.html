@@ -1790,6 +1790,14 @@
           <button type="button" class="btn-propose" onclick="seedActivitiesToSheet(false)">기본 수업을 시트 '수업' 탭에 올리기</button>
         </div>
         <div class="panel-block">
+          <div class="panel-title">연도별 후기·추천 기록 보관</div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">해가 바뀌면 지난해 후기와 추천·저장 기록을 새 구글 시트 파일(예: 「2026 후기·추천 기록」)로 옮깁니다. 수업 데이터와 추천·저장 수는 그대로이고, 옮긴 후기도 사이트에 계속 보입니다.</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button type="button" class="btn-propose" id="btnArchiveYear" onclick="archiveLastYear()"></button>
+            <span id="archiveList" style="font-size:12.5px; color:var(--text-secondary);"></span>
+          </div>
+        </div>
+        <div class="panel-block">
           <div class="panel-title">시트 연결</div>
           <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">
             Apps Script 웹 앱 주소입니다. 비워 두고 저장하면 기본 주소를 씁니다.
@@ -3853,6 +3861,33 @@
     renderPackModal();
   }
 
+  // ---------- 관리자: 연도별 보관 ----------
+  async function loadArchives() {
+    const y = new Date().getFullYear() - 1;
+    const btn = document.getElementById("btnArchiveYear");
+    if (btn) btn.textContent = `${y}년 기록 보관하기`;
+    const el = document.getElementById("archiveList");
+    if (!el) return;
+    try {
+      const res = await apiPost({ action: "archives", pin: adminPin });
+      const list = (res && res.ok && res.archives) || [];
+      el.innerHTML = list.length ? "보관 파일: " + list.map(a => `<a href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(a.id)}/edit" target="_blank" rel="noopener" style="color:var(--blue);">${escapeHtml(String(a.year))}</a>`).join(", ") : "아직 보관한 연도가 없습니다.";
+    } catch (e) { el.textContent = ""; }
+  }
+  async function archiveLastYear() {
+    const y = new Date().getFullYear() - 1;
+    if (!confirm(`${y}년(이전 포함) 후기와 추천·저장 기록을 새 구글 시트 파일로 옮길까요?`)) return;
+    const btn = document.getElementById("btnArchiveYear");
+    btn.disabled = true;
+    try {
+      const res = await apiPost({ action: "archiveYear", pin: adminPin, year: y });
+      if (!res || !res.ok) throw new Error((res && res.error) || "fail");
+      showToast(`보관했습니다: 후기 ${res.reviews}건, 추천·저장 기록 ${res.reactions}건`);
+      loadArchives();
+    } catch (e) { showToast("보관하지 못했습니다: " + (e.message === "fail" ? "Apps Script를 새 버전으로 배포했는지 확인해 주세요." : e.message)); }
+    btn.disabled = false;
+  }
+
   // ---------- 제작자 삭제 요청 ----------
   function openTakedown() {
     const f = document.getElementById("takedownForm");
@@ -5118,7 +5153,7 @@
       document.getElementById("tabBtn" + cap).classList.toggle("active", t === tab);
       document.getElementById("adminTab" + cap).style.display = t === tab ? "block" : "none";
     });
-    if (tab === "db") updateSeedStatus();
+    if (tab === "db") { updateSeedStatus(); loadArchives(); }
   }
 
   async function loadAdminData() {

@@ -79,7 +79,8 @@ function doGet(e) {
     if (action === 'videoReports') return json_(videoReports_()); // 데이터 발행 때 먼저 확인할 영상
     if (action === 'actTabs') return json_(actTabs_());             // 데이터 발행용: 수업 탭 목록과 줄 수
     if (action === 'acts') return json_(actsPage_(e.parameter));    // 데이터 발행용: 탭 하나를 나눠 받기
-    if (action === 'reviewsPage') return json_(reviewsPage_(e.parameter)); // 데이터 발행용: 후기를 나눠 받기
+    if (action === 'reviewsPage') return json_(reviewsPage_(e.parameter)); // 데이터 발행용: 후기를 나눠 받기 (src=main 또는 연도)
+    if (action === 'reviewSources') return json_(reviewSources_());       // 데이터 발행용: 지금 파일 + 연도별 보관 파일 목록
     if (action === 'counts') return json_({ ok: true, at: now_(), likes: countMap_('likes'), saves: countMap_('saves') });
     if (action === 'recent') return json_(recentReviews_(e.parameter)); // 사이트용: 마지막 발행 이후 새 후기만
     return json_({ ok: false, error: 'unknown action' });
@@ -112,6 +113,8 @@ function doPost(e) {
     if (a === 'approveEdit') return json_(withLock_(() => approveEdit_(body.editId)));
     if (a === 'rejectEdit') return json_(withLock_(() => setStatus_('edits', 'editId', body.editId, '반려')));
     if (a === 'changePin') return json_(changePin_(body.newPin));
+    if (a === 'archiveYear') return json_(withLock_(() => archiveYear_(Number(body.year))));
+    if (a === 'archives') return json_({ ok: true, archives: getArchives_() });
     if (a === 'seedActivities') return json_(withLock_(() => seedActivities_(body.rows || [], !!body.force)));
     if (a === 'importActivities') return json_(withLock_(() => importActivities_(body.items || [])));
 
@@ -192,7 +195,13 @@ function visibleReview_(t, r, hidden) {
 
 // 데이터 발행용: 공개 후기를 2,000줄씩 (기기 번호 제외)
 function reviewsPage_(p) {
-  const sh = getTab_('reviews');
+  const srcName = String((p && p.src) || 'main');
+  let sh = getTab_('reviews');
+  if (srcName !== 'main') {
+    const a = getArchives_().find(x => String(x.year) === srcName);
+    sh = a ? archiveSheet_(a, 'reviews') : null;
+    if (!sh) return { ok: false, error: '보관 파일을 찾을 수 없습니다: ' + srcName };
+  }
   const lastRow = sh.getLastRow(), lastCol = Math.max(sh.getLastColumn(), 1);
   const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
   const col = {};
@@ -318,11 +327,82 @@ function addReview_(b) {
 }
 
 function deleteReview_(reviewId) {
-  const t = readTab_('reviews');
-  const idx = t.rows.findIndex(r => String(r[t.col.reviewId]) === String(reviewId));
-  if (idx < 0) return { ok: false, error: '후기를 찾을 수 없습니다.' };
-  t.sheet.getRange(idx + 2, t.col.deleted + 1).setValue('Y');
-  return { ok: true };
+  // 지금 파일과 연도별 보관 파일에서 후기 번호로 찾아 '삭제' 표시
+  const sheets = [getTab_('reviews')].concat(getArchives_().map(a => archiveSheet_(a, 'reviews')).filter(Boolean));
+  for (const sh of sheets) {
+    if (sh.getLastRow() < 2) continue;
+    const h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    const cId = h.indexOf('reviewId') + 1, cDel = h.indexOf('deleted') + 1;
+    if (cId < 1 || cDel < 1) continue;
+    const hit = sh.getRange(2, cId, sh.getLastRow() - 1, 1).createTextFinder(String(reviewId)).matchEntireCell(true).findNext();
+    if (hit) { sh.getRange(hit.getRow(), cDel).setValue('Y'); return { ok: true }; }
+  }
+  return { ok: false, error: '후기를 찾을 수 없습니다.' };
+}
+
+/* ----------------------------- 연도별 보관 (후기·추천 기록) -----------------------------
+   후기와 추천·저장 기록은 계속 쌓이므로, 지난 연도 것은 따로 구글 시트 파일(예: 「2026 후기·추천 기록 - 오늘 체육 뭐 하지」)로 옮긴다.
+   수업 데이터와 추천·저장 수(합계)는 지금 파일에 그대로 둔다. 보관한 후기도 사이트에는 그대로 보인다. */
+const ARCHIVE_PROP = 'REVIEW_ARCHIVES';
+
+function getArchives_() {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(ARCHIVE_PROP) || '[]'); } catch (e) { return []; }
+}
+
+function archiveSheet_(a, key) {
+  try { return SpreadsheetApp.openById(a.id).getSheetByName(TABS[key].name); } catch (e) { return null; }
+}
+
+function archiveYear_(year) {
+  const thisYear = Number(Utilities.formatDate(new Date(), TZ, 'yyyy'));
+  if (!year || year >= thisYear) return { ok: false, error: '지난 연도만 보관할 수 있습니다. (올해: ' + thisYear + ')' };
+  const archives = getArchives_();
+  let entry = archives.find(a => Number(a.year) === year);
+  let file;
+  if (entry) file = SpreadsheetApp.openById(entry.id);
+  else {
+    file = SpreadsheetApp.create(year + ' 후기·추천 기록 - 오늘 체육 뭐 하지');
+    entry = { year: year, id: file.getId(), name: file.getName() };
+  }
+  const moved = {};
+  ['reviews', 'reactions'].forEach(key => {
+    const src = getTab_(key);
+    const lastRow = src.getLastRow(), lastCol = Math.max(src.getLastColumn(), 1);
+    const headers = src.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+    const cAt = headers.indexOf('createdAt');
+    let dst = file.getSheetByName(TABS[key].name);
+    if (!dst) {
+      dst = file.insertSheet(TABS[key].name);
+      dst.getRange(1, 1, 1, headers.length).setValues([headers]);
+      dst.setFrozenRows(1);
+    }
+    if (lastRow < 2 || cAt < 0) { moved[key] = 0; return; }
+    // 기록은 시간순으로 아래에 쌓이므로, 위에서부터 그 연도 이하인 줄을 한 덩어리로 옮긴다
+    const values = src.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    let n = 0;
+    while (n < values.length && String(cellOut_(values[n][cAt])).slice(0, 4) !== '' && Number(String(cellOut_(values[n][cAt])).slice(0, 4)) <= year) n++;
+    if (n > 0) {
+      dst.getRange(dst.getLastRow() + 1, 1, n, lastCol).setValues(values.slice(0, n));
+      src.deleteRows(2, n);
+    }
+    moved[key] = n;
+  });
+  // 기본 시트 1이 남아 있으면 지운다
+  const blank = file.getSheetByName('Sheet1') || file.getSheetByName('시트1');
+  if (blank && file.getSheets().length > 1) file.deleteSheet(blank);
+  if (!archives.find(a => Number(a.year) === year)) archives.push(entry);
+  archives.sort((a, b) => a.year - b.year);
+  PropertiesService.getScriptProperties().setProperty(ARCHIVE_PROP, JSON.stringify(archives));
+  return { ok: true, year: year, url: file.getUrl(), reviews: moved.reviews, reactions: moved.reactions };
+}
+
+function reviewSources_() {
+  const out = [{ src: 'main', rows: Math.max(getTab_('reviews').getLastRow() - 1, 0) }];
+  getArchives_().forEach(a => {
+    const sh = archiveSheet_(a, 'reviews');
+    if (sh) out.push({ src: String(a.year), rows: Math.max(sh.getLastRow() - 1, 0) });
+  });
+  return { ok: true, sources: out };
 }
 
 /* ----------------------------- 신고 (후기·영상) ----------------------------- */
@@ -445,6 +525,19 @@ function react_(b) {
     if (rowNum > 0) return { ok: true, on: true, count: getCount_(countKey, activityId) };
     appendObj_('reactions', { deviceId: deviceId, activityId: activityId, kind: kind, createdAt: now_() });
     return { ok: true, on: true, count: addCount_(countKey, activityId, 1) };
+  }
+
+  if (rowNum < 0 && !on) {
+    // 지난 연도에 누른 추천·저장이면 보관 파일에서 지운다
+    for (const a of getArchives_()) {
+      const ash = archiveSheet_(a, 'reactions');
+      if (!ash || ash.getLastRow() < 2) continue;
+      const ah = ash.getRange(1, 1, 1, ash.getLastColumn()).getValues()[0].map(String);
+      const hits = ash.getRange(2, ah.indexOf('deviceId') + 1, ash.getLastRow() - 1, 1).createTextFinder(deviceId).matchEntireCell(true).findAll();
+      const hit = hits.find(h => String(ash.getRange(h.getRow(), ah.indexOf('activityId') + 1).getValue()) === activityId &&
+        String(ash.getRange(h.getRow(), ah.indexOf('kind') + 1).getValue()) === kind);
+      if (hit) { ash.deleteRow(hit.getRow()); return { ok: true, on: false, count: addCount_(countKey, activityId, -1) }; }
+    }
   }
 
   if (rowNum > 0) {
