@@ -1573,6 +1573,7 @@
       revCautionLabel: "유의사항:",
       revTipLabel: "발전 팁:",
       sourcePrefix: "수업 참고 영상 (YouTube 공식 임베드)",
+      sourceLabel: "출처: YouTube ·",
       openYoutube: "원본 영상 보기 ↗",
       toastLike: "추천이 반영되었습니다.",
       toastUnlike: "추천을 취소했습니다.",
@@ -1670,6 +1671,7 @@
       revCautionLabel: "Caution:",
       revTipLabel: "Progression Tip:",
       sourcePrefix: "Reference Video (Official YouTube Embed)",
+      sourceLabel: "Source: YouTube ·",
       openYoutube: "Watch on YouTube ↗",
       toastLike: "Recommendation added.",
       toastUnlike: "Recommendation removed.",
@@ -1767,6 +1769,7 @@
       revCautionLabel: "留意点:",
       revTipLabel: "発展のコツ:",
       sourcePrefix: "授業参考動画 (YouTube公式埋め込み)",
+      sourceLabel: "出典: YouTube ·",
       openYoutube: "元動画を開く ↗",
       toastLike: "おすすめが反映されました。",
       toastUnlike: "おすすめを取り消しました。",
@@ -3189,7 +3192,7 @@
       videoBox.innerHTML = "";
     }
 
-    const srcInfo = act.channel ? `${escapeHtml(act.channel)}${act.videoTitle ? " · " + escapeHtml(act.videoTitle) : ""}` : ui.sourcePrefix;
+    const srcInfo = act.channel ? `${ui.sourceLabel} ${escapeHtml(act.channel)}${act.videoTitle ? " · " + escapeHtml(act.videoTitle) : ""}` : ui.sourcePrefix;
     document.getElementById("modalSourceBar").innerHTML = `
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:8px;">${srcInfo}</span>
       <a href="${escapeHtml(act.youtubeUrl)}" target="_blank" rel="noopener">${ui.openYoutube}</a>
@@ -3319,9 +3322,16 @@
 
   function tableToObjects(tbl) {
     if (!tbl || !Array.isArray(tbl.h) || !Array.isArray(tbl.r)) return [];
+    // 시트 머리글이 비어 있어도 updatedAt 바로 뒤 두 칸은 channel, transcriptVerified로 읽는다(납품 32열 양식)
+    const heads = tbl.h.slice();
+    const u = heads.indexOf("updatedAt");
+    if (u >= 0 && !heads.includes("channel")) {
+      if (!heads[u + 1]) heads[u + 1] = "channel";
+      if (!heads[u + 2] && !heads.includes("transcriptVerified")) heads[u + 2] = "transcriptVerified";
+    }
     return tbl.r.map(row => {
       const o = {};
-      tbl.h.forEach((h, i) => { if (h) o[h] = row[i]; });
+      heads.forEach((h, i) => { if (h) o[h] = row[i]; });
       return o;
     });
   }
