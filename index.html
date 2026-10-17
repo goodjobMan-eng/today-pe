@@ -1137,7 +1137,9 @@
     .preset-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
     .btn-draw { padding: 9px 16px; font-size: 13.5px; font-weight: 700; font-family: inherit; color: #fff; background: #0f766e; border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
     .btn-draw:hover { background: #115e59; }
-    .modal-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .modal-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+    .modal-actions .modal-react, .modal-actions .modal-tools { display: contents; }
+    .modal-actions .btn-recommend, .modal-actions .tool-btn { height: 34px; padding: 0 12px; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; }
     .tool-btn { padding: 6px 12px; font-size: 12.5px; font-weight: 600; font-family: inherit; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
     .tool-btn:hover { color: var(--text-primary); background: var(--surface-subtle); }
     .tool-btn.on { color: #0f766e; border-color: #99f6e4; background: #f0fdfa; }
@@ -1184,6 +1186,8 @@
     @media (max-width: 640px) {
       .preset-row { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
       .results-right .btn-draw { grid-column: 1 / -1; height: 42px; font-size: 14px; }
+      .modal-actions { gap: 5px; }
+      .modal-actions .btn-recommend, .modal-actions .tool-btn { height: 34px; padding: 0 9px; font-size: 12.5px; }
       .pack-item { grid-template-columns: 1fr; }
       .pack-item-side { flex-direction: row; justify-content: space-between; align-items: center; }
       body.has-pack { padding-bottom: 88px; }
@@ -1299,8 +1303,6 @@
   </aside>
 
   <main class="results-col">
-    <div class="preset-row" id="presetRow" role="group" aria-label="상황별 바로가기"></div>
-
     <div class="popular-row">
       <span class="popular-label" id="popularLabelText">추천 검색어</span>
       <div id="popularKeywordsWrap" class="popular-wrap"></div>
@@ -1346,8 +1348,10 @@
       <div>
         <div id="modalCategoryLine" style="font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px;"></div>
         <h2 id="modalTitle" style="font-size:20px; font-weight:800;"></h2>
-        <div class="modal-react" id="modalReactBar"></div>
-        <div class="modal-tools" id="modalTools"></div>
+        <div class="modal-actions">
+          <div class="modal-react" id="modalReactBar"></div>
+          <div class="modal-tools" id="modalTools"></div>
+        </div>
       </div>
       <button class="btn-close" onclick="closeDetailModal()" aria-label="닫기">✕</button>
     </div>
@@ -2917,13 +2921,13 @@
     try { localStorage.setItem(key, val); } catch (e) {}
   }
 
-  function showToast(msg) {
+  function showToast(msg, ms) {
     const t = document.getElementById("toastBox");
     if (!t) return;
     t.textContent = msg;
     t.style.display = "block";
     clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
+    window._toastTimer = setTimeout(() => { t.style.display = "none"; }, ms || Math.max(3000, String(msg).length * 70));
   }
 
   function makeDeviceId() {
@@ -3432,7 +3436,7 @@
   const XUI = {
     ko: {
       sortPopular: "인기순", share: "공유", shareCopied: "링크를 복사했어요. 카톡이나 메신저에 붙여 넣으세요.",
-      packAdd: "＋ 꾸러미에 담기", packIn: "✓ 꾸러미에 있음", drawAgain: "다른 활동 뽑기", drawBtn: "오늘 체육 뭐 하지? 뽑기",
+      packAdd: "＋ 꾸러미", packIn: "✓ 꾸러미", drawAgain: "다른 활동 뽑기", drawBtn: "오늘 체육 뭐 하지? 뽑기",
       drawNone: "조건에 맞는 활동이 없어요. 필터를 조금 풀어 보세요.",
       videoReport: "영상이 안 나와요", videoReportAsk: "신고할까요? 한 번 더 누르세요", reportDone: "알려 주셔서 고마워요. 확인 후 정리할게요.",
       report: "신고", reportAsk: "신고할까요?", reportFail: "지금은 신고를 받을 수 없어요. 잠시 후 다시 해 주세요.",
@@ -3445,7 +3449,7 @@
       packBar: (n, m) => `수업 꾸러미 ${n}개 · ${m}분`, packTotal: (m, t) => `합계 ${m}분 / 목표 ${t}분`,
       packOver: m => `${m}분 넘어요`, packLeft: m => `${m}분 남아요`, packFit: "딱 맞아요",
       packCopy: "링크 복사", packPrint: "인쇄", packClear: "비우기", packTake: "내 꾸러미로 담기", packTaken: "내 꾸러미에 담았어요.",
-      packAdded: "꾸러미에 담았어요.", packRemoved: "꾸러미에서 뺐어요.", min: "분", up: "위로", down: "아래로", remove: "빼기",
+      packAdded: "꾸러미에 담았어요.", packFirst: "꾸러미에 담았어요. 아래 「수업 꾸러미」를 누르면 담은 활동을 40분 수업으로 이어 보고, 링크로 나누거나 인쇄할 수 있어요.", packRemoved: "꾸러미에서 뺐어요.", min: "분", up: "위로", down: "아래로", remove: "빼기",
       packMissing: n => `${n}개 활동은 지금 목록에 없어 빠졌어요.`, target: "목표",
       moreReviews: n => `후기 더 보기 (${n}개 남음)`, loadingReviews: "후기를 불러오는 중…",
       footerCopyright: "영상과 영상 속 내용의 저작권은 각 유튜브 제작자에게 있습니다. 이 사이트는 유튜브 공식 플레이어로 영상을 소개하며, 놀이 방법은 영상을 보고 새로 정리한 글입니다.",
@@ -3454,7 +3458,7 @@
     },
     en: {
       sortPopular: "Most popular", share: "Share", shareCopied: "Link copied. Paste it into a chat or message.",
-      packAdd: "+ Add to plan", packIn: "✓ In plan", drawAgain: "Pick another", drawBtn: "Pick today's PE activity",
+      packAdd: "+ Plan", packIn: "✓ Plan", drawAgain: "Pick another", drawBtn: "Pick today's PE activity",
       drawNone: "No activity matches. Try loosening the filters.",
       videoReport: "Video not playing", videoReportAsk: "Report it? Tap again", reportDone: "Thanks for letting us know. We'll check it.",
       report: "Report", reportAsk: "Report this?", reportFail: "Reports can't be sent right now. Please try again later.",
@@ -3467,7 +3471,7 @@
       packBar: (n, m) => `Lesson plan: ${n} · ${m} min`, packTotal: (m, t) => `Total ${m} min / target ${t} min`,
       packOver: m => `${m} min over`, packLeft: m => `${m} min left`, packFit: "Just right",
       packCopy: "Copy link", packPrint: "Print", packClear: "Clear", packTake: "Add to my plan", packTaken: "Added to your plan.",
-      packAdded: "Added to your plan.", packRemoved: "Removed from your plan.", min: "min", up: "Move up", down: "Move down", remove: "Remove",
+      packAdded: "Added to your plan.", packFirst: "Added. Tap “Lesson plan” at the bottom to line activities up into a 40-min lesson, share it, or print it.", packRemoved: "Removed from your plan.", min: "min", up: "Move up", down: "Move down", remove: "Remove",
       packMissing: n => `${n} activities are no longer listed and were left out.`, target: "Target",
       moreReviews: n => `Show more reviews (${n} left)`, loadingReviews: "Loading reviews…",
       footerCopyright: "Videos and their content belong to their YouTube creators. This site shows them through YouTube's official player, and the activity steps are our own write-ups.",
@@ -3476,7 +3480,7 @@
     },
     ja: {
       sortPopular: "人気順", share: "共有", shareCopied: "リンクをコピーしました。メッセージに貼り付けてください。",
-      packAdd: "＋ 授業セットに追加", packIn: "✓ 授業セットにあり", drawAgain: "別の活動を引く", drawBtn: "今日の体育はこれ！くじ引き",
+      packAdd: "＋ セット", packIn: "✓ セット", drawAgain: "別の活動を引く", drawBtn: "今日の体育はこれ！くじ引き",
       drawNone: "条件に合う活動がありません。絞り込みを少し外してください。",
       videoReport: "動画が再生されない", videoReportAsk: "報告しますか？もう一度押してください", reportDone: "お知らせありがとうございます。確認して対応します。",
       report: "報告", reportAsk: "報告しますか？", reportFail: "今は報告を送れません。しばらくしてからお試しください。",
@@ -3489,7 +3493,7 @@
       packBar: (n, m) => `授業セット ${n}件・${m}分`, packTotal: (m, t) => `合計 ${m}分 / 目標 ${t}分`,
       packOver: m => `${m}分オーバー`, packLeft: m => `あと${m}分`, packFit: "ちょうど",
       packCopy: "リンクをコピー", packPrint: "印刷", packClear: "空にする", packTake: "自分のセットに追加", packTaken: "自分のセットに追加しました。",
-      packAdded: "授業セットに追加しました。", packRemoved: "授業セットから外しました。", min: "分", up: "上へ", down: "下へ", remove: "外す",
+      packAdded: "授業セットに追加しました。", packFirst: "追加しました。下の「授業セット」を押すと、活動を40分の授業に並べて共有・印刷できます。", packRemoved: "授業セットから外しました。", min: "分", up: "上へ", down: "下へ", remove: "外す",
       packMissing: n => `${n}件の活動は一覧にないため除きました。`, target: "目標",
       moreReviews: n => `レビューをもっと見る（残り${n}件）`, loadingReviews: "レビューを読み込み中…",
       footerCopyright: "動画と動画の内容の著作権は各YouTube制作者にあります。本サイトはYouTube公式プレーヤーで動画を紹介し、活動の方法は動画を見て新たにまとめた文章です。",
@@ -3747,7 +3751,12 @@
     const act = activities.find(a => a.id === id);
     if (!act) return;
     if (packHas(id)) { pack.items = pack.items.filter(i => i.id !== id); showToast(xui().packRemoved); }
-    else { pack.items.push({ id, m: defaultMinutes(act) }); showToast(xui().packAdded); }
+    else {
+      pack.items.push({ id, m: defaultMinutes(act) });
+      let first = false;
+      try { first = !localStorage.getItem("pe_hub_pack_seen_v1"); localStorage.setItem("pe_hub_pack_seen_v1", "1"); } catch (e) {}
+      showToast(first ? xui().packFirst : xui().packAdded);
+    }
     savePack();
     if (activeModalId === id) renderModalExtras(act);
   }
