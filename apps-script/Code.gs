@@ -32,7 +32,7 @@ const TABS = {
   reviews: {
     name: '후기',
     headers: ['reviewId', 'activityId', 'activityTitle', 'createdAt', 'teacher', 'grade', 'fitScore', 'rating', 'duration',
-      'sessionType', 'lang', 'caution_ko', 'caution_en', 'caution_ja', 'tip_ko', 'tip_en', 'tip_ja', 'deleted']
+      'sessionType', 'lang', 'caution_ko', 'caution_en', 'caution_ja', 'tip_ko', 'tip_en', 'tip_ja', 'deleted', 'deviceId']
   },
   likes: {
     name: '추천',
@@ -50,6 +50,10 @@ const TABS = {
     name: '새수업제안',
     headers: ['proposalId', 'status', 'createdAt', 'title', 'lang', 'country', 'curriculumArea', 'playType', 'place',
       'groupSize', 'equipment', 'equipmentDetail', 'youtubeUrl', 'rules', 'duration', 'caution', 'resultActivityId']
+  },
+  reports: {
+    name: '신고',
+    headers: ['reportId', 'createdAt', 'kind', 'targetId', 'activityId', 'deviceId', 'reason', 'status']
   },
   edits: {
     name: '수정제안',
@@ -72,6 +76,7 @@ function doGet(e) {
     const action = (e && e.parameter && e.parameter.action) || 'data';
     if (action === 'data') return json_(publicData_());
     if (action === 'social') return json_(socialData_()); // 추천·저장·후기만 (수업 내용은 사이트의 data/*.json)
+    if (action === 'videoReports') return json_(videoReports_()); // 데이터 발행 때 먼저 확인할 영상
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -89,12 +94,14 @@ function doPost(e) {
     if (a === 'react') return json_(withLock_(() => react_(body)));
     if (a === 'proposeActivity') return json_(withLock_(() => proposeActivity_(body.activity || {})));
     if (a === 'proposeEdit') return json_(withLock_(() => proposeEdit_(body.edit || {})));
+    if (a === 'report') return json_(withLock_(() => report_(body)));
     if (a === 'checkPin') return json_({ ok: checkPin_(body.pin) });
 
     // 관리자만 가능
     if (!checkPin_(body.pin)) return json_({ ok: false, error: 'auth' });
     if (a === 'adminData') return json_(adminData_());
     if (a === 'deleteReview') return json_(withLock_(() => deleteReview_(body.reviewId)));
+    if (a === 'resolveReport') return json_(withLock_(() => resolveReports_(body.targetId, body.kind)));
     if (a === 'approveProposal') return json_(withLock_(() => approveProposal_(body.proposalId)));
     if (a === 'rejectProposal') return json_(withLock_(() => setStatus_('proposals', 'proposalId', body.proposalId, '반려')));
     if (a === 'approveEdit') return json_(withLock_(() => approveEdit_(body.editId)));
@@ -116,13 +123,14 @@ function publicData_() {
   const actRows = acts.rows.filter(r => filled_(acts, r, 'id') && String(r[acts.col.status] || '').trim() !== '숨김');
 
   const revs = readTab_('reviews');
-  const revRows = revs.rows.filter(r => filled_(revs, r, 'reviewId') && String(r[revs.col.deleted] || '').trim().toUpperCase() !== 'Y');
+  const hidden = hiddenReviewIds_();
+  const revRows = revs.rows.filter(r => filled_(revs, r, 'reviewId') && String(r[revs.col.deleted] || '').trim().toUpperCase() !== 'Y' && !hidden[String(r[revs.col.reviewId])]);
 
   return {
     ok: true,
     at: now_(),
     activities: { h: acts.headers, r: actRows },
-    reviews: { h: revs.headers, r: revRows },
+    reviews: publicTable_(revs.headers, revRows, ['deviceId']),
     likes: countMap_('likes'),
     saves: countMap_('saves')
   };
@@ -131,11 +139,12 @@ function publicData_() {
 // 사이트가 매번 받는 가벼운 데이터: 수업 내용은 빼고 추천·저장 수와 후기만
 function socialData_() {
   const revs = readTab_('reviews');
-  const revRows = revs.rows.filter(r => filled_(revs, r, 'reviewId') && String(r[revs.col.deleted] || '').trim().toUpperCase() !== 'Y');
+  const hidden = hiddenReviewIds_();
+  const revRows = revs.rows.filter(r => filled_(revs, r, 'reviewId') && String(r[revs.col.deleted] || '').trim().toUpperCase() !== 'Y' && !hidden[String(r[revs.col.reviewId])]);
   return {
     ok: true,
     at: now_(),
-    reviews: { h: revs.headers, r: revRows },
+    reviews: publicTable_(revs.headers, revRows, ['deviceId']),
     likes: countMap_('likes'),
     saves: countMap_('saves')
   };
@@ -151,6 +160,15 @@ function addReview_(b) {
   const tip = clean_(r.upgradeTip, 1000);
   if (!caution && !tip) return { ok: false, error: '내용을 입력해 주세요.' };
   const lang = LANGS.indexOf(r.lang) >= 0 ? r.lang : 'ko';
+  const deviceId = /^[A-Za-z0-9-]{8,64}$/.test(String(b.deviceId || '')) ? String(b.deviceId) : '';
+
+  // 같은 기기에서 하루(24시간)에 쓸 수 있는 후기는 5개까지
+  if (deviceId) {
+    const since = Utilities.formatDate(new Date(Date.now() - 24 * 3600 * 1000), TZ, 'yyyy-MM-dd HH:mm');
+    const t = readTab_('reviews');
+    const recent = t.rows.filter(x => String(x[t.col.deviceId] || '') === deviceId && String(x[t.col.createdAt] || '') >= since).length;
+    if (recent >= REVIEW_DAILY_LIMIT) return { ok: false, error: '후기는 하루에 ' + REVIEW_DAILY_LIMIT + '개까지 쓸 수 있습니다. 내일 다시 써 주세요.' };
+  }
 
   const row = {
     reviewId: 'rv-' + new Date().getTime() + '-' + Math.floor(Math.random() * 1000),
@@ -164,14 +182,17 @@ function addReview_(b) {
     duration: clampNum_(r.duration, 5, 80, 25),
     sessionType: clean_(r.sessionType, 20),
     lang: lang,
-    deleted: ''
+    deleted: '',
+    deviceId: deviceId
   };
   const c3 = translateAll_(caution, lang);
   const t3 = translateAll_(tip, lang);
   LANGS.forEach(l => { row['caution_' + l] = c3[l]; row['tip_' + l] = t3[l]; });
 
   appendObj_('reviews', row);
-  return { ok: true, review: row };
+  const pub = Object.assign({}, row);
+  delete pub.deviceId;
+  return { ok: true, review: pub };
 }
 
 function deleteReview_(reviewId) {
@@ -180,6 +201,73 @@ function deleteReview_(reviewId) {
   if (idx < 0) return { ok: false, error: '후기를 찾을 수 없습니다.' };
   t.sheet.getRange(idx + 2, t.col.deleted + 1).setValue('Y');
   return { ok: true };
+}
+
+/* ----------------------------- 신고 (후기·영상) ----------------------------- */
+
+const REVIEW_DAILY_LIMIT = 5;
+const REVIEW_HIDE_REPORTS = 3; // 서로 다른 기기 3곳에서 신고하면 관리자가 보기 전까지 숨김
+
+function report_(b) {
+  const kind = String(b.kind || '');
+  if (['review', 'video', 'takedown'].indexOf(kind) < 0) return { ok: false, error: 'bad request' };
+  const targetId = clean_(b.targetId, 200);
+  const deviceId = String(b.deviceId || '').trim();
+  if (!targetId || !/^[A-Za-z0-9-]{8,64}$/.test(deviceId)) return { ok: false, error: 'bad request' };
+  const t = readTab_('reports');
+  const dup = t.rows.some(r => String(r[t.col.kind]) === kind && String(r[t.col.targetId]) === targetId && String(r[t.col.deviceId]) === deviceId);
+  if (dup) return { ok: true, already: true };
+  appendObj_('reports', {
+    reportId: 'rp-' + new Date().getTime() + '-' + Math.floor(Math.random() * 1000),
+    createdAt: now_(),
+    kind: kind,
+    targetId: targetId,
+    activityId: clean_(b.activityId, 40),
+    deviceId: deviceId,
+    reason: clean_(b.reason, 300),
+    status: '대기'
+  });
+  return { ok: true };
+}
+
+// 공개 응답에서 기기 번호처럼 밖에 보이면 안 되는 칸을 뺀다
+function publicTable_(headers, rows, drop) {
+  const keep = headers.map((h, i) => drop.indexOf(h) < 0 ? i : -1).filter(i => i >= 0);
+  return { h: keep.map(i => headers[i]), r: rows.map(r => keep.map(i => r[i])) };
+}
+
+function openReports_() {
+  const t = readTab_('reports');
+  return t.rows.filter(r => filled_(t, r, 'reportId') && String(r[t.col.status] || '').trim() === '대기').map(r => rowToObj_(t, r));
+}
+
+function hiddenReviewIds_() {
+  const devices = {};
+  openReports_().filter(o => o.kind === 'review').forEach(o => {
+    (devices[o.targetId] = devices[o.targetId] || {})[o.deviceId] = true;
+  });
+  const out = {};
+  Object.keys(devices).forEach(id => { if (Object.keys(devices[id]).length >= REVIEW_HIDE_REPORTS) out[id] = true; });
+  return out;
+}
+
+function videoReports_() {
+  const map = {};
+  openReports_().filter(o => o.kind === 'video').forEach(o => { map[o.targetId] = (map[o.targetId] || 0) + 1; });
+  return { ok: true, videos: map };
+}
+
+// 관리자가 신고를 처리(후기 삭제 또는 문제없음)하면 그 대상의 신고를 모두 '처리'로 바꾼다
+function resolveReports_(targetId, kind) {
+  const t = readTab_('reports');
+  let n = 0;
+  t.rows.forEach((r, i) => {
+    if (String(r[t.col.targetId]) === String(targetId) && (!kind || String(r[t.col.kind]) === kind) && String(r[t.col.status]) === '대기') {
+      t.sheet.getRange(i + 2, t.col.status + 1).setValue('처리');
+      n++;
+    }
+  });
+  return { ok: true, resolved: n };
 }
 
 /* ----------------------------- 추천 (이전 버전 사이트용, 기기 기록 없음) ----------------------------- */
@@ -509,7 +597,8 @@ function adminData_() {
   return {
     ok: true,
     proposals: p.rows.map(r => rowToObj_(p, r)).filter(o => o.status === '대기'),
-    edits: e.rows.map(r => rowToObj_(e, r)).filter(o => o.status === '대기')
+    edits: e.rows.map(r => rowToObj_(e, r)).filter(o => o.status === '대기'),
+    reports: openReports_().map(o => { delete o.deviceId; return o; })
   };
 }
 

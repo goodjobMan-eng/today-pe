@@ -1030,6 +1030,7 @@
     .card-react { flex-wrap: wrap; }
     .source-bar { gap: 8px; }
     .source-bar a { white-space: nowrap; flex-shrink: 0; }
+    .source-bar a.channel-link { color: var(--text-secondary); text-decoration: underline; font-weight: 600; }
 
     :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
     .filter-panel-title:focus, .filter-panel-title:focus-visible { outline: none; }
@@ -1122,6 +1123,79 @@
 
     @media (prefers-reduced-motion: reduce) {
       .filter-panel, .filter-scrim { transition: none; }
+    }
+
+    /* ===== 추가 기능: 뽑기·바로가기·꾸러미·신고·비슷한 활동 ===== */
+    .site-footer { margin-top: 48px; padding-top: 20px; padding-bottom: 24px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-muted); line-height: 1.7; }
+    .footer-link { background: none; border: none; padding: 0; font: inherit; color: var(--blue); text-decoration: underline; cursor: pointer; }
+    .takedown-form { display: grid; gap: 8px; max-width: 520px; margin-top: 10px; }
+    .takedown-form[hidden] { display: none; }
+    .takedown-form label { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+    .preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .preset-chip { padding: 7px 13px; font-size: 13px; font-weight: 600; font-family: inherit; color: var(--text-primary); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; cursor: pointer; white-space: nowrap; }
+    .preset-chip:hover { border-color: var(--text-primary); }
+    .preset-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-draw { padding: 9px 16px; font-size: 13.5px; font-weight: 700; font-family: inherit; color: #fff; background: #0f766e; border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+    .btn-draw:hover { background: #115e59; }
+    .modal-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .tool-btn { padding: 6px 12px; font-size: 12.5px; font-weight: 600; font-family: inherit; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+    .tool-btn:hover { color: var(--text-primary); background: var(--surface-subtle); }
+    .tool-btn.on { color: #0f766e; border-color: #99f6e4; background: #f0fdfa; }
+    .tool-btn.draw { color: #fff; background: #0f766e; border-color: #0f766e; }
+    .video-report-btn, .review-report-btn { background: none; border: none; padding: 2px 4px; font-size: 11.5px; font-family: inherit; color: var(--text-muted); text-decoration: underline; cursor: pointer; white-space: nowrap; }
+    .video-report-btn.armed, .review-report-btn.armed { color: #b91c1c; font-weight: 700; }
+    .similar-list { display: grid; gap: 6px; }
+    .similar-item { display: flex; flex-direction: column; gap: 2px; text-align: left; width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; }
+    .similar-item:hover { border-color: var(--border-strong); background: var(--surface); }
+    .similar-meta { font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+    .similar-title { font-size: 13.5px; color: var(--text-primary); font-weight: 700; }
+    .pack-bar { position: fixed; z-index: 900; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 12px 20px; font-size: 14px; font-weight: 700; font-family: inherit; color: #fff; background: #0f766e; border: none; border-radius: 999px; box-shadow: 0 8px 24px rgba(15, 118, 110, 0.35); cursor: pointer; white-space: nowrap; }
+    .pack-bar[hidden] { display: none; }
+    .pack-box { max-width: 720px; }
+    .pack-summary { margin-bottom: 12px; }
+    .pack-total { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 15px; }
+    .pack-status { font-size: 13px; font-weight: 700; color: #0f766e; }
+    .pack-status.over { color: #b45309; }
+    .pack-meter { height: 8px; background: var(--surface-subtle); border-radius: 999px; overflow: hidden; margin: 8px 0; }
+    .pack-meter span { display: block; height: 100%; background: #0f766e; border-radius: 999px; }
+    .pack-target { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+    .pack-target select { margin-left: 4px; padding: 4px 6px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; }
+    .pack-note { font-size: 12px; color: #b45309; margin-top: 6px; }
+    .pack-list { list-style: none; display: grid; gap: 8px; counter-reset: pk; }
+    .pack-item { counter-increment: pk; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+    .pack-item-main { min-width: 0; }
+    .pack-item-title { display: block; background: none; border: none; padding: 0; font-family: inherit; font-size: 14.5px; font-weight: 700; color: var(--text-primary); text-align: left; cursor: pointer; }
+    .pack-item-title::before { content: counter(pk) ". "; color: var(--text-muted); }
+    .pack-item-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .pack-item-rules { display: none; font-size: 12.5px; color: var(--text-secondary); white-space: pre-line; margin-top: 6px; }
+    .pack-item-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .pack-min { font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .pack-min input { width: 52px; padding: 4px 6px; margin-right: 3px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; text-align: right; }
+    .pack-move { display: flex; gap: 4px; }
+    .pack-move button { width: 30px; height: 30px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+    .pack-move button:disabled { opacity: 0.35; cursor: default; }
+    .pack-empty { padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 13.5px; border: 1px dashed var(--border-strong); border-radius: var(--radius-md); }
+    .pack-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .pack-actions .btn-submit { width: auto; flex: 1 1 160px; }
+    @media (max-width: 1023px) {
+      .preset-row { flex-wrap: nowrap; overflow-x: auto; margin: 0 -20px 8px; padding: 0 20px; scrollbar-width: none; }
+      .preset-row::-webkit-scrollbar { display: none; }
+    }
+    @media (max-width: 640px) {
+      .preset-row { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+      .results-right .btn-draw { grid-column: 1 / -1; height: 42px; font-size: 14px; }
+      .pack-item { grid-template-columns: 1fr; }
+      .pack-item-side { flex-direction: row; justify-content: space-between; align-items: center; }
+      body.has-pack { padding-bottom: 88px; }
+    }
+    @media print {
+      body > *:not(#packModal) { display: none !important; }
+      #packModal { position: static; display: block !important; background: none; padding: 0; }
+      #packModal .modal-box { box-shadow: none; border: none; max-height: none; height: auto; overflow: visible; padding: 0; }
+      #packModal .btn-close, #packModal .pack-actions, #packModal .pack-move, #packModal .pack-target, #packModal .pack-meter { display: none !important; }
+      .pack-item { break-inside: avoid; }
+      .pack-item-rules { display: block; }
+      .pack-min input { border: none; }
     }
   </style>
 </head>
@@ -1225,6 +1299,8 @@
   </aside>
 
   <main class="results-col">
+    <div class="preset-row" id="presetRow" role="group" aria-label="상황별 바로가기"></div>
+
     <div class="popular-row">
       <span class="popular-label" id="popularLabelText">추천 검색어</span>
       <div id="popularKeywordsWrap" class="popular-wrap"></div>
@@ -1238,6 +1314,7 @@
       <div class="results-right">
         <select id="sortSelect" class="sort-select" onchange="resetPageAndRender()" aria-label="정렬"></select>
         <button type="button" class="btn-saved-filter" id="btnSavedFilter" onclick="toggleSavedOnly()" aria-pressed="false"></button>
+        <button type="button" class="btn-draw" id="btnDraw" onclick="drawActivity()">오늘 체육 뭐 하지? 뽑기</button>
         <button class="btn-propose" id="btnProposeText" onclick="openAddActivityModal()">새 체육 수업 제안 신청</button>
       </div>
     </div>
@@ -1252,6 +1329,16 @@
   </main>
 </div>
 
+<footer class="site-footer container">
+  <p id="footerCopyright">영상과 영상 속 내용의 저작권은 각 유튜브 제작자에게 있습니다. 이 사이트는 유튜브 공식 플레이어로 영상을 소개하며, 놀이 방법은 영상을 보고 새로 정리한 글입니다.</p>
+  <p><span id="footerTakedownText">제작자께서 내리기를 원하시면 알려 주세요. 바로 내리겠습니다.</span> <button type="button" class="footer-link" id="btnTakedown" onclick="openTakedown()">삭제 요청하기</button></p>
+  <form class="takedown-form" id="takedownForm" hidden onsubmit="submitTakedown(event)">
+    <label for="takedownText" id="takedownLabel">영상 주소(또는 채널 이름)와 연락받을 방법을 적어 주세요.</label>
+    <textarea id="takedownText" class="input-box" rows="3" maxlength="300" required></textarea>
+    <button type="submit" class="btn-submit" id="btnTakedownSend" style="width:auto; padding:9px 18px;">보내기</button>
+  </form>
+</footer>
+
 <!-- Activity Detail & Review Modal -->
 <div class="modal-backdrop" id="detailModal">
   <div class="modal-box">
@@ -1260,8 +1347,9 @@
         <div id="modalCategoryLine" style="font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px;"></div>
         <h2 id="modalTitle" style="font-size:20px; font-weight:800;"></h2>
         <div class="modal-react" id="modalReactBar"></div>
+        <div class="modal-tools" id="modalTools"></div>
       </div>
-      <button class="btn-close" onclick="closeDetailModal()">✕</button>
+      <button class="btn-close" onclick="closeDetailModal()" aria-label="닫기">✕</button>
     </div>
 
     <div class="modal-grid">
@@ -1373,8 +1461,31 @@
           <div class="panel-title" id="modalReviewCountTitle">교사 후기</div>
           <div id="modalReviewsList"></div>
         </div>
+
+        <div class="panel-block" id="modalSimilarPanel" hidden>
+          <div class="panel-title" id="modalSimilarTitle">비슷한 활동</div>
+          <div id="modalSimilarList" class="similar-list"></div>
+        </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- 수업 꾸러미 -->
+<button type="button" class="pack-bar" id="packBar" onclick="openPackModal()" hidden></button>
+
+<div class="modal-backdrop" id="packModal">
+  <div class="modal-box pack-box">
+    <div class="modal-top">
+      <div>
+        <h2 id="packTitle" style="font-size:20px; font-weight:800;">수업 꾸러미</h2>
+        <p id="packSub" style="font-size:13px; color:var(--text-muted); margin-top:4px;"></p>
+      </div>
+      <button class="btn-close" onclick="closePackModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="pack-summary" id="packSummary"></div>
+    <ol class="pack-list" id="packList"></ol>
+    <div class="pack-actions" id="packActions"></div>
   </div>
 </div>
 
@@ -1615,6 +1726,7 @@
       <div class="admin-tabs" style="flex-wrap:wrap;">
         <button class="admin-tab active" id="tabBtnPending" onclick="switchAdminTab('pending')">새 수업 승인</button>
         <button class="admin-tab" id="tabBtnEdits" onclick="switchAdminTab('edits')">수정 제안 승인</button>
+        <button class="admin-tab" id="tabBtnReports" onclick="switchAdminTab('reports')">신고</button>
         <button class="admin-tab" id="tabBtnImport" onclick="switchAdminTab('import')">AI 자료 등록</button>
         <button class="admin-tab" id="tabBtnSecurity" onclick="switchAdminTab('security')">비밀번호</button>
         <button class="admin-tab" id="tabBtnDb" onclick="switchAdminTab('db')">시트 DB</button>
@@ -1628,6 +1740,11 @@
       <div id="adminTabEdits" style="display:none;">
         <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">승인하면 시트 '수업' 탭의 해당 칸이 바뀌고, 나머지 두 언어는 자동 번역되어 함께 바뀝니다.</p>
         <div id="editListContainer"></div>
+      </div>
+
+      <div id="adminTabReports" style="display:none;">
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:10px;">선생님들이 보낸 신고입니다. 후기는 서로 다른 기기 3곳에서 신고되면 처리 전까지 자동으로 숨겨집니다. 영상은 매일 자동 점검해 두 번 연속 안 나오면 목록에서 빠집니다.</p>
+        <div id="reportListContainer"></div>
       </div>
 
       <div id="adminTabImport" style="display:none;">
@@ -2892,6 +3009,7 @@
     document.getElementById("btnSubmitReview").textContent = ui.btnSubmitReview;
 
     const fui = FILTER_UI[lang] || FILTER_UI.ko;
+    renderExtrasI18n();
     document.getElementById("btnOpenFiltersText").textContent = fui.filter;
     document.getElementById("filterPanelTitle").textContent = fui.filter;
     document.getElementById("filterPanelReset").textContent = ui.resetBtn;
@@ -2936,8 +3054,9 @@
     ).join("");
 
     const sortSel = document.getElementById("sortSelect");
-    const curSort = sortSel.value || "likes";
+    const curSort = sortSel.value || "popular";
     const sortOpts = [
+      { v: "popular", l: xui().sortPopular },
       { v: "likes", l: ui.sortLikes },
       { v: "saves", l: ui.sortSaves },
       { v: "fit", l: ui.sortFit },
@@ -3163,6 +3282,7 @@
   }
 
   let _searchTimer = null;
+  let lastFiltered = [];
   function onSearchInput() {
     clearTimeout(_searchTimer);
     _searchTimer = setTimeout(() => {
@@ -3256,6 +3376,455 @@
     else if (c.k === "slot") setSel("slotSelect", "ALL");
   }
 
+
+  /* =========================================================================
+     9. 추가 기능: 고유 주소·공유, 뽑기, 상황별 바로가기, 인기순, 수업 꾸러미, 신고, 비슷한 활동
+     ========================================================================= */
+  const XUI = {
+    ko: {
+      sortPopular: "인기순", share: "공유", shareCopied: "링크를 복사했어요. 카톡이나 메신저에 붙여 넣으세요.",
+      packAdd: "＋ 꾸러미에 담기", packIn: "✓ 꾸러미에 있음", drawAgain: "다른 활동 뽑기", drawBtn: "오늘 체육 뭐 하지? 뽑기",
+      drawNone: "조건에 맞는 활동이 없어요. 필터를 조금 풀어 보세요.",
+      videoReport: "영상이 안 나와요", videoReportAsk: "신고할까요? 한 번 더 누르세요", reportDone: "알려 주셔서 고마워요. 확인 후 정리할게요.",
+      report: "신고", reportAsk: "신고할까요?", reportFail: "지금은 신고를 받을 수 없어요. 잠시 후 다시 해 주세요.",
+      similar: "비슷한 활동", similarOther: "다른 나라", presetLabel: "상황별 바로가기",
+      presets: { rain: "비 오는 날 교실", none: "준비물 없이", short: "10분 자투리", ice: "학기 초 친해지기", low: "저학년", field: "운동장에서 다 같이" },
+      packTitle: "수업 꾸러미", packSharedTitle: "받은 수업 꾸러미",
+      packSub: "활동을 이어 붙여 한 차시를 만들어요. 분을 고치면 합계가 바뀌어요.",
+      packSharedSub: "다른 선생님이 보낸 꾸러미예요. 내 꾸러미로 담아 고칠 수 있어요.",
+      packEmpty: "아직 담은 활동이 없어요. 수업 상세 화면에서 「꾸러미에 담기」를 눌러 보세요.",
+      packBar: (n, m) => `수업 꾸러미 ${n}개 · ${m}분`, packTotal: (m, t) => `합계 ${m}분 / 목표 ${t}분`,
+      packOver: m => `${m}분 넘어요`, packLeft: m => `${m}분 남아요`, packFit: "딱 맞아요",
+      packCopy: "링크 복사", packPrint: "인쇄", packClear: "비우기", packTake: "내 꾸러미로 담기", packTaken: "내 꾸러미에 담았어요.",
+      packAdded: "꾸러미에 담았어요.", packRemoved: "꾸러미에서 뺐어요.", min: "분", up: "위로", down: "아래로", remove: "빼기",
+      packMissing: n => `${n}개 활동은 지금 목록에 없어 빠졌어요.`, target: "목표",
+      footerCopyright: "영상과 영상 속 내용의 저작권은 각 유튜브 제작자에게 있습니다. 이 사이트는 유튜브 공식 플레이어로 영상을 소개하며, 놀이 방법은 영상을 보고 새로 정리한 글입니다.",
+      footerTakedown: "제작자께서 내리기를 원하시면 알려 주세요. 바로 내리겠습니다.", takedownBtn: "삭제 요청하기",
+      takedownLabel: "영상 주소(또는 채널 이름)와 연락받을 방법을 적어 주세요.", takedownSend: "보내기", takedownDone: "요청을 받았어요. 확인하는 대로 내리겠습니다."
+    },
+    en: {
+      sortPopular: "Most popular", share: "Share", shareCopied: "Link copied. Paste it into a chat or message.",
+      packAdd: "+ Add to plan", packIn: "✓ In plan", drawAgain: "Pick another", drawBtn: "Pick today's PE activity",
+      drawNone: "No activity matches. Try loosening the filters.",
+      videoReport: "Video not playing", videoReportAsk: "Report it? Tap again", reportDone: "Thanks for letting us know. We'll check it.",
+      report: "Report", reportAsk: "Report this?", reportFail: "Reports can't be sent right now. Please try again later.",
+      similar: "Similar activities", similarOther: "Other country", presetLabel: "Quick picks",
+      presets: { rain: "Rainy day indoors", none: "No equipment", short: "10-min filler", ice: "Back-to-school icebreakers", low: "Grades 1–2", field: "Whole class outdoors" },
+      packTitle: "Lesson plan", packSharedTitle: "Shared lesson plan",
+      packSub: "Chain activities into one lesson. Edit the minutes to change the total.",
+      packSharedSub: "A teacher shared this plan. Add it to your own plan to edit it.",
+      packEmpty: "No activities yet. Open an activity and tap “Add to plan”.",
+      packBar: (n, m) => `Lesson plan: ${n} · ${m} min`, packTotal: (m, t) => `Total ${m} min / target ${t} min`,
+      packOver: m => `${m} min over`, packLeft: m => `${m} min left`, packFit: "Just right",
+      packCopy: "Copy link", packPrint: "Print", packClear: "Clear", packTake: "Add to my plan", packTaken: "Added to your plan.",
+      packAdded: "Added to your plan.", packRemoved: "Removed from your plan.", min: "min", up: "Move up", down: "Move down", remove: "Remove",
+      packMissing: n => `${n} activities are no longer listed and were left out.`, target: "Target",
+      footerCopyright: "Videos and their content belong to their YouTube creators. This site shows them through YouTube's official player, and the activity steps are our own write-ups.",
+      footerTakedown: "Creators: if you'd like your video removed, tell us and we'll take it down right away.", takedownBtn: "Request removal",
+      takedownLabel: "Enter the video link (or channel name) and how we can reach you.", takedownSend: "Send", takedownDone: "Request received. We'll remove it as soon as we check."
+    },
+    ja: {
+      sortPopular: "人気順", share: "共有", shareCopied: "リンクをコピーしました。メッセージに貼り付けてください。",
+      packAdd: "＋ 授業セットに追加", packIn: "✓ 授業セットにあり", drawAgain: "別の活動を引く", drawBtn: "今日の体育はこれ！くじ引き",
+      drawNone: "条件に合う活動がありません。絞り込みを少し外してください。",
+      videoReport: "動画が再生されない", videoReportAsk: "報告しますか？もう一度押してください", reportDone: "お知らせありがとうございます。確認して対応します。",
+      report: "報告", reportAsk: "報告しますか？", reportFail: "今は報告を送れません。しばらくしてからお試しください。",
+      similar: "似ている活動", similarOther: "他の国", presetLabel: "場面別ショートカット",
+      presets: { rain: "雨の日・教室", none: "用具なし", short: "10分すきま時間", ice: "学期はじめの仲間づくり", low: "低学年", field: "運動場で全員で" },
+      packTitle: "授業セット", packSharedTitle: "共有された授業セット",
+      packSub: "活動をつないで1時間の授業にします。分を直すと合計が変わります。",
+      packSharedSub: "他の先生が共有したセットです。自分のセットに追加して編集できます。",
+      packEmpty: "まだ活動がありません。活動の詳細で「授業セットに追加」を押してください。",
+      packBar: (n, m) => `授業セット ${n}件・${m}分`, packTotal: (m, t) => `合計 ${m}分 / 目標 ${t}分`,
+      packOver: m => `${m}分オーバー`, packLeft: m => `あと${m}分`, packFit: "ちょうど",
+      packCopy: "リンクをコピー", packPrint: "印刷", packClear: "空にする", packTake: "自分のセットに追加", packTaken: "自分のセットに追加しました。",
+      packAdded: "授業セットに追加しました。", packRemoved: "授業セットから外しました。", min: "分", up: "上へ", down: "下へ", remove: "外す",
+      packMissing: n => `${n}件の活動は一覧にないため除きました。`, target: "目標",
+      footerCopyright: "動画と動画の内容の著作権は各YouTube制作者にあります。本サイトはYouTube公式プレーヤーで動画を紹介し、活動の方法は動画を見て新たにまとめた文章です。",
+      footerTakedown: "制作者の方で掲載停止をご希望の場合はお知らせください。すぐに削除します。", takedownBtn: "削除を依頼する",
+      takedownLabel: "動画のURL（またはチャンネル名）と連絡先をご記入ください。", takedownSend: "送信", takedownDone: "依頼を受け付けました。確認後すぐに削除します。"
+    }
+  };
+  function xui() { return XUI[currentLang] || XUI.ko; }
+
+  // ---------- 주소(URL) ----------
+  function setUrlParam(key, val) {
+    try {
+      const u = new URL(location.href);
+      if (val === null || val === undefined || val === "") u.searchParams.delete(key); else u.searchParams.set(key, val);
+      history.replaceState(null, "", u.pathname + (u.searchParams.toString() ? "?" + u.searchParams.toString() : "") + u.hash);
+    } catch (e) {}
+  }
+  let _urlHandled = false;
+  function handleUrlParams() {
+    if (_urlHandled) return;
+    _urlHandled = true;
+    let params;
+    try { params = new URL(location.href).searchParams; } catch (e) { return; }
+    const pack = params.get("pack");
+    if (pack) { openSharedPack(pack, params.get("m") || "", params.get("t") || ""); return; }
+    const id = params.get("id");
+    if (id && activities.some(a => a.id === id)) openDetailModal(id);
+  }
+  function shareUrlFor(id) {
+    // 정적 미리보기 페이지(a/ID.html)가 있으면 그 주소, 없으면 사이트 주소에 ?id=
+    const base = location.href.split(/[?#]/)[0].replace(/index\.html$/, "");
+    return staticMode ? `${base}a/${encodeURIComponent(id)}.html` : `${base}?id=${encodeURIComponent(id)}`;
+  }
+  async function shareLink(url, title) {
+    try {
+      if (navigator.share && /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) { await navigator.share({ title, url }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(url); showToast(xui().shareCopied); }
+    catch (e) { window.prompt(xui().share, url); }
+  }
+  function shareActivity(id) {
+    const act = activities.find(a => a.id === id);
+    if (act) shareLink(shareUrlFor(id), getLocalizedField(act, "title"));
+  }
+
+  // ---------- 상세 화면 보조 영역 ----------
+  let drawMode = false;
+  function renderModalExtras(act) {
+    const x = xui();
+    setUrlParam("id", act.id);
+    const inPack = packHas(act.id);
+    document.getElementById("modalTools").innerHTML = `
+      <button type="button" class="tool-btn" onclick="shareActivity('${act.id}')">${x.share}</button>
+      <button type="button" class="tool-btn${inPack ? " on" : ""}" onclick="togglePack('${act.id}')">${inPack ? x.packIn : x.packAdd}</button>
+      ${drawMode ? `<button type="button" class="tool-btn draw" onclick="drawActivity()">${x.drawAgain}</button>` : ""}`;
+    const bar = document.getElementById("modalSourceBar");
+    if (bar && act.videoId && !bar.querySelector(".video-report-btn")) {
+      bar.insertAdjacentHTML("beforeend", `<button type="button" class="video-report-btn" onclick="reportVideo('${act.id}', this)">${x.videoReport}</button>`);
+    }
+    renderSimilar(act);
+  }
+
+  // ---------- 뽑기 ----------
+  function drawActivity() {
+    const pool = lastFiltered.length ? lastFiltered : [];
+    if (!pool.length) { showToast(xui().drawNone); return; }
+    let pick = pool[Math.floor(Math.random() * pool.length)];
+    if (pool.length > 1 && pick.id === activeModalId) pick = pool[(pool.indexOf(pick) + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length];
+    drawMode = true;
+    openDetailModal(pick.id);
+    const box = document.querySelector("#detailModal .modal-box");
+    if (box) box.scrollTop = 0;
+  }
+
+  // ---------- 상황별 바로가기 ----------
+  const PRESETS = [
+    { k: "rain", apply: () => { selectedPlace = "교실"; } , test: () => selectedPlace === "교실" },
+    { k: "none", apply: () => { selectedEquipments = new Set(["없음(맨손)"]); }, test: () => selectedEquipments.size === 1 && selectedEquipments.has("없음(맨손)") },
+    { k: "short", apply: () => { document.getElementById("slotSelect").value = "도입·자투리"; }, test: () => document.getElementById("slotSelect").value === "도입·자투리" },
+    { k: "ice", apply: () => { selectedPlayType = "팀빌딩·협동형"; }, test: () => selectedPlayType === "팀빌딩·협동형" },
+    { k: "low", apply: () => { document.getElementById("gradeSelect").value = "1~2학년"; }, test: () => document.getElementById("gradeSelect").value === "1~2학년" },
+    { k: "field", apply: () => { selectedPlace = "운동장"; document.getElementById("sizeSelect").value = "학급 전체 (15~30명)"; },
+      test: () => selectedPlace === "운동장" && document.getElementById("sizeSelect").value === "학급 전체 (15~30명)" }
+  ];
+  function renderPresets() {
+    const x = xui();
+    const row = document.getElementById("presetRow");
+    if (!row) return;
+    row.setAttribute("aria-label", x.presetLabel);
+    row.innerHTML = PRESETS.map(p => {
+      const on = p.test();
+      return `<button type="button" class="preset-chip${on ? " on" : ""}" aria-pressed="${on}" onclick="applyPreset('${p.k}')">${x.presets[p.k]}</button>`;
+    }).join("");
+  }
+  function applyPreset(k) {
+    const p = PRESETS.find(x => x.k === k);
+    if (!p) return;
+    const wasOn = p.test();
+    const q = document.getElementById("searchInput").value;
+    resetFilters();
+    document.getElementById("searchInput").value = q;
+    if (!wasOn) p.apply();
+    visibleLimit = 36;
+    renderFilterChips();
+    renderActivities();
+  }
+
+  // ---------- 인기순 ----------
+  function popularityScore(a) {
+    const revs = a.reviews || [];
+    const avg = revs.length ? revs.reduce((s, r) => s + Number(r.rating || 0), 0) / revs.length : 0;
+    return (a.likes || 0) * 2 + (a.saves || 0) * 3 + revs.length * 4 + (revs.length ? (avg - 3) * 2 : 0);
+  }
+
+  // ---------- 비슷한 활동 ----------
+  function bigrams(text) {
+    const t = String(text || "").toLowerCase().replace(/[^0-9a-z가-힣ぁ-んァ-ン一-龥]+/g, "");
+    const set = new Set();
+    for (let i = 0; i < t.length - 1; i++) set.add(t.slice(i, i + 2));
+    return set;
+  }
+  function jaccard(a, b) {
+    if (!a.size || !b.size) return 0;
+    let n = 0; a.forEach(x => { if (b.has(x)) n++; });
+    return n / (a.size + b.size - n);
+  }
+  function renderSimilar(act) {
+    const panel = document.getElementById("modalSimilarPanel");
+    const list = document.getElementById("modalSimilarList");
+    if (!panel || !list) return;
+    const key = "_bg_" + currentLang;
+    const bg = a => a[key] || (a[key] = bigrams(getLocalizedField(a, "title")));
+    const mine = bg(act);
+    const myEq = new Set((act.equipment || []).filter(e => e !== "없음(맨손)"));
+    const scored = [];
+    for (const a of activities) {
+      if (a.id === act.id || (act.videoId && a.videoId === act.videoId)) continue;
+      let sc = (a.playType === act.playType ? 2 : 0) + 4 * jaccard(mine, bg(a));
+      if (sc < 2.2) continue;
+      if (myEq.size) sc += jaccard(myEq, new Set(a.equipment || []));
+      if (a.curriculumArea === act.curriculumArea) sc += 0.3;
+      scored.push([sc, a]);
+    }
+    scored.sort((p, q) => q[0] - p[0]);
+    const top = scored.slice(0, 4).map(p => p[1]);
+    panel.hidden = top.length === 0;
+    document.getElementById("modalSimilarTitle").textContent = xui().similar;
+    list.innerHTML = top.map(a => `
+      <button type="button" class="similar-item" onclick="openDetailModal('${a.id}'); document.querySelector('#detailModal .modal-box').scrollTop = 0;">
+        <span class="similar-meta">${tTerm("country", a.country || "한국")}${(a.country || "한국") !== (act.country || "한국") ? ` · ${xui().similarOther}` : ""} · ${tTerm("playType", a.playType)}</span>
+        <span class="similar-title">${escapeHtml(getLocalizedField(a, "title"))}</span>
+      </button>`).join("");
+  }
+
+  // ---------- 신고 ----------
+  const _reportArm = new WeakSet();
+  async function sendReport(payload, btn, askText) {
+    if (btn && !_reportArm.has(btn)) { _reportArm.add(btn); btn.dataset.label = btn.textContent; btn.textContent = askText; btn.classList.add("armed"); return false; }
+    try {
+      const res = await apiPost(Object.assign({ action: "report", deviceId }, payload));
+      if (!res || !res.ok) throw new Error((res && res.error) || "fail");
+      showToast(xui().reportDone);
+      return true;
+    } catch (e) {
+      showToast(xui().reportFail);
+      if (btn) { _reportArm.delete(btn); btn.textContent = btn.dataset.label || btn.textContent; btn.classList.remove("armed"); }
+      return false;
+    }
+  }
+  async function reportVideo(id, btn) {
+    const act = activities.find(a => a.id === id);
+    if (!act) return;
+    const ok = await sendReport({ kind: "video", targetId: act.videoId, activityId: act.id }, btn, xui().videoReportAsk);
+    if (ok && btn) { btn.disabled = true; btn.textContent = "✓"; }
+  }
+  const HIDDEN_REVIEWS_KEY = "pe_hub_hidden_reviews_v1";
+  let hiddenReviews = new Set();
+  try { hiddenReviews = new Set(JSON.parse(localStorage.getItem(HIDDEN_REVIEWS_KEY) || "[]")); } catch (e) {}
+  async function reportReview(reviewId, btn) {
+    const ok = await sendReport({ kind: "review", targetId: reviewId, activityId: activeModalId || "" }, btn, xui().reportAsk);
+    if (!ok) return;
+    hiddenReviews.add(reviewId);
+    try { localStorage.setItem(HIDDEN_REVIEWS_KEY, JSON.stringify(Array.from(hiddenReviews))); } catch (e) {}
+    activities.forEach(a => { a.reviews = (a.reviews || []).filter(r => r.reviewId !== reviewId); });
+    if (activeModalId) openDetailModal(activeModalId);
+  }
+
+  // ---------- 관리자: 신고 목록 ----------
+  let openReports = [];
+  function renderReportList() {
+    const wrap = document.getElementById("reportListContainer");
+    if (!wrap) return;
+    const btn = document.getElementById("tabBtnReports");
+    if (btn) btn.textContent = `신고 (${openReports.length})`;
+    const groups = {};
+    openReports.forEach(r => { const k = r.kind + ":" + r.targetId; (groups[k] = groups[k] || []).push(r); });
+    const actById = new Map(activities.map(a => [a.id, a]));
+    const findReview = id => { for (const a of activities) { const r = (a.reviews || []).find(x => x.reviewId === id); if (r) return [a, r]; } return [null, null]; };
+    const rows = Object.values(groups).sort((a, b) => b.length - a.length).map(g => {
+      const r0 = g[0];
+      if (r0.kind === "review") {
+        const [a, rv] = findReview(r0.targetId);
+        const text = rv ? [getLocalizedReviewText(rv.caution), getLocalizedReviewText(rv.upgradeTip)].filter(Boolean).join(" / ") : "(이미 숨겨졌거나 삭제된 후기)";
+        return `<div class="panel-block" style="margin-bottom:8px;">
+          <div style="font-size:12px; color:var(--text-muted);">후기 신고 ${g.length}건 · ${escapeHtml(a ? getLocalizedField(a, "title") : r0.activityId)}</div>
+          <div style="font-size:13px; margin:6px 0;">${escapeHtml(text)}</div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="review-del-btn" onclick="resolveReport('${escapeHtml(r0.targetId)}','review', true)">후기 삭제</button>
+            <button type="button" class="btn-recommend" onclick="resolveReport('${escapeHtml(r0.targetId)}','review', false)">문제없음</button>
+          </div></div>`;
+      }
+      if (r0.kind === "takedown") {
+        return `<div class="panel-block" style="margin-bottom:8px; border-color:#fca5a5;">
+          <div style="font-size:12px; color:#b91c1c; font-weight:700;">제작자 삭제 요청 · ${escapeHtml(r0.createdAt || "")}</div>
+          <div style="font-size:13px; margin:6px 0; white-space:pre-line;">${escapeHtml(r0.reason || r0.targetId)}</div>
+          <button type="button" class="btn-recommend" onclick="resolveReport('${escapeHtml(r0.targetId)}','takedown', false)">처리함 (시트에서 해당 수업 status를 '숨김'으로)</button>
+        </div>`;
+      }
+      const a = actById.get(r0.activityId) || activities.find(x => x.videoId === r0.targetId);
+      return `<div class="panel-block" style="margin-bottom:8px;">
+        <div style="font-size:12px; color:var(--text-muted);">영상 신고 ${g.length}건</div>
+        <div style="font-size:13px; margin:6px 0;">${escapeHtml(a ? getLocalizedField(a, "title") : r0.activityId)} · <a href="https://www.youtube.com/watch?v=${encodeURIComponent(r0.targetId)}" target="_blank" rel="noopener" style="color:var(--blue);">유튜브에서 열기</a></div>
+        <button type="button" class="btn-recommend" onclick="resolveReport('${escapeHtml(r0.targetId)}','video', false)">확인함</button>
+      </div>`;
+    });
+    const hidden = (staticMeta && staticMeta.hidden) || [];
+    const hiddenHtml = hidden.length ? `<details class="panel-block"><summary style="cursor:pointer; font-size:13px; font-weight:700;">영상이 안 나와 자동으로 숨긴 수업 ${hidden.length}건</summary>
+      <div style="font-size:12.5px; margin-top:8px; line-height:1.7;">${hidden.map(h => `${escapeHtml(h.id)} · <a href="https://www.youtube.com/watch?v=${encodeURIComponent(h.videoId)}" target="_blank" rel="noopener" style="color:var(--blue);">${escapeHtml(h.videoId)}</a> (${h.s === "gone" ? "삭제·비공개" : "퍼가기 막힘"})`).join("<br>")}</div></details>` : "";
+    wrap.innerHTML = (rows.length ? rows.join("") : `<div style="padding:16px; color:var(--text-muted); font-size:13px;">처리할 신고가 없습니다.</div>`) + hiddenHtml;
+  }
+  async function resolveReport(targetId, kind, deleteIt) {
+    try {
+      if (deleteIt) {
+        const d = await apiPost({ action: "deleteReview", pin: adminPin, reviewId: targetId });
+        if (!d || !d.ok) throw new Error("fail");
+        activities.forEach(a => { a.reviews = (a.reviews || []).filter(r => r.reviewId !== targetId); });
+      }
+      const res = await apiPost({ action: "resolveReport", pin: adminPin, targetId, kind });
+      if (!res || !res.ok) throw new Error("fail");
+      openReports = openReports.filter(r => !(r.targetId === targetId && r.kind === kind));
+      renderReportList();
+      showToast("처리했습니다.");
+    } catch (e) { showToast("처리하지 못했습니다. Apps Script를 새 버전으로 배포했는지 확인해 주세요."); }
+  }
+
+  // ---------- 수업 꾸러미 ----------
+  const PACK_KEY = "pe_hub_pack_v1";
+  let pack = { items: [], target: 40 };
+  let packView = null; // 받은 꾸러미를 보는 중이면 { items, target }
+  try { const p = JSON.parse(localStorage.getItem(PACK_KEY) || "null"); if (p && Array.isArray(p.items)) pack = { items: p.items.slice(0, 30), target: Number(p.target) || 40 }; } catch (e) {}
+  function savePack() { try { localStorage.setItem(PACK_KEY, JSON.stringify(pack)); } catch (e) {} renderPackBar(); }
+  function packHas(id) { return pack.items.some(i => i.id === id); }
+  function defaultMinutes(a) { return Math.max(5, Math.min(80, Number(a && a.defaultDur) || 20)); }
+  function togglePack(id) {
+    const act = activities.find(a => a.id === id);
+    if (!act) return;
+    if (packHas(id)) { pack.items = pack.items.filter(i => i.id !== id); showToast(xui().packRemoved); }
+    else { pack.items.push({ id, m: defaultMinutes(act) }); showToast(xui().packAdded); }
+    savePack();
+    if (activeModalId === id) renderModalExtras(act);
+  }
+  function packTotal(p) { return p.items.reduce((s, i) => s + (Number(i.m) || 0), 0); }
+  function renderPackBar() {
+    const bar = document.getElementById("packBar");
+    if (!bar) return;
+    const n = pack.items.length;
+    bar.hidden = n === 0;
+    bar.textContent = xui().packBar(n, packTotal(pack));
+    document.body.classList.toggle("has-pack", n > 0);
+  }
+  function openPackModal() { packView = null; renderPackModal(); document.getElementById("packModal").classList.add("open"); }
+  function closePackModal() {
+    document.getElementById("packModal").classList.remove("open");
+    if (packView) { packView = null; setUrlParam("pack", null); setUrlParam("m", null); setUrlParam("t", null); }
+  }
+  function openSharedPack(idsStr, minsStr, targetStr) {
+    const ids = idsStr.split(",").map(s => s.trim()).filter(Boolean).slice(0, 30);
+    const mins = minsStr.split(",").map(Number);
+    const known = new Map(activities.map(a => [a.id, a]));
+    const items = ids.map((id, i) => ({ id, m: Number.isFinite(mins[i]) && mins[i] > 0 ? Math.min(80, mins[i]) : defaultMinutes(known.get(id)) })).filter(i => known.has(i.id));
+    packView = { items, target: Number(targetStr) || 40, missing: ids.length - items.length };
+    renderPackModal();
+    document.getElementById("packModal").classList.add("open");
+  }
+  function renderPackModal() {
+    const x = xui();
+    const p = packView || pack;
+    const shared = !!packView;
+    const byId = new Map(activities.map(a => [a.id, a]));
+    document.getElementById("packTitle").textContent = shared ? x.packSharedTitle : x.packTitle;
+    document.getElementById("packSub").textContent = shared ? x.packSharedSub : x.packSub;
+    const total = packTotal(p);
+    const diff = total - p.target;
+    const status = diff > 0 ? x.packOver(diff) : diff < 0 ? x.packLeft(-diff) : x.packFit;
+    document.getElementById("packSummary").innerHTML = p.items.length ? `
+      <div class="pack-total"><strong>${x.packTotal(total, p.target)}</strong> <span class="pack-status${diff > 0 ? " over" : ""}">${status}</span></div>
+      <div class="pack-meter" aria-hidden="true"><span style="width:${Math.min(100, Math.round(total / Math.max(1, p.target) * 100))}%"></span></div>
+      ${shared ? "" : `<label class="pack-target">${x.target} <select onchange="pack.target = Number(this.value); savePack(); renderPackModal();">${[40, 80, 20].map(t => `<option value="${t}" ${p.target === t ? "selected" : ""}>${t}${x.min}</option>`).join("")}</select></label>`}
+      ${shared && p.missing ? `<p class="pack-note">${x.packMissing(p.missing)}</p>` : ""}` : "";
+    const list = document.getElementById("packList");
+    list.innerHTML = p.items.length ? p.items.map((it, i) => {
+      const a = byId.get(it.id);
+      if (!a) return "";
+      return `<li class="pack-item">
+        <div class="pack-item-main">
+          <button type="button" class="pack-item-title" onclick="closePackModal(); openDetailModal('${a.id}')">${escapeHtml(getLocalizedField(a, "title"))}</button>
+          <div class="pack-item-meta">${tTerm("playType", a.playType)} · ${escapeHtml(getLocalizedField(a, "equipmentDetail"))}</div>
+          <div class="pack-item-rules">${escapeHtml(getLocalizedField(a, "rules"))}</div>
+        </div>
+        <div class="pack-item-side">
+          ${shared ? `<span class="pack-min">${it.m}${x.min}</span>` : `
+          <label class="pack-min"><input type="number" min="1" max="80" value="${it.m}" aria-label="${x.min}" onchange="pack.items[${i}].m = Math.max(1, Math.min(80, Number(this.value) || 1)); savePack(); renderPackModal();">${x.min}</label>
+          <div class="pack-move">
+            <button type="button" onclick="movePack(${i}, -1)" aria-label="${x.up}" ${i === 0 ? "disabled" : ""}>↑</button>
+            <button type="button" onclick="movePack(${i}, 1)" aria-label="${x.down}" ${i === p.items.length - 1 ? "disabled" : ""}>↓</button>
+            <button type="button" onclick="pack.items.splice(${i}, 1); savePack(); renderPackModal();" aria-label="${x.remove}">✕</button>
+          </div>`}
+        </div>
+      </li>`;
+    }).join("") : `<li class="pack-empty">${x.packEmpty}</li>`;
+    document.getElementById("packActions").innerHTML = p.items.length ? (shared
+      ? `<button type="button" class="btn-submit" onclick="takeSharedPack()">${x.packTake}</button>`
+      : `<button type="button" class="btn-submit" onclick="sharePack()">${x.packCopy}</button>
+         <button type="button" class="btn-recommend" onclick="window.print()">${x.packPrint}</button>
+         <button type="button" class="btn-recommend" onclick="pack.items = []; savePack(); renderPackModal();">${x.packClear}</button>`) : "";
+  }
+  function movePack(i, d) {
+    const j = i + d;
+    if (j < 0 || j >= pack.items.length) return;
+    [pack.items[i], pack.items[j]] = [pack.items[j], pack.items[i]];
+    savePack(); renderPackModal();
+  }
+  function sharePack() {
+    const base = location.href.split(/[?#]/)[0];
+    const url = `${base}?pack=${pack.items.map(i => encodeURIComponent(i.id)).join(",")}&m=${pack.items.map(i => i.m).join(",")}&t=${pack.target}`;
+    shareLink(url, xui().packTitle);
+  }
+  function takeSharedPack() {
+    if (!packView) return;
+    packView.items.forEach(it => { if (!packHas(it.id)) pack.items.push({ id: it.id, m: it.m }); });
+    pack.items = pack.items.slice(0, 30);
+    pack.target = packView.target || pack.target;
+    savePack();
+    packView = null;
+    setUrlParam("pack", null); setUrlParam("m", null); setUrlParam("t", null);
+    showToast(xui().packTaken);
+    renderPackModal();
+  }
+
+  // ---------- 제작자 삭제 요청 ----------
+  function openTakedown() {
+    const f = document.getElementById("takedownForm");
+    f.hidden = !f.hidden;
+    if (!f.hidden) document.getElementById("takedownText").focus();
+  }
+  async function submitTakedown(ev) {
+    ev.preventDefault();
+    const text = document.getElementById("takedownText").value.trim();
+    if (!text) return;
+    const vid = extractYoutubeId(text) || "site";
+    const btn = document.getElementById("btnTakedownSend");
+    btn.disabled = true;
+    try {
+      const res = await apiPost({ action: "report", kind: "takedown", targetId: vid + "-" + Date.now().toString(36), activityId: "", deviceId, reason: text });
+      if (!res || !res.ok) throw new Error("fail");
+      document.getElementById("takedownText").value = "";
+      document.getElementById("takedownForm").hidden = true;
+      showToast(xui().takedownDone);
+    } catch (e) { showToast(xui().reportFail); }
+    btn.disabled = false;
+  }
+
+  // 언어가 바뀌면 새 기능 글자도 바꾼다
+  function renderExtrasI18n() {
+    const x = xui();
+    const d = document.getElementById("btnDraw");
+    if (d) d.textContent = x.drawBtn;
+    document.getElementById("footerCopyright").textContent = x.footerCopyright;
+    document.getElementById("footerTakedownText").textContent = x.footerTakedown;
+    document.getElementById("btnTakedown").textContent = x.takedownBtn;
+    document.getElementById("takedownLabel").textContent = x.takedownLabel;
+    document.getElementById("btnTakedownSend").textContent = x.takedownSend;
+    renderPresets();
+    renderPackBar();
+    if (document.getElementById("packModal").classList.contains("open")) renderPackModal();
+  }
+
   function resetPageAndRender() {
     visibleLimit = 36;
     renderActivities();
@@ -3278,7 +3847,7 @@
     document.getElementById("sizeSelect").value = "전체 인원";
     document.getElementById("gradeSelect").value = "ALL";
     document.getElementById("slotSelect").value = "ALL";
-    document.getElementById("sortSelect").value = "likes";
+    document.getElementById("sortSelect").value = "popular";
     renderFilterChips();
     renderActivities();
   }
@@ -3433,7 +4002,7 @@
 
     const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
     const statCache = new Map();
-    if (sortVal !== "likes" && sortVal !== "saves") filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
+    if (!["likes", "saves", "popular"].includes(sortVal)) filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
     filtered.sort((a, b) => {
       if (termCandidates.length > 0) {
         const sA = matchScoreMap[a.id] || 0;
@@ -3445,6 +4014,7 @@
         const mB = selEqArr.filter(eq => b.equipment.includes(eq)).length;
         if (mB !== mA) return mB - mA;
       }
+      if (sortVal === "popular") return popularityScore(b) - popularityScore(a);
       if (sortVal === "likes") return b.likes - a.likes;
       if (sortVal === "saves") return (b.saves || 0) - (a.saves || 0);
       const stA = statCache.get(a.id);
@@ -3458,6 +4028,8 @@
     document.getElementById("resultsCountText").innerHTML = ui.resultsCount(filtered.length);
     updateSavedFilterButton();
     renderActiveFilters(filtered.length);
+    lastFiltered = filtered;
+    renderPresets();
 
     const grid = document.getElementById("cardsGrid");
     const loadMoreWrap = document.getElementById("loadMoreWrap");
@@ -3583,7 +4155,9 @@
       videoBox.innerHTML = "";
     }
 
-    const srcInfo = act.channel ? `${ui.sourceLabel} ${escapeHtml(act.channel)}${act.videoTitle ? " · " + escapeHtml(act.videoTitle) : ""}` : ui.sourcePrefix;
+    const chName = act.channel ? (act.channelUrl && /^https:\/\/www\.youtube\.com\//.test(act.channelUrl)
+      ? `<a class="channel-link" href="${escapeHtml(act.channelUrl)}" target="_blank" rel="noopener">${escapeHtml(act.channel)}</a>` : escapeHtml(act.channel)) : "";
+    const srcInfo = act.channel ? `${ui.sourceLabel} ${chName}${act.videoTitle ? " · " + escapeHtml(act.videoTitle) : ""}` : ui.sourcePrefix;
     document.getElementById("modalSourceBar").innerHTML = `
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:8px;">${srcInfo}</span>
       <a href="${escapeHtml(act.youtubeUrl)}" target="_blank" rel="noopener">${ui.openYoutube}</a>
@@ -3678,7 +4252,7 @@
         <div class="review-card">
           <div class="review-meta">
             <span>${ui.revMetaLine(escapeHtml(tName), gText, Number(r.fitScore) || "-", Number(r.duration) || "-")} · ★${Number(r.rating) || "-"}</span>
-            <span>${escapeHtml(r.date)}${isAdminAuthenticated && r.reviewId ? ` <button type="button" class="review-del-btn" onclick="deleteReview('${escapeHtml(r.reviewId)}')">삭제</button>` : ""}</span>
+            <span>${escapeHtml(r.date)}${isAdminAuthenticated && r.reviewId ? ` <button type="button" class="review-del-btn" onclick="deleteReview('${escapeHtml(r.reviewId)}')">삭제</button>` : ""}${!isAdminAuthenticated && r.reviewId ? ` <button type="button" class="review-report-btn" onclick="reportReview('${escapeHtml(r.reviewId)}', this)">${xui().report}</button>` : ""}</span>
           </div>
           ${cText ? `<div style="margin-bottom:4px; color:var(--text-secondary); white-space:pre-line;"><strong style="color:var(--text-primary);">${ui.revCautionLabel}</strong> ${escapeHtml(cText)}</div>` : ""}
           ${uText ? `<div style="color:var(--text-secondary); white-space:pre-line;"><strong style="color:var(--text-primary);">${ui.revTipLabel}</strong> ${escapeHtml(uText)}</div>` : ""}
@@ -3687,12 +4261,15 @@
     }).join("");
 
     document.getElementById("detailModal").classList.add("open");
+    renderModalExtras(act);
   }
 
   function closeDetailModal() {
     document.getElementById("modalVideoBox").innerHTML = "";
     document.getElementById("detailModal").classList.remove("open");
     activeModalId = null;
+    drawMode = false;
+    setUrlParam("id", null);
   }
 
   /* =========================================================================
@@ -3771,6 +4348,7 @@
       },
       source: o.source || "",
       channel: o.channel || "",
+      channelUrl: o.channelUrl || "",
       videoTitle: o.videoTitle || "",
       evidence: String(o.evidence || ""),
       confidence: o.confidence || "",
@@ -3927,7 +4505,7 @@
     });
     tableToObjects(data.reviews).forEach(o => {
       const a = byId.get(String(o.activityId));
-      if (a) a.reviews.push(rowToReview(o));
+      if (a && !hiddenReviews.has(String(o.reviewId))) a.reviews.push(rowToReview(o));
     });
   }
 
@@ -3951,10 +4529,12 @@
       lastSyncAt = staticMeta.at || "";
       setSyncStatus("ok");
       renderActivities();
+      handleUrlParams();
     } catch (e) {
       // 정적 파일이 아직 없거나 받지 못하면 예전처럼 시트에서 전부 받는다
       await syncFromSheet(true);
       if (!dataReady) { activities = buildBaseActivities(); dataReady = true; renderActivities(); }
+      handleUrlParams();
       return;
     }
     loadSocial();
@@ -4109,6 +4689,7 @@
     const payload = {
       action: "addReview",
       activityId: act.id,
+      deviceId,
       title: getLocalizedField(act, "title"),
       review: {
         teacher: document.getElementById("revTeacher").value.trim(),
@@ -4331,7 +4912,7 @@
   }
 
   function switchAdminTab(tab) {
-    ["pending", "edits", "import", "security", "db"].forEach(t => {
+    ["pending", "edits", "reports", "import", "security", "db"].forEach(t => {
       const cap = t.charAt(0).toUpperCase() + t.slice(1);
       document.getElementById("tabBtn" + cap).classList.toggle("active", t === tab);
       document.getElementById("adminTab" + cap).style.display = t === tab ? "block" : "none";
@@ -4350,13 +4931,16 @@
       }
       pendingProposals = res.proposals || [];
       pendingEdits = res.edits || [];
+      openReports = res.reports || [];
     } catch (e) {
       pendingProposals = [];
       pendingEdits = [];
+      openReports = [];
       showToast("승인 대기 목록을 불러오지 못했습니다.");
     }
     renderPendingList();
     renderEditList();
+    renderReportList();
     updateAdminHeaderButton();
   }
 
