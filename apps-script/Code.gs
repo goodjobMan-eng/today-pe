@@ -10,6 +10,9 @@
  *   새수업제안  : 새 수업 제안 (관리자 승인 후 수업 탭으로 이동)
  *   수정제안    : 기존 수업 설명 수정 제안 (관리자 승인 후 수업 탭에 반영)
  *
+ * 검색기록은 이 파일이 아니라 그해 「YYYY 후기·추천 기록 - 오늘 체육 뭐 하지」 파일의 '검색기록' 탭에 쌓입니다.
+ * (그해 첫 검색이 들어올 때 파일이 없으면 자동으로 만들고, 연도별 보관 목록에 등록합니다.)
+ *
  * 관리자 비밀번호는 이 스크립트 안(스크립트 속성)에만 저장되고 사이트 소스에는 없습니다.
  */
 
@@ -102,6 +105,7 @@ function doPost(e) {
     if (a === 'proposeEdit') return json_(withLock_(() => proposeEdit_(body.edit || {})));
     if (a === 'report') return json_(withLock_(() => report_(body)));
     if (a === 'checkPin') return json_({ ok: checkPin_(body.pin) });
+    if (a === 'logSearches') return json_(withLock_(() => logSearches_(body.items)));
 
     // 관리자만 가능
     if (!checkPin_(body.pin)) return json_({ ok: false, error: 'auth' });
@@ -403,6 +407,68 @@ function reviewSources_() {
     if (sh) out.push({ src: String(a.year), rows: Math.max(sh.getLastRow() - 1, 0) });
   });
   return { ok: true, sources: out };
+}
+
+/* ----------------------------- 검색기록 -----------------------------
+   사이트가 검색어를 모아 두었다가 한 번에 보낸다(보통 방문 한 번에 요청 한 번).
+   그해 「후기·추천 기록」 파일에 '검색기록' 탭으로 쌓는다. 메인 시트에는 아무것도 쓰지 않는다.
+   results 가 0인 줄이 '찾았는데 수업이 없던 검색어'라서 앞으로 모을 수업을 정할 때 참고하면 된다. */
+const SEARCH_LOG_TAB = '검색기록';
+const SEARCH_LOG_HEADERS = ['createdAt', 'query', 'lang', 'results', 'filters', 'source'];
+const SEARCH_SOURCES = ['enter', 'button', 'chip', 'typed'];
+
+// 그해 「후기·추천 기록」 파일. 없으면 만들고 연도별 보관 목록에 등록한다(나중에 archiveYear_가 같은 파일을 이어서 씀)
+function yearFile_(year) {
+  const archives = getArchives_();
+  const entry = archives.find(a => Number(a.year) === year);
+  if (entry) {
+    try { return SpreadsheetApp.openById(entry.id); } catch (e) { return null; }
+  }
+  const file = SpreadsheetApp.create(year + ' 후기·추천 기록 - 오늘 체육 뭐 하지');
+  archives.push({ year: year, id: file.getId(), name: file.getName() });
+  archives.sort((a, b) => a.year - b.year);
+  PropertiesService.getScriptProperties().setProperty(ARCHIVE_PROP, JSON.stringify(archives));
+  return file;
+}
+
+function searchLogSheet_(file) {
+  let sh = file.getSheetByName(SEARCH_LOG_TAB);
+  if (sh) return sh;
+  // 새 파일의 기본 시트(Sheet1/시트1)가 비어 있으면 그걸 검색기록 탭으로 바꿔 쓴다
+  const blank = file.getSheetByName('Sheet1') || file.getSheetByName('시트1');
+  if (blank && blank.getLastRow() === 0) sh = blank.setName(SEARCH_LOG_TAB);
+  else sh = file.insertSheet(SEARCH_LOG_TAB);
+  sh.getRange(1, 1, 1, SEARCH_LOG_HEADERS.length).setValues([SEARCH_LOG_HEADERS]);
+  sh.setFrozenRows(1);
+  return sh;
+}
+
+function logSearches_(items) {
+  if (!Array.isArray(items) || !items.length) return { ok: true, added: 0 };
+  const nowMs = Date.now();
+  const rows = items.slice(0, 50).map(it => {
+    if (!it || typeof it !== 'object') return null;
+    const q = clean_(it.q, 100);
+    if (!q) return null;
+    // 브라우저가 적은 시각을 쓰되, 미래이거나 7일보다 오래된 값이면 지금 시각으로
+    const at = Number(it.at);
+    const t = isFinite(at) && at <= nowMs + 5 * 60000 && at >= nowMs - 7 * 86400000 ? new Date(at) : new Date();
+    const n = Number(it.n);
+    return [
+      Utilities.formatDate(t, TZ, 'yyyy-MM-dd HH:mm'),
+      q,
+      LANGS.indexOf(it.lang) >= 0 ? it.lang : '',
+      isFinite(n) && n >= 0 ? Math.min(Math.round(n), 1000000) : '',
+      clean_(it.filters, 200),
+      SEARCH_SOURCES.indexOf(it.src) >= 0 ? it.src : ''
+    ].map(safeCell_);
+  }).filter(Boolean);
+  if (!rows.length) return { ok: true, added: 0 };
+  const file = yearFile_(Number(Utilities.formatDate(new Date(), TZ, 'yyyy')));
+  if (!file) return { ok: false, error: '올해 기록 파일을 열 수 없습니다.' };
+  const sh = searchLogSheet_(file);
+  sh.getRange(sh.getLastRow() + 1, 1, rows.length, SEARCH_LOG_HEADERS.length).setValues(rows);
+  return { ok: true, added: rows.length };
 }
 
 /* ----------------------------- 신고 (후기·영상) ----------------------------- */

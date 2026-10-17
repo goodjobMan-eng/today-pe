@@ -1223,10 +1223,10 @@
           placeholder="활동명·활동 내용 검색 (예: 피구, 킨볼, 협동, 가위바위보)"
           oninput="onSearchInput()"
           oncompositionend="onSearchInput()"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();recordSearchQuery(this.value);clearTimeout(_searchTimer);resetPageAndRender();this.blur();}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();recordSearchQuery(this.value);clearTimeout(_searchTimer);resetPageAndRender();logSearch('enter');this.blur();}"
         />
       </div>
-      <button type="button" class="btn-propose btn-search" id="btnSearchExec" onclick="recordSearchQuery(document.getElementById('searchInput').value);clearTimeout(_searchTimer);resetPageAndRender();">검색</button>
+      <button type="button" class="btn-propose btn-search" id="btnSearchExec" onclick="recordSearchQuery(document.getElementById('searchInput').value);clearTimeout(_searchTimer);resetPageAndRender();logSearch('button');">검색</button>
       <button type="button" class="btn-reset" id="btnResetText" onclick="resetFilters()">초기화</button>
       <button type="button" class="btn-open-filters" id="btnOpenFilters" onclick="openFilterPanel()" aria-controls="filterPanel" aria-expanded="false">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M6 10h8M8.5 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -3128,7 +3128,82 @@
     saveData();
     renderPopularKeywords();
     resetPageAndRender();
+    logSearch("chip");
   }
+
+  /* ===== 검색 기록 (2026-10) =====
+     검색어를 브라우저에 잠깐 모아 두었다가 페이지를 나갈 때(또는 20개가 모이면) 한 번에 시트로 보낸다.
+     시트에는 그해 「후기·추천 기록」 파일의 '검색기록' 탭에 쌓인다. 기기 번호 등 개인 정보는 보내지 않는다. */
+  const SEARCH_LOG_KEY = "pe_hub_search_log_v1";
+  const SEARCH_LOG_SEND_AT = 20;   // 이만큼 모이면 페이지를 나가기 전이라도 보냄
+  const SEARCH_LOG_TYPED_MS = 3000; // 엔터 없이 입력만 하고 3초 동안 그대로 두면 검색한 것으로 봄
+  let searchLogQueue = [];
+  let lastLoggedSearch = "";
+  let _searchLogTimer = null;
+  let _searchLogPending = false;
+  let _searchLogSending = false;
+  try {
+    searchLogQueue = JSON.parse(safeGetStorage(SEARCH_LOG_KEY) || "[]");
+    if (!Array.isArray(searchLogQueue)) searchLogQueue = [];
+  } catch (e) { searchLogQueue = []; }
+
+  function saveSearchLogQueue() {
+    safeSetStorage(SEARCH_LOG_KEY, JSON.stringify(searchLogQueue));
+  }
+
+  // source: enter(엔터) · button(검색 버튼) · chip(추천 검색어) · typed(입력 후 3초 그대로)
+  function logSearch(source) {
+    clearTimeout(_searchLogTimer);
+    _searchLogPending = false;
+    if (!dataReady) return;
+    const q = (document.getElementById("searchInput").value || "").trim().slice(0, 100);
+    if (!q) return;
+    const key = q.toLowerCase() + "|" + currentLang;
+    if (key === lastLoggedSearch) return; // 같은 검색어를 연달아 두 번 세지 않음
+    lastLoggedSearch = key;
+    let filters = "";
+    try { filters = getActiveFilterList().map(f => f.label).join(" / ").slice(0, 200); } catch (e) {}
+    searchLogQueue.push({ q: q, lang: currentLang, n: lastFiltered.length, filters: filters, src: source, at: Date.now() });
+    if (searchLogQueue.length > 100) searchLogQueue = searchLogQueue.slice(-100);
+    saveSearchLogQueue();
+    if (searchLogQueue.length >= SEARCH_LOG_SEND_AT) flushSearchLog(false);
+  }
+
+  function scheduleTypedSearchLog() {
+    clearTimeout(_searchLogTimer);
+    _searchLogPending = true;
+    _searchLogTimer = setTimeout(() => logSearch("typed"), SEARCH_LOG_TYPED_MS);
+  }
+
+  // leaving: 페이지를 떠나는 중이면 sendBeacon(브라우저가 닫혀도 전송), 아니면 fetch로 보내고 성공하면 지움
+  function flushSearchLog(leaving) {
+    if (!searchLogQueue.length || !gasWebAppUrl || _searchLogSending) return;
+    const items = searchLogQueue.slice(0, 50);
+    const body = JSON.stringify({ action: "logSearches", items: items });
+    const drop = () => { searchLogQueue = searchLogQueue.slice(items.length); saveSearchLogQueue(); };
+    if (leaving) {
+      let sent = false;
+      try { if (navigator.sendBeacon) sent = navigator.sendBeacon(gasWebAppUrl, new Blob([body], { type: "text/plain;charset=utf-8" })); } catch (e) {}
+      if (!sent) { try { fetch(gasWebAppUrl, { method: "POST", body: body, keepalive: true }).catch(() => {}); sent = true; } catch (e) {} }
+      if (sent) drop();
+      return;
+    }
+    _searchLogSending = true;
+    fetch(gasWebAppUrl, { method: "POST", body: body })
+      .then(res => res.ok ? res.json() : null)
+      .then(j => { if (j && j.ok) drop(); })
+      .catch(() => {})
+      .finally(() => { _searchLogSending = false; });
+  }
+
+  function onPageLeave() {
+    if (_searchLogPending) logSearch("typed");
+    flushSearchLog(true);
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") onPageLeave(); });
+  window.addEventListener("pagehide", onPageLeave);
+  // 지난번에 못 보낸 기록이 남아 있으면 사이트가 뜨고 조금 뒤에 보냄
+  setTimeout(() => flushSearchLog(false), 8000);
 
   function extractYoutubeId(url) {
     if (!url) return "";
@@ -3313,6 +3388,7 @@
     _searchTimer = setTimeout(() => {
       visibleLimit = 36;
       renderActivities();
+      scheduleTypedSearchLog();
     }, 250);
   }
 
