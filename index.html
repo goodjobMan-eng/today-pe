@@ -1275,8 +1275,27 @@
       </div>
 
       <div class="filter-line">
-        <div class="filter-label" id="lblPlayType">놀이·활동 유형</div>
-        <div class="chip-group" id="playTypeChips"></div>
+        <div class="filter-label">
+          <div id="lblPlayMode">놀이 방식</div>
+          <div class="lbl-multi-hint" style="font-size:11px; font-weight:500; color:var(--blue); margin-top:2px;">중복 선택 가능</div>
+        </div>
+        <div class="chip-group" id="playModeChips"></div>
+      </div>
+
+      <div class="filter-line">
+        <div class="filter-label">
+          <div id="lblSportType">종목·운동</div>
+          <div class="lbl-multi-hint" style="font-size:11px; font-weight:500; color:var(--blue); margin-top:2px;">중복 선택 가능</div>
+        </div>
+        <div class="chip-group" id="sportTypeChips"></div>
+      </div>
+
+      <div class="filter-line">
+        <div class="filter-label">
+          <div id="lblStage">수업 단계</div>
+          <div class="lbl-multi-hint" style="font-size:11px; font-weight:500; color:var(--blue); margin-top:2px;">중복 선택 가능</div>
+        </div>
+        <div class="chip-group" id="stageChips"></div>
       </div>
 
       <div class="filter-line">
@@ -1550,37 +1569,26 @@
             <option value="안전·인성">안전·인성 (Safety & Teamwork / 安全・協同)</option>
           </select>
         </div>
-        <div>
-          <label id="lblNewPlayType" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">놀이·활동 유형</label>
-          <select id="newPlayType" class="input-box">
-            <option value="준비운동·코디네이션">준비운동·코디네이션</option>
-            <option value="팀빌딩·협동형">팀빌딩·협동형</option>
-            <option value="술래잡기·태그형">술래잡기·태그형</option>
-            <option value="피구·투척형">피구·투척형</option>
-            <option value="축구·발구기형">축구·발구기형</option>
-            <option value="농구·핸드볼형">농구·핸드볼형</option>
-            <option value="럭비·보물탈환형">럭비·보물탈환형</option>
-            <option value="네트·라켓형">네트·라켓형</option>
-            <option value="필드·티볼·야구형">필드·티볼·야구형</option>
-            <option value="플라잉디스크·하키형">플라잉디스크·하키형</option>
-            <option value="줄넘기·리듬스텝형">줄넘기·리듬스텝형</option>
-            <option value="육상·릴레이·순발력형">육상·릴레이·순발력형</option>
-            <option value="표적·컬링·보치아형">표적·컬링·보치아형</option>
-            <option value="전래·전통놀이형">전래·전통놀이형</option>
-          </select>
-        </div>
       </div>
 
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">놀이 방식 <span style="font-weight:400; color:var(--text-muted);">(여러 개 가능 · 해당 없으면 비워 두기)</span></label>
+        <div class="chip-group pick-group" id="newPlayModes"></div>
+      </div>
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">종목·운동 <span style="font-weight:400; color:var(--text-muted);">(여러 개 가능 · 해당 없으면 비워 두기)</span></label>
+        <div class="chip-group pick-group" id="newSportTypes"></div>
+      </div>
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">수업 단계 <span style="font-weight:400; color:var(--text-muted);">(여러 개 가능)</span></label>
+        <div class="chip-group pick-group" id="newStages"></div>
+      </div>
+
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">수업 장소 <span style="font-weight:400; color:var(--text-muted);">(여러 개 가능)</span></label>
+        <div class="chip-group pick-group" id="newPlaces"></div>
+      </div>
       <div class="form-row">
-        <div>
-          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">수업 장소</label>
-          <select id="newPlace" class="input-box">
-            <option value="교실,강당">교실 · 강당</option>
-            <option value="강당,운동장">강당 · 운동장</option>
-            <option value="교실">교실</option>
-            <option value="교실,강당,운동장">교실 · 강당 · 운동장</option>
-          </select>
-        </div>
         <div>
           <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">적정 인원</label>
           <select id="newGroupSize" class="input-box">
@@ -1589,50 +1597,19 @@
             <option value="대집단·합동 (30명+)">대집단·합동 (30명+)</option>
           </select>
         </div>
+        <div></div>
       </div>
-
-      <div class="form-row">
-        <div>
-          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">대표 교구 분류</label>
-          <select id="newEquipmentTag" class="input-box">
-            <option value="없음(맨손)">없음(맨손)</option>
-            <option value="폼볼/피구공">폼볼/피구공</option>
-            <option value="축구/농구/배구공">축구/농구/배구공</option>
-            <option value="럭비공/태그벨트">럭비공/태그벨트</option>
-            <option value="큰공(짐볼/킨볼)">큰공(짐볼/킨볼)</option>
-            <option value="풍선/탱탱볼/비치볼">풍선/탱탱볼/비치볼</option>
-            <option value="콩주머니(빈백)/보치아">콩주머니(빈백)/보치아</option>
-            <option value="플라잉디스크(원반)">플라잉디스크(원반)</option>
-            <option value="줄넘기/긴줄/고무줄">줄넘기/긴줄/고무줄</option>
-            <option value="라켓/스틱(플로어볼/패드민턴)">라켓/스틱(플로어볼/패드민턴)</option>
-            <option value="훌라후프">훌라후프</option>
-            <option value="접시콘/라바콘">접시콘/라바콘</option>
-            <option value="원마커(스팟)">원마커(스팟)</option>
-            <option value="펀스틱(스펀지봉)">펀스틱(스펀지봉)</option>
-            <option value="미트/스태킹컵(종이컵)">미트/스태킹컵(종이컵)</option>
-            <option value="스카프/꼬리끈">스카프/꼬리끈</option>
-            <option value="스텝래더(사다리)/허들">스텝래더(사다리)/허들</option>
-            <option value="파라슈트(낙하산)/타프">파라슈트(낙하산)/타프</option>
-            <option value="팀조끼">팀조끼</option>
-            <option value="스쿠터보드/매트">스쿠터보드/매트</option>
-            <option value="의자/책상">의자/책상</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">보조 교구 분류 (선택·중복용)</label>
-          <select id="newEquipmentTagSub" class="input-box">
-            <option value="">선택 안 함 (단일 교구)</option>
-            <option value="접시콘/라바콘">접시콘/라바콘</option>
-            <option value="원마커(스팟)">원마커(스팟)</option>
-            <option value="훌라후프">훌라후프</option>
-            <option value="팀조끼">팀조끼</option>
-            <option value="폼볼/피구공">폼볼/피구공</option>
-            <option value="펀스틱(스펀지봉)">펀스틱(스펀지봉)</option>
-            <option value="스카프/꼬리끈">스카프/꼬리끈</option>
-            <option value="줄넘기/긴줄/고무줄">줄넘기/긴줄/고무줄</option>
-            <option value="미트/스태킹컵(종이컵)">미트/스태킹컵(종이컵)</option>
-          </select>
-        </div>
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">필수 준비물 <span style="font-weight:400; color:var(--text-muted);">(꼭 필요한 운동 교구 · 하나도 없으면 '없음(맨손)')</span></label>
+        <div class="chip-group pick-group" id="newRequiredEq"></div>
+      </div>
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">선택 준비물 <span style="font-weight:400; color:var(--text-muted);">(있으면 좋은 것)</span></label>
+        <div class="chip-group pick-group" id="newOptionalEq"></div>
+      </div>
+      <div class="form-field">
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">화면·음향 기기</label>
+        <div class="chip-group pick-group" id="newMedia"></div>
       </div>
 
       <div class="form-field">
@@ -1853,6 +1830,9 @@
       lblCountry: "국가별 수업",
       lblCurriculum: "교육과정 영역",
       lblPlayType: "놀이·활동 유형",
+      lblPlayMode: "놀이 방식",
+      lblSportType: "종목·운동",
+      lblStage: "수업 단계",
       lblEquipment: "체육교구(준비물)",
       lblEquipMultiHint: "중복 선택 가능",
       equipAllSummary: "전체 교구 표시 중 (여러 교구를 동시에 클릭해 중복 검색 가능)",
@@ -1951,6 +1931,9 @@
       lblCountry: "Country",
       lblCurriculum: "Curriculum Area",
       lblPlayType: "Activity Type",
+      lblPlayMode: "Play Style",
+      lblSportType: "Sport / Movement",
+      lblStage: "Lesson Stage",
       lblEquipment: "Equipment",
       lblEquipMultiHint: "Multi-select enabled",
       equipAllSummary: "Showing all equipment (Click multiple items to combine filters)",
@@ -2049,6 +2032,9 @@
       lblCountry: "国別フィルター",
       lblCurriculum: "学習指導領域",
       lblPlayType: "運動・遊びタイプ",
+      lblPlayMode: "遊び方",
+      lblSportType: "種目・運動",
+      lblStage: "授業の段階",
       lblEquipment: "体育用具（準備物）",
       lblEquipMultiHint: "複数選択可能",
       equipAllSummary: "すべての用具を表示中（複数の用具を同時にクリックして組み合わせ検索可能）",
@@ -2214,7 +2200,45 @@
       "전체 장소": { ko: "전체 장소", en: "All Spaces", ja: "すべての場所" },
       "교실": { ko: "교실", en: "Classroom", ja: "教室" },
       "강당": { ko: "강당", en: "Gymnasium", ja: "体育館" },
-      "운동장": { ko: "운동장", en: "Outdoor Field", ja: "運動場・校庭" }
+      "운동장": { ko: "운동장", en: "Outdoor Field", ja: "運動場・校庭" },
+      "수영장": { ko: "수영장", en: "Swimming Pool", ja: "プール" }
+    },
+    playMode: {
+      "술래잡기·태그": { ko: "술래잡기·태그", en: "Tag & Chase", ja: "鬼ごっこ・タグ" },
+      "피하기·맞히기": { ko: "피하기·맞히기", en: "Dodge & Hit", ja: "よける・当てる" },
+      "표적 맞히기": { ko: "표적 맞히기", en: "Target Games", ja: "的当て" },
+      "진지·보물탈환": { ko: "진지·보물탈환", en: "Capture the Flag / Treasure", ja: "陣取り・宝取り" },
+      "릴레이": { ko: "릴레이", en: "Relay", ja: "リレー" },
+      "협동 미션": { ko: "협동 미션", en: "Cooperative Challenge", ja: "協力ミッション" }
+    },
+    sportType: {
+      "육상": { ko: "육상", en: "Track & Field", ja: "陸上" },
+      "축구·풋살": { ko: "축구·풋살", en: "Soccer / Futsal", ja: "サッカー・フットサル" },
+      "농구·넷볼·핸드볼": { ko: "농구·넷볼·핸드볼", en: "Basketball / Netball / Handball", ja: "バスケ・ネットボール・ハンドボール" },
+      "배구·족구": { ko: "배구·족구", en: "Volleyball / Foot Volley", ja: "バレーボール・足バレー" },
+      "야구·티볼·발야구": { ko: "야구·티볼·발야구", en: "Baseball / Tee-Ball / Kickball", ja: "野球・ティーボール・キックベース" },
+      "라켓 운동": { ko: "라켓 운동 (배드민턴·테니스·탁구 등)", en: "Racket Sports (Badminton, Tennis, Table Tennis…)", ja: "ラケット運動 (バドミントン・テニス・卓球など)" },
+      "하키·플로어볼": { ko: "하키·플로어볼", en: "Hockey / Floorball", ja: "ホッケー・フロアボール" },
+      "플라잉디스크": { ko: "플라잉디스크", en: "Flying Disc", ja: "フライングディスク" },
+      "럭비·미식축구": { ko: "럭비·미식축구", en: "Rugby / Flag Football", ja: "ラグビー・アメフト" },
+      "킨볼·대형공 운동": { ko: "킨볼·대형공 운동", en: "Kin-Ball / Giant Ball", ja: "キンボール・大玉運動" },
+      "체조·기구운동": { ko: "체조·기구운동", en: "Gymnastics & Apparatus", ja: "体操・器械運動" },
+      "수영·물놀이": { ko: "수영·물놀이", en: "Swimming & Water Play", ja: "水泳・水遊び" },
+      "춤·신체표현": { ko: "춤·신체표현", en: "Dance & Movement Expression", ja: "ダンス・表現運動" },
+      "체력·기본 움직임": { ko: "체력·기본 움직임", en: "Fitness & Fundamental Movement", ja: "体力・基本の動き" },
+      "줄넘기": { ko: "줄넘기", en: "Jump Rope", ja: "なわとび" },
+      "스태킹·저글링": { ko: "스태킹·저글링", en: "Stacking & Juggling", ja: "スタッキング・ジャグリング" },
+      "전통놀이·씨름": { ko: "전통놀이·씨름", en: "Traditional Games & Wrestling", ja: "伝承遊び・相撲" },
+      "표적 운동": { ko: "표적 운동 (골프·볼링·컬링·보치아 등)", en: "Target Sports (Golf, Bowling, Curling, Boccia…)", ja: "ターゲット運動 (ゴルフ・ボウリング・カーリング・ボッチャなど)" }
+    },
+    stage: {
+      "도입·준비운동": { ko: "도입·준비운동", en: "Warm-Up / Intro", ja: "導入・準備運動" },
+      "본활동": { ko: "본활동", en: "Main Activity", ja: "主運動" },
+      "정리운동": { ko: "정리운동", en: "Cool-Down", ja: "整理運動" }
+    },
+    media: {
+      "화면": { ko: "화면(영상) 필요", en: "Screen needed", ja: "画面(映像)が必要" },
+      "음향": { ko: "음향(음악) 필요", en: "Speaker / music needed", ja: "音響(音楽)が必要" }
     },
     size: {
       "전체 인원": { ko: "적정 인원 전체", en: "All Group Sizes", ja: "適正人数すべて" },
@@ -2723,6 +2747,7 @@
         slotKey: "",
         gradeGroup: seed.grades.slice(),
         equipment: Array.isArray(seed.eq) ? seed.eq.slice() : [seed.eq],
+        playModes: [], sportTypes: [], lessonStages: [], requiredEquipment: [], optionalEquipment: [], mediaNeeds: [], hasTaxonomy: false,
         equipmentDetail: i18nObj.ko.equipmentDetail,
         videoId: seed.vid,
         youtubeUrl: `https://www.youtube.com/watch?v=${seed.vid}`,
@@ -2866,7 +2891,43 @@
     return ["전체", ...rest];
   }
 
-  const PLACE_OPTIONS = ["전체 장소", "교실", "강당", "운동장"];
+  const PLACE_OPTIONS = ["전체 장소", "교실", "강당", "운동장", "수영장"];
+
+  /* ---- 새 분류(2026-10): 놀이 방식 × 종목·운동 × 수업 단계, 필수/선택 준비물, 화면·음향 ----
+     시트에는 JSON 배열 문자열(예: ["릴레이","협동 미션"])로 저장. 정적 목록 파일에는 쉼표로 이어 붙인 값.
+     해당이 없으면 빈 배열. 새 값이 아직 없는 수업은 옛 playType·equipment로 표시만 하고, 새 필터에는 걸리지 않는다. */
+  const PLAY_MODE_OPTIONS = ["술래잡기·태그", "피하기·맞히기", "표적 맞히기", "진지·보물탈환", "릴레이", "협동 미션"];
+  const SPORT_TYPE_OPTIONS = ["육상", "축구·풋살", "농구·넷볼·핸드볼", "배구·족구", "야구·티볼·발야구", "라켓 운동",
+    "하키·플로어볼", "플라잉디스크", "럭비·미식축구", "킨볼·대형공 운동", "체조·기구운동", "수영·물놀이", "춤·신체표현",
+    "체력·기본 움직임", "줄넘기", "스태킹·저글링", "전통놀이·씨름", "표적 운동"];
+  const LESSON_STAGE_OPTIONS = ["도입·준비운동", "본활동", "정리운동"];
+  const MEDIA_OPTIONS = ["화면", "음향"];
+
+  // 시트 값(JSON 배열 문자열) · 정적 파일 값(쉼표) · 배열을 모두 배열로
+  function parseList(v) {
+    if (Array.isArray(v)) return v.map(x => String(x).trim()).filter(Boolean);
+    const s = String(v === undefined || v === null ? "" : v).trim();
+    if (!s) return [];
+    if (s.charAt(0) === "[") { try { const a = JSON.parse(s); if (Array.isArray(a)) return a.map(x => String(x).trim()).filter(Boolean); } catch (e) {} }
+    return s.split(",").map(x => x.trim()).filter(Boolean);
+  }
+  const onlyAllowed = (arr, allowed) => arr.filter(v => allowed.includes(v));
+
+  const TAX_UI = {
+    ko: { stage: "수업 단계", required: "필수 준비물", optional: "있으면 좋은 것", media: "기기" },
+    en: { stage: "Lesson stage", required: "Required equipment", optional: "Optional", media: "Devices" },
+    ja: { stage: "授業の段階", required: "必要な用具", optional: "あると便利", media: "機器" }
+  };
+
+  // 카드·상세에 보일 분류 이름(새 값이 있으면 종목·놀이 방식, 없으면 옛 유형)
+  function categoryLabels(act, max) {
+    if (act.hasTaxonomy) {
+      const sh = (g, v) => tTerm(g, v).replace(/\s*\(.*\)$/, "");
+      const out = [...act.sportTypes.map(v => sh("sportType", v)), ...act.playModes.map(v => sh("playMode", v))];
+      return max ? out.slice(0, max) : out;
+    }
+    return act.playType ? [tTerm("playType", act.playType)] : [];
+  }
 
   const POPULAR_KEYWORDS_I18N = {
     "협동": { ko: "협동", en: "Co-op", ja: "協力" },
@@ -2909,10 +2970,12 @@
 
   let selectedCountry = "전체 국가";
   let selectedCurriculum = "전체";
-  let selectedPlayType = "전체";
+  let selectedPlayModes = new Set();   // 비어 있으면 전체. 같은 필터 안에서는 OR
+  let selectedSportTypes = new Set();
+  let selectedStages = new Set();
   let selectedEquipments = new Set(["전체"]);
   let equipmentMatchMode = "AND";
-  let selectedPlace = "전체 장소";
+  let selectedPlaces = new Set();
   let visibleLimit = 36;
   let activeModalId = null;
   let isAdminAuthenticated = false;
@@ -3017,7 +3080,10 @@
 
     document.getElementById("lblCountry").textContent = ui.lblCountry;
     document.getElementById("lblCurriculum").textContent = ui.lblCurriculum;
-    document.getElementById("lblPlayType").textContent = ui.lblPlayType;
+    document.getElementById("lblPlayMode").textContent = ui.lblPlayMode;
+    document.getElementById("lblSportType").textContent = ui.lblSportType;
+    document.getElementById("lblStage").textContent = ui.lblStage;
+    document.querySelectorAll(".lbl-multi-hint").forEach(el => { el.textContent = ui.lblEquipMultiHint; });
     document.getElementById("lblEquipment").textContent = ui.lblEquipment;
     document.getElementById("lblEquipMultiHint").textContent = ui.lblEquipMultiHint;
     document.getElementById("btnClearEquip").textContent = ui.equipClearBtn;
@@ -3213,9 +3279,19 @@
       `<span class="chip ${selectedCurriculum === c ? 'active' : ''}" onclick="selectCurriculum('${c}')">${tTerm('curriculum', c)}</span>`
     ).join("");
 
-    document.getElementById("playTypeChips").innerHTML = PLAY_TYPE_OPTIONS.map(t =>
-      `<span class="chip ${selectedPlayType === t ? 'active' : ''}" onclick="selectPlayType('${t}')">${tTerm('playType', t)}</span>`
-    ).join("");
+    // 놀이 방식·종목·수업 단계: 여러 개 선택(같은 필터 안 OR). '전체'를 누르면 선택 해제
+    const tc = taxonomyCounts();
+    const multiChips = (id, group, opts, sel, fn) => {
+      document.getElementById(id).innerHTML =
+        `<span class="chip ${sel.size === 0 ? 'active' : ''}" onclick="${fn}('')">${tTerm('curriculum', '전체')}</span>` +
+        opts.map(v => {
+          const on = sel.has(v), n = (tc[group] && tc[group][v]) || 0;
+          return `<span class="chip ${on ? 'active multi-chip' : ''}" onclick="${fn}('${v}')">${on ? '✓ ' : ''}${tTerm(group, v)}${n ? `<span class="chip-count">${n.toLocaleString()}</span>` : ""}</span>`;
+        }).join("");
+    };
+    multiChips("playModeChips", "playMode", PLAY_MODE_OPTIONS, selectedPlayModes, "togglePlayMode");
+    multiChips("sportTypeChips", "sportType", SPORT_TYPE_OPTIONS, selectedSportTypes, "toggleSportType");
+    multiChips("stageChips", "stage", LESSON_STAGE_OPTIONS, selectedStages, "toggleStage");
 
     const isAllEq = selectedEquipments.has("전체");
     const eqCounts = getEquipmentCounts();
@@ -3242,9 +3318,10 @@
     document.getElementById("modeBtnAnd").classList.toggle("active", equipmentMatchMode === "AND");
     document.getElementById("modeBtnOr").classList.toggle("active", equipmentMatchMode === "OR");
 
-    document.getElementById("placeChips").innerHTML = PLACE_OPTIONS.map(p =>
-      `<span class="chip ${selectedPlace === p ? 'active' : ''}" onclick="selectPlace('${p}')">${tTerm('place', p)}</span>`
-    ).join("");
+    document.getElementById("placeChips").innerHTML = PLACE_OPTIONS.map(p => {
+      const on = p === "전체 장소" ? selectedPlaces.size === 0 : selectedPlaces.has(p);
+      return `<span class="chip ${on ? 'active' : ''}" onclick="selectPlace('${p}')">${tTerm('place', p)}</span>`;
+    }).join("");
   }
 
   function selectCountry(c) {
@@ -3261,11 +3338,30 @@
     renderActivities();
   }
 
-  function selectPlayType(t) {
-    selectedPlayType = t;
+  function toggleInSet(set, v) {
+    if (!v) set.clear();
+    else if (set.has(v)) set.delete(v);
+    else set.add(v);
     visibleLimit = 36;
     renderFilterChips();
     renderActivities();
+  }
+  function togglePlayMode(v) { toggleInSet(selectedPlayModes, v); }
+  function toggleSportType(v) { toggleInSet(selectedSportTypes, v); }
+  function toggleStage(v) { toggleInSet(selectedStages, v); }
+
+  // 지금 불러온 수업에서 놀이 방식·종목·수업 단계별 개수
+  let _taxCountCache = { n: -1, c: null };
+  function taxonomyCounts() {
+    if (_taxCountCache.n === activities.length && _taxCountCache.c) return _taxCountCache.c;
+    const c = { playMode: {}, sportType: {}, stage: {} };
+    activities.forEach(a => {
+      (a.playModes || []).forEach(v => { c.playMode[v] = (c.playMode[v] || 0) + 1; });
+      (a.sportTypes || []).forEach(v => { c.sportType[v] = (c.sportType[v] || 0) + 1; });
+      (a.lessonStages || []).forEach(v => { c.stage[v] = (c.stage[v] || 0) + 1; });
+    });
+    _taxCountCache = { n: activities.length, c };
+    return c;
   }
 
   function toggleEquipment(eq) {
@@ -3300,7 +3396,9 @@
   }
 
   function selectPlace(p) {
-    selectedPlace = p;
+    if (p === "전체 장소") selectedPlaces.clear();
+    else if (selectedPlaces.has(p)) selectedPlaces.delete(p);
+    else selectedPlaces.add(p);
     visibleLimit = 36;
     renderFilterChips();
     renderActivities();
@@ -3388,9 +3486,11 @@
     const val = id => document.getElementById(id).value;
     if (selectedCountry !== "전체 국가") list.push({ k: "country", label: tTerm("country", selectedCountry) });
     if (selectedCurriculum !== "전체") list.push({ k: "curriculum", label: tTerm("curriculum", selectedCurriculum) });
-    if (selectedPlayType !== "전체") list.push({ k: "playType", label: tTerm("playType", selectedPlayType) });
+    selectedPlayModes.forEach(v => list.push({ k: "mode", v, label: tTerm("playMode", v) }));
+    selectedSportTypes.forEach(v => list.push({ k: "sport", v, label: tTerm("sportType", v).replace(/\s*\(.*\)$/, "") }));
+    selectedStages.forEach(v => list.push({ k: "stage", v, label: tTerm("stage", v) }));
     if (!selectedEquipments.has("전체")) Array.from(selectedEquipments).forEach(eq => list.push({ k: "eq", v: eq, label: tTerm("equipment", eq) }));
-    if (selectedPlace !== "전체 장소") list.push({ k: "place", label: tTerm("place", selectedPlace) });
+    selectedPlaces.forEach(v => list.push({ k: "place", v, label: tTerm("place", v) }));
     if (val("sizeSelect") && val("sizeSelect") !== "전체 인원") list.push({ k: "size", label: tTerm("size", val("sizeSelect")) });
     if (val("gradeSelect") && val("gradeSelect") !== "ALL") list.push({ k: "grade", label: tTerm("grade", val("gradeSelect")) });
     if (val("slotSelect") && val("slotSelect") !== "ALL") list.push({ k: "slot", label: tTerm("slot", val("slotSelect")) });
@@ -3433,9 +3533,11 @@
     else if (c.k === "saved") toggleSavedOnly();
     else if (c.k === "country") selectCountry("전체 국가");
     else if (c.k === "curriculum") selectCurriculum("전체");
-    else if (c.k === "playType") selectPlayType("전체");
+    else if (c.k === "mode") togglePlayMode(c.v);
+    else if (c.k === "sport") toggleSportType(c.v);
+    else if (c.k === "stage") toggleStage(c.v);
     else if (c.k === "eq") toggleEquipment(c.v);
-    else if (c.k === "place") selectPlace("전체 장소");
+    else if (c.k === "place") selectPlace(c.v);
     else if (c.k === "size") setSel("sizeSelect", "전체 인원");
     else if (c.k === "grade") setSel("gradeSelect", "ALL");
     else if (c.k === "slot") setSel("slotSelect", "ALL");
@@ -3593,13 +3695,13 @@
 
   // ---------- 상황별 바로가기 ----------
   const PRESETS = [
-    { k: "rain", apply: () => { selectedPlace = "교실"; } , test: () => selectedPlace === "교실" },
+    { k: "rain", apply: () => { selectedPlaces = new Set(["교실"]); } , test: () => selectedPlaces.size === 1 && selectedPlaces.has("교실") },
     { k: "none", apply: () => { selectedEquipments = new Set(["없음(맨손)"]); }, test: () => selectedEquipments.size === 1 && selectedEquipments.has("없음(맨손)") },
     { k: "short", apply: () => { document.getElementById("slotSelect").value = "도입·자투리"; }, test: () => document.getElementById("slotSelect").value === "도입·자투리" },
-    { k: "ice", apply: () => { selectedPlayType = "팀빌딩·협동형"; }, test: () => selectedPlayType === "팀빌딩·협동형" },
+    { k: "ice", apply: () => { selectedPlayModes = new Set(["협동 미션"]); }, test: () => selectedPlayModes.size === 1 && selectedPlayModes.has("협동 미션") },
     { k: "low", apply: () => { document.getElementById("gradeSelect").value = "1~2학년"; }, test: () => document.getElementById("gradeSelect").value === "1~2학년" },
-    { k: "field", apply: () => { selectedPlace = "운동장"; document.getElementById("sizeSelect").value = "학급 전체 (15~30명)"; },
-      test: () => selectedPlace === "운동장" && document.getElementById("sizeSelect").value === "학급 전체 (15~30명)" }
+    { k: "field", apply: () => { selectedPlaces = new Set(["운동장"]); document.getElementById("sizeSelect").value = "학급 전체 (15~30명)"; },
+      test: () => selectedPlaces.size === 1 && selectedPlaces.has("운동장") && document.getElementById("sizeSelect").value === "학급 전체 (15~30명)" }
   ];
   function renderPresets() {
     const x = xui();
@@ -3655,7 +3757,10 @@
     const scored = [];
     for (const a of activities) {
       if (a.id === act.id || (act.videoId && a.videoId === act.videoId)) continue;
-      let sc = (a.playType === act.playType ? 2 : 0) + 4 * jaccard(mine, bg(a));
+      const same = (act.hasTaxonomy && a.hasTaxonomy)
+        ? (act.sportTypes.some(v => a.sportTypes.includes(v)) ? 1.2 : 0) + (act.playModes.some(v => a.playModes.includes(v)) ? 0.8 : 0)
+        : (a.playType === act.playType ? 2 : 0);
+      let sc = same + 4 * jaccard(mine, bg(a));
       if (sc < 2.2) continue;
       if (myEq.size) sc += jaccard(myEq, new Set(a.equipment || []));
       if (a.curriculumArea === act.curriculumArea) sc += 0.3;
@@ -3667,7 +3772,7 @@
     document.getElementById("modalSimilarTitle").textContent = xui().similar;
     list.innerHTML = top.map(a => `
       <button type="button" class="similar-item" onclick="openDetailModal('${a.id}'); document.querySelector('#detailModal .modal-box').scrollTop = 0;">
-        <span class="similar-meta">${tTerm("country", a.country || "한국")}${(a.country || "한국") !== (act.country || "한국") ? ` · ${xui().similarOther}` : ""} · ${tTerm("playType", a.playType)}</span>
+        <span class="similar-meta">${tTerm("country", a.country || "한국")}${(a.country || "한국") !== (act.country || "한국") ? ` · ${xui().similarOther}` : ""}${categoryLabels(a, 2).length ? " · " + escapeHtml(categoryLabels(a, 2).join("·")) : ""}</span>
         <span class="similar-title">${escapeHtml(getLocalizedField(a, "title"))}</span>
       </button>`).join("");
   }
@@ -3850,7 +3955,7 @@
       return `<li class="pack-item">
         <div class="pack-item-main">
           <button type="button" class="pack-item-title" onclick="openFromPack('${a.id}')">${escapeHtml(getLocalizedField(a, "title"))}</button>
-          <div class="pack-item-meta">${tTerm("playType", a.playType)} · ${escapeHtml(getLocalizedField(a, "equipmentDetail"))}</div>
+          <div class="pack-item-meta">${escapeHtml(categoryLabels(a, 2).join("·"))}${categoryLabels(a, 2).length ? " · " : ""}${escapeHtml(getLocalizedField(a, "equipmentDetail"))}</div>
           <div class="pack-item-rules">${escapeHtml(getLocalizedField(a, "rules"))}</div>
         </div>
         <div class="pack-item-side">
@@ -3973,9 +4078,11 @@
     showSavedOnly = false;
     selectedCountry = "전체 국가";
     selectedCurriculum = "전체";
-    selectedPlayType = "전체";
+    selectedPlayModes = new Set();
+    selectedSportTypes = new Set();
+    selectedStages = new Set();
     selectedEquipments = new Set(["전체"]);
-    selectedPlace = "전체 장소";
+    selectedPlaces = new Set();
     visibleLimit = 36;
     document.getElementById("searchInput").value = "";
     document.getElementById("sizeSelect").value = "전체 인원";
@@ -4061,7 +4168,10 @@
     const en = (act.i18n && act.i18n.en) || {};
     const ja = (act.i18n && act.i18n.ja) || {};
     const titleText = [act.title, ko.title, en.title, ja.title].filter(Boolean).join(" ").toLowerCase();
-    const rulesText = [act.rules, ko.rules, en.rules, ja.rules].filter(Boolean).join(" ").toLowerCase();
+    const tags = [...(act.sportTypes || []), ...(act.playModes || [])].flatMap(v => {
+      const m = (TERM_MAP.sportType[v] || TERM_MAP.playMode[v]); return m ? [v, m.en, m.ja] : [v];
+    });
+    const rulesText = [act.rules, ko.rules, en.rules, ja.rules, ...tags].filter(Boolean).join(" ").toLowerCase();
     act._searchIdx = {
       title: titleText.replace(/\s+/g, ""),
       rules: rulesText.replace(/\s+/g, "")
@@ -4100,8 +4210,11 @@
       if (showSavedOnly && !savedSet.has(act.id)) return false;
       if (selectedCountry !== "전체 국가" && (act.country || "한국") !== selectedCountry) return false;
       if (selectedCurriculum !== "전체" && act.curriculumArea !== selectedCurriculum) return false;
-      if (selectedPlayType !== "전체" && act.playType !== selectedPlayType) return false;
-      if (selectedPlace !== "전체 장소" && !act.place.includes(selectedPlace)) return false;
+      // 서로 다른 필터는 AND, 같은 필터 안에서 여러 개를 고르면 OR
+      if (selectedPlayModes.size && !act.playModes.some(v => selectedPlayModes.has(v))) return false;
+      if (selectedSportTypes.size && !act.sportTypes.some(v => selectedSportTypes.has(v))) return false;
+      if (selectedStages.size && !act.lessonStages.some(v => selectedStages.has(v))) return false;
+      if (selectedPlaces.size && !act.place.some(v => selectedPlaces.has(v))) return false;
       if (sizeVal !== "전체 인원" && act.groupSize !== sizeVal) return false;
       if (gradeVal !== "ALL" && !act.gradeGroup.includes(gradeVal)) return false;
       if (slotVal !== "ALL" && act.slotKey !== slotVal) return false;
@@ -4222,7 +4335,7 @@
               <div class="card-cats">
                 <span class="country-tag">${tTerm('country', act.country || '한국')}</span>
                 <span class="cat-tag">${tTerm('curriculum', act.curriculumArea)}</span>
-                <span class="cat-tag">${tTerm('playType', act.playType)}</span>
+                ${categoryLabels(act, 2).map(t => `<span class="cat-tag">${escapeHtml(t)}</span>`).join("")}
               </div>
               <span class="card-rating">${ui.ratingLabel} ${st.avgRating} · ${ui.reviewLabel} ${st.reviewCount}</span>
             </div>
@@ -4272,7 +4385,7 @@
     const locEquip = getLocalizedField(act, "equipmentDetail");
 
     document.getElementById("modalCategoryLine").textContent =
-      `${tTerm('country', act.country || '한국')} · ${tTerm('curriculum', act.curriculumArea)} · ${tTerm('playType', act.playType)}`;
+      [tTerm('country', act.country || '한국'), tTerm('curriculum', act.curriculumArea), ...categoryLabels(act)].filter(Boolean).join(" · ");
     document.getElementById("modalTitle").textContent = locTitle;
     document.getElementById("modalReactBar").innerHTML = reactButtonsHtml(act);
 
@@ -4304,8 +4417,14 @@
     const sizeStr = tTerm("size", act.groupSize);
     const gradeStr = act.gradeGroup.map(g => tTerm("grade", g)).join(", ");
 
+    const tx = TAX_UI[currentLang] || TAX_UI.ko;
+    const eqNames = list => list.map(k => tTerm("equipment", k)).join(", ");
+    const taxLines = act.hasTaxonomy ? `
+      ${act.lessonStages.length ? `<div><strong>${tx.stage}:</strong> ${act.lessonStages.map(v => tTerm("stage", v)).join(", ")}</div>` : ""}
+      <div><strong>${tx.required}:</strong> ${escapeHtml(eqNames(act.requiredEquipment))}${act.optionalEquipment.length ? ` <span style="color:var(--text-muted);">· ${tx.optional}: ${escapeHtml(eqNames(act.optionalEquipment))}</span>` : ""}</div>
+      ${act.mediaNeeds.length ? `<div><strong>${tx.media}:</strong> ${act.mediaNeeds.map(v => tTerm("media", v)).join(", ")}</div>` : ""}` : "";
     document.getElementById("modalMetaInfo").innerHTML = `
-      <div><strong>${ui.metaEquip}:</strong> ${escapeHtml(locEquip)}</div>
+      <div><strong>${ui.metaEquip}:</strong> ${escapeHtml(locEquip)}</div>${taxLines}
       <div><strong>${ui.metaPlace} / ${ui.metaSize}:</strong> ${placeStr} / ${sizeStr}</div>
       <div><strong>${ui.metaGrade}:</strong> ${gradeStr}</div>
     `;
@@ -4478,6 +4597,19 @@
     });
     const place = splitList(o.place);
     const grades = splitList(o.gradeGroup);
+    // 새 분류 값. 수업 단계가 하나라도 있으면 새 분류가 들어간 수업으로 본다(놀이 방식·종목은 빈 배열일 수 있음)
+    const playModes = onlyAllowed(parseList(o.playModes), PLAY_MODE_OPTIONS);
+    const sportTypes = onlyAllowed(parseList(o.sportTypes), SPORT_TYPE_OPTIONS);
+    const lessonStages = onlyAllowed(parseList(o.lessonStages), LESSON_STAGE_OPTIONS);
+    const eqAllowed = EQUIPMENT_OPTIONS.filter(e => e !== "전체" && e !== "음악·영상 기기");
+    const requiredEquipment = onlyAllowed(parseList(o.requiredEquipment).map(e => EQUIP_ALIASES[e] || e), eqAllowed);
+    const optionalEquipment = onlyAllowed(parseList(o.optionalEquipment).map(e => EQUIP_ALIASES[e] || e), eqAllowed);
+    const mediaNeeds = onlyAllowed(parseList(o.mediaNeeds), MEDIA_OPTIONS);
+    const hasTaxonomy = lessonStages.length > 0 || requiredEquipment.length > 0;
+    // 준비물 필터용 목록: 새 값이 있으면 필수+선택(+화면·음향이면 '음악·영상 기기'), 없으면 예전 방식
+    const equipment = hasTaxonomy
+      ? Array.from(new Set([...requiredEquipment, ...optionalEquipment, ...(mediaNeeds.length ? ["음악·영상 기기"] : [])]))
+      : deriveEquipment(splitList(o.equipment), i18n.ko.equipmentDetail);
     return {
       id: String(o.id),
       country: o.country || "한국",
@@ -4488,7 +4620,8 @@
       groupSize: o.groupSize || "학급 전체 (15~30명)",
       slotKey: o.slotKey || "반차시",
       gradeGroup: grades.length ? grades : ["1~2학년", "3~4학년", "5~6학년"],
-      equipment: deriveEquipment(splitList(o.equipment), i18n.ko.equipmentDetail),
+      equipment,
+      playModes, sportTypes, lessonStages, requiredEquipment, optionalEquipment, mediaNeeds, hasTaxonomy,
       equipmentDetail: i18n.ko.equipmentDetail,
       videoId: o.videoId || extractYoutubeId(o.youtubeUrl),
       youtubeUrl: o.youtubeUrl || (o.videoId ? `https://www.youtube.com/watch?v=${o.videoId}` : ""),
@@ -4524,6 +4657,12 @@
       slotKey: act.slotKey,
       gradeGroup: (act.gradeGroup || []).join(","),
       equipment: (act.equipment || []).join(","),
+      playModes: JSON.stringify(act.playModes || []),
+      sportTypes: JSON.stringify(act.sportTypes || []),
+      lessonStages: JSON.stringify(act.lessonStages || []),
+      requiredEquipment: JSON.stringify(act.requiredEquipment || []),
+      optionalEquipment: JSON.stringify(act.optionalEquipment || []),
+      mediaNeeds: JSON.stringify(act.mediaNeeds || []),
       videoId: act.videoId,
       youtubeUrl: act.youtubeUrl,
       defaultDur: act.defaultDur
@@ -4910,7 +5049,7 @@
     const q = v => `"${String(v === undefined || v === null ? "" : v).replace(/"/g, '""')}"`;
     const rows = [x.savedCsvHead.map(q).join(",")].concat(ids.map(id => {
       const a = byId.get(id);
-      return [getLocalizedField(a, "title"), tTerm("country", a.country || "한국"), tTerm("playType", a.playType),
+      return [getLocalizedField(a, "title"), tTerm("country", a.country || "한국"), categoryLabels(a).join("·"),
         getLocalizedField(a, "equipmentDetail"), shareUrlFor(id), a.youtubeUrl, a.channel || ""].map(q).join(",");
     }));
     const blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -5071,23 +5210,38 @@
     }
   }
 
-  // 제안 화면의 교구 선택지도 필터와 같은 분류·같은 순서(많이 쓰는 순)로 채운다
-  function renderProposalEquipmentOptions() {
-    const opts = getSortedEquipmentOptions().filter(e => e !== "전체");
-    const main = document.getElementById("newEquipmentTag");
-    const sub = document.getElementById("newEquipmentTagSub");
-    if (!main || !sub) return;
-    const curMain = main.value || "없음(맨손)";
-    const curSub = sub.value || "";
-    const noneLabel = sub.dataset.noneLabel || (sub.options[0] ? sub.options[0].textContent : "");
-    sub.dataset.noneLabel = noneLabel;
-    const optHtml = cur => opts.map(v => `<option value="${escapeHtml(v)}" ${cur === v ? "selected" : ""}>${escapeHtml(tTerm("equipment", v))}</option>`).join("");
-    main.innerHTML = optHtml(curMain);
-    sub.innerHTML = `<option value="">${escapeHtml(noneLabel)}</option>` + optHtml(curSub);
+  // 제안 화면: 놀이 방식·종목·수업 단계·장소·필수/선택 준비물·화면/음향을 눌러서 고르는 칩
+  const PICKERS = {
+    newPlayModes: { group: "playMode", opts: () => PLAY_MODE_OPTIONS },
+    newSportTypes: { group: "sportType", opts: () => SPORT_TYPE_OPTIONS },
+    newStages: { group: "stage", opts: () => LESSON_STAGE_OPTIONS, def: ["본활동"] },
+    newPlaces: { group: "place", opts: () => PLACE_OPTIONS.filter(p => p !== "전체 장소"), def: ["강당"] },
+    newRequiredEq: { group: "equipment", opts: () => getSortedEquipmentOptions().filter(e => e !== "전체" && e !== "음악·영상 기기") },
+    newOptionalEq: { group: "equipment", opts: () => getSortedEquipmentOptions().filter(e => e !== "전체" && e !== "음악·영상 기기" && e !== "없음(맨손)") },
+    newMedia: { group: "media", opts: () => MEDIA_OPTIONS }
+  };
+  const pickState = {};
+  function renderProposalPickers(reset) {
+    Object.entries(PICKERS).forEach(([id, cfg]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (reset || !pickState[id]) pickState[id] = new Set(cfg.def || []);
+      const sel = pickState[id];
+      el.innerHTML = cfg.opts().map(v =>
+        `<span class="chip ${sel.has(v) ? 'active' : ''}" role="button" tabindex="0" onclick="togglePick('${id}','${v}')">${sel.has(v) ? '✓ ' : ''}${tTerm(cfg.group, v)}</span>`).join("");
+    });
   }
+  function togglePick(id, v) {
+    const sel = pickState[id] || (pickState[id] = new Set());
+    if (sel.has(v)) sel.delete(v); else sel.add(v);
+    // 맨손은 다른 필수 준비물과 함께 고를 수 없다
+    if (id === "newRequiredEq") { if (v === "없음(맨손)" && sel.has(v)) { sel.clear(); sel.add(v); } else if (v !== "없음(맨손)") sel.delete("없음(맨손)"); }
+    renderProposalPickers();
+  }
+  const picked = id => Array.from(pickState[id] || []);
 
   function openAddActivityModal() {
-    renderProposalEquipmentOptions();
+    renderProposalPickers();
     const el = document.getElementById("addActivityModal");
     if (!el.classList.contains("open")) pushOverlay("propose");
     el.classList.add("open");
@@ -5103,18 +5257,21 @@
   async function submitNewActivity(ev) {
     ev.preventDefault();
     const ui = UI_I18N[currentLang];
-    const eqTag = document.getElementById("newEquipmentTag").value;
-    const eqTagSub = document.getElementById("newEquipmentTagSub").value;
     const title = document.getElementById("newTitle").value.trim();
     const rules = document.getElementById("newRules").value.trim();
     const activity = {
       country: document.getElementById("newCountry").value,
       title,
       curriculumArea: document.getElementById("newCurrArea").value,
-      playType: document.getElementById("newPlayType").value,
-      place: document.getElementById("newPlace").value.split(","),
+      playModes: picked("newPlayModes"),
+      sportTypes: picked("newSportTypes"),
+      lessonStages: picked("newStages").length ? picked("newStages") : ["본활동"],
+      place: picked("newPlaces").length ? picked("newPlaces") : ["강당"],
       groupSize: document.getElementById("newGroupSize").value,
-      equipment: eqTagSub && eqTagSub !== eqTag ? [eqTag, eqTagSub] : [eqTag],
+      requiredEquipment: picked("newRequiredEq").length ? picked("newRequiredEq") : ["없음(맨손)"],
+      optionalEquipment: picked("newOptionalEq"),
+      mediaNeeds: picked("newMedia"),
+      equipment: Array.from(new Set([...(picked("newRequiredEq").length ? picked("newRequiredEq") : ["없음(맨손)"]), ...picked("newOptionalEq")])),
       equipmentDetail: document.getElementById("newEquipmentDetail").value.trim(),
       youtubeUrl: document.getElementById("newYoutubeUrl").value.trim(),
       rules,
@@ -5130,6 +5287,7 @@
       const res = await apiPost({ action: "proposeActivity", activity });
       if (!res || !res.ok) throw new Error("fail");
       ev.target.reset();
+      renderProposalPickers(true);
       closeAddActivityModal();
       showToast(ui.toastProposed);
     } catch (e) {
@@ -5294,7 +5452,7 @@
       <div class="panel-block" style="margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:8px;">
           <div>
-            <span style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(p.country)} · ${escapeHtml(p.curriculumArea)} · ${escapeHtml(p.playType)}</span>
+            <span style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(p.country)} · ${escapeHtml(p.curriculumArea)} · ${escapeHtml([...parseList(p.sportTypes), ...parseList(p.playModes)].join("·") || p.playType || "")}${parseList(p.lessonStages).length ? " · " + escapeHtml(parseList(p.lessonStages).join("·")) : ""}</span>
             <h4 style="font-size:15.5px; font-weight:700; margin-top:2px;">${escapeHtml(p.title)}</h4>
           </div>
           <span style="font-size:12px; color:var(--text-muted); flex-shrink:0;">${escapeHtml(p.createdAt)}</span>
@@ -5438,7 +5596,13 @@
   const IMPORT_ALLOWED = {
     curriculumArea: CURRICULUM_OPTIONS.filter(v => v !== "전체"),
     playType: PLAY_TYPE_OPTIONS.filter(v => v !== "전체"),
-    place: ["교실", "강당", "운동장"],
+    place: ["교실", "강당", "운동장", "수영장"],
+    playModes: PLAY_MODE_OPTIONS,
+    sportTypes: SPORT_TYPE_OPTIONS,
+    lessonStages: LESSON_STAGE_OPTIONS,
+    requiredEquipment: EQUIPMENT_OPTIONS.filter(v => v !== "전체" && v !== "음악·영상 기기"),
+    optionalEquipment: EQUIPMENT_OPTIONS.filter(v => v !== "전체" && v !== "음악·영상 기기"),
+    mediaNeeds: MEDIA_OPTIONS,
     groupSize: ["소규모·짝·모둠 (2~10명)", "학급 전체 (15~30명)", "대집단·합동 (30명+)"],
     grades: ["1~2학년", "3~4학년", "5~6학년"],
     equipment: EQUIPMENT_OPTIONS.filter(v => v !== "전체"),
@@ -5490,9 +5654,19 @@
     ["title_ko", "rules_ko", "channel", "videoTitle"].forEach(k => { if (!String(it[k] || "").trim()) p.push(`${k} 비어 있음`); });
     const quotes = Array.isArray(it.quotes) ? it.quotes.filter(q => String(q || "").trim()) : [];
     if (quotes.length < 2) p.push("자막 근거(quotes) 2개 미만");
-    ["curriculumArea", "playType", "groupSize", "country", "confidence"].forEach(k => {
+    ["curriculumArea", "groupSize", "country", "confidence"].forEach(k => {
       if (!IMPORT_ALLOWED[k].includes(it[k])) p.push(`${k} 허용값 아님: ${it[k] === undefined ? "(없음)" : it[k]}`);
     });
+    // 새 분류(playModes·sportTypes·lessonStages·required/optionalEquipment·mediaNeeds)가 있으면 그걸 쓰고, 없으면 옛 playType 필요
+    const hasNew = Array.isArray(it.lessonStages) && it.lessonStages.length > 0;
+    if (!hasNew && !IMPORT_ALLOWED.playType.includes(it.playType)) p.push(`lessonStages 또는 playType 필요 (playType: ${it.playType === undefined ? "(없음)" : it.playType})`);
+    ["playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds"].forEach(k => {
+      if (it[k] === undefined) return;
+      if (!Array.isArray(it[k])) { p.push(`${k}는 배열이어야 함`); return; }
+      it[k].forEach(v => { if (!IMPORT_ALLOWED[k].includes(v)) p.push(`${k} 허용값 아님: ${v}`); });
+    });
+    if ((!Array.isArray(it.equipment) || !it.equipment.length) && Array.isArray(it.requiredEquipment) && it.requiredEquipment.length)
+      it.equipment = Array.from(new Set([...it.requiredEquipment, ...(it.optionalEquipment || [])]));
     ["place", "grades", "equipment"].forEach(k => {
       if (!Array.isArray(it[k]) || !it[k].length) p.push(`${k} 비어 있음`);
       else it[k].forEach(v => { if (!IMPORT_ALLOWED[k].includes(v)) p.push(`${k} 허용값 아님: ${v}`); });
@@ -5535,7 +5709,7 @@
             <div style="flex:1; min-width:0;">
               <div style="font-size:14px; font-weight:700;">${escapeHtml(it.title_ko || "(제목 없음)")}</div>
               <div style="font-size:11.5px; color:var(--text-muted); margin:2px 0 6px;">
-                ${escapeHtml(it.country || "")} · ${escapeHtml(it.playType || "")} · 확신도 ${escapeHtml(it.confidence || "-")} ·
+                ${escapeHtml(it.country || "")} · ${escapeHtml([...(it.sportTypes || []), ...(it.playModes || [])].join("·") || it.playType || "")} · 확신도 ${escapeHtml(it.confidence || "-")} ·
                 <a href="https://www.youtube.com/watch?v=${encodeURIComponent(it.videoId || "")}" target="_blank" rel="noopener" style="color:var(--blue);">${escapeHtml(it.channel || "")} — ${escapeHtml(it.videoTitle || "")}</a>
               </div>
               <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.55;">${escapeHtml(String(it.rules_ko || "").slice(0, 220))}</div>
@@ -5612,11 +5786,13 @@
   }
 
   function exportCurrentDbToCsv() {
-    const headers = ["id","curriculumArea","playType","title_ko","title_en","title_ja","place","groupSize","gradeGroup","equipment","equipmentDetail","youtubeUrl","likes","saves","reviews","avgDuration","avgFitScore"];
+    const headers = ["id","curriculumArea","playType","playModes","sportTypes","lessonStages","requiredEquipment","optionalEquipment","mediaNeeds","title_ko","title_en","title_ja","place","groupSize","gradeGroup","equipment","equipmentDetail","youtubeUrl","likes","saves","reviews","avgDuration","avgFitScore"];
     const rows = activities.map(a => {
       const st = computeAiStats(a);
       const vals = [
         a.id, a.curriculumArea, a.playType,
+        JSON.stringify(a.playModes || []), JSON.stringify(a.sportTypes || []), JSON.stringify(a.lessonStages || []),
+        JSON.stringify(a.requiredEquipment || []), JSON.stringify(a.optionalEquipment || []), JSON.stringify(a.mediaNeeds || []),
         a.i18n ? a.i18n.ko.title : a.title,
         a.i18n ? a.i18n.en.title : a.title,
         a.i18n ? a.i18n.ja.title : a.title,

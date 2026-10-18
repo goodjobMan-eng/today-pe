@@ -27,7 +27,9 @@ const TABS = {
       'title_en', 'rules_en', 'caution_en', 'tip_en', 'equip_en',
       'title_ja', 'rules_ja', 'caution_ja', 'tip_ja', 'equip_ja',
       'createdAt', 'updatedAt',
-      'source', 'channel', 'videoTitle', 'evidence', 'confidence', 'ai_ko', 'ai_en', 'ai_ja']
+      'source', 'channel', 'videoTitle', 'evidence', 'confidence', 'ai_ko', 'ai_en', 'ai_ja',
+      // 새 분류(2026-10). 값은 JSON 배열 문자열. taxonomyReview는 관리자 검토용 메모(사이트에 안 나감)
+      'playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'taxonomyReview']
   },
   reviews: {
     name: '후기',
@@ -49,7 +51,8 @@ const TABS = {
   proposals: {
     name: '새수업제안',
     headers: ['proposalId', 'status', 'createdAt', 'title', 'lang', 'country', 'curriculumArea', 'playType', 'place',
-      'groupSize', 'equipment', 'equipmentDetail', 'youtubeUrl', 'rules', 'duration', 'caution', 'resultActivityId']
+      'groupSize', 'equipment', 'equipmentDetail', 'youtubeUrl', 'rules', 'duration', 'caution', 'resultActivityId',
+      'playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds']
   },
   reports: {
     name: '신고',
@@ -117,6 +120,7 @@ function doPost(e) {
     if (a === 'archives') return json_({ ok: true, archives: getArchives_() });
     if (a === 'seedActivities') return json_(withLock_(() => seedActivities_(body.rows || [], !!body.force)));
     if (a === 'importActivities') return json_(withLock_(() => importActivities_(body.items || [])));
+    if (a === 'applyTaxonomy') return json_(withLock_(() => applyTaxonomyMigration_(body.url || TAXONOMY_URL, !!body.overwrite)));
 
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
@@ -228,6 +232,7 @@ function recentReviews_(p) {
 function appendAct_(obj) {
   const tabs = activityTabs_();
   const sh = tabs[tabs.length - 1];
+  ensureTaxonomyColumns_(sh);
   const h = actHeaders_(sh);
   sh.appendRow(h.map(x => safeCell_(!x || obj[x] === undefined || obj[x] === null ? '' : obj[x])));
 }
@@ -600,7 +605,13 @@ function proposeActivity_(p) {
     rules: rules,
     duration: clampNum_(p.duration, 5, 80, 25),
     caution: clean_(p.caution, 1000),
-    resultActivityId: ''
+    resultActivityId: '',
+    playModes: jsonList_(p.playModes, 'playModes'),
+    sportTypes: jsonList_(p.sportTypes, 'sportTypes'),
+    lessonStages: jsonList_(p.lessonStages, 'lessonStages'),
+    requiredEquipment: jsonList_(p.requiredEquipment, 'equipment'),
+    optionalEquipment: jsonList_(p.optionalEquipment, 'equipment'),
+    mediaNeeds: jsonList_(p.mediaNeeds, 'mediaNeeds')
   };
   appendObj_('proposals', row);
   return { ok: true };
@@ -630,6 +641,12 @@ function approveProposal_(proposalId) {
     videoId: youtubeId_(p.youtubeUrl),
     youtubeUrl: p.youtubeUrl,
     defaultDur: dur,
+    playModes: p.playModes || '[]',
+    sportTypes: p.sportTypes || '[]',
+    lessonStages: p.lessonStages || '["본활동"]',
+    requiredEquipment: p.requiredEquipment || '[]',
+    optionalEquipment: p.optionalEquipment || '[]',
+    mediaNeeds: p.mediaNeeds || '[]',
     source: '교사 제안',
     createdAt: now_(),
     updatedAt: now_()
@@ -709,13 +726,20 @@ const ALLOWED = {
   playType: ['준비운동·코디네이션', '팀빌딩·협동형', '술래잡기·태그형', '피구·투척형', '축구·발구기형', '농구·핸드볼형',
     '럭비·보물탈환형', '네트·라켓형', '필드·티볼·야구형', '플라잉디스크·하키형', '줄넘기·리듬스텝형',
     '육상·릴레이·순발력형', '표적·컬링·보치아형', '전래·전통놀이형'],
-  place: ['교실', '강당', '운동장'],
+  place: ['교실', '강당', '운동장', '수영장'],
+  playModes: ['술래잡기·태그', '피하기·맞히기', '표적 맞히기', '진지·보물탈환', '릴레이', '협동 미션'],
+  sportTypes: ['육상', '축구·풋살', '농구·넷볼·핸드볼', '배구·족구', '야구·티볼·발야구', '라켓 운동', '하키·플로어볼',
+    '플라잉디스크', '럭비·미식축구', '킨볼·대형공 운동', '체조·기구운동', '수영·물놀이', '춤·신체표현', '체력·기본 움직임',
+    '줄넘기', '스태킹·저글링', '전통놀이·씨름', '표적 운동'],
+  lessonStages: ['도입·준비운동', '본활동', '정리운동'],
+  mediaNeeds: ['화면', '음향'],
   groupSize: ['소규모·짝·모둠 (2~10명)', '학급 전체 (15~30명)', '대집단·합동 (30명+)'],
   grades: ['1~2학년', '3~4학년', '5~6학년'],
   equipment: ['없음(맨손)', '폼볼/피구공', '축구/농구/배구공', '럭비공/태그벨트', '큰공(짐볼/킨볼)', '풍선/탱탱볼/비치볼',
     '콩주머니(빈백)/보치아', '플라잉디스크(원반)', '줄넘기/긴줄/고무줄', '라켓/스틱(플로어볼/패드민턴)', '훌라후프',
     '접시콘/라바콘', '원마커(스팟)', '펀스틱(스펀지봉)', '미트/스태킹컵(종이컵)', '스카프/꼬리끈', '스텝래더(사다리)/허들',
-    '파라슈트(낙하산)/타프', '팀조끼', '스쿠터보드/매트', '의자/책상'],
+    '파라슈트(낙하산)/타프', '팀조끼', '스쿠터보드/매트', '의자/책상',
+    '네트/골대', '수건/양말공/신문지', '바구니/상자', '뜀틀/철봉/평균대', '볼링핀/표적', '탁구공/테니스공(작은 공)'],
   country: ['한국', '일본', '미국', '캐나다', '호주', '영국', '독일', '스페인', '프랑스', '글로벌', '미확인'],
   confidence: ['높음', '중간', '낮음']
 };
@@ -765,6 +789,12 @@ function importActivities_(items) {
       slotKey: '',
       gradeGroup: it.grades.join(','),
       equipment: it.equipment.join(','),
+      playModes: jsonList_(it.playModes, 'playModes'),
+      sportTypes: jsonList_(it.sportTypes, 'sportTypes'),
+      lessonStages: jsonList_(it.lessonStages, 'lessonStages'),
+      requiredEquipment: jsonList_(it.requiredEquipment, 'equipment'),
+      optionalEquipment: jsonList_(it.optionalEquipment, 'equipment'),
+      mediaNeeds: jsonList_(it.mediaNeeds, 'mediaNeeds'),
       videoId: it.videoId,
       youtubeUrl: 'https://www.youtube.com/watch?v=' + it.videoId,
       defaultDur: '',
@@ -796,8 +826,20 @@ function validateImportItem_(it) {
   if (!/^[A-Za-z0-9_-]{11}$/.test(String(it.videoId || ''))) p.push('videoId 형식 오류');
   ['title_ko', 'rules_ko', 'channel', 'videoTitle'].forEach(k => { if (!String(it[k] || '').trim()) p.push(k + ' 비어 있음'); });
   if (!Array.isArray(it.quotes) || it.quotes.filter(q => String(q || '').trim()).length < 2) p.push('자막 근거(quotes) 2개 미만');
-  ['curriculumArea', 'playType', 'groupSize', 'country', 'confidence'].forEach(k => {
+  ['curriculumArea', 'groupSize', 'country', 'confidence'].forEach(k => {
     if (ALLOWED[k].indexOf(it[k]) < 0) p.push(k + ' 허용값 아님: ' + it[k]);
+  });
+  // 새 분류가 있으면 그걸 쓰고(playType 없어도 됨), 없으면 옛 playType이 있어야 한다
+  const hasNew = Array.isArray(it.lessonStages) && it.lessonStages.length > 0;
+  if (!hasNew && ALLOWED.playType.indexOf(it.playType) < 0) p.push('lessonStages 또는 playType 필요');
+  if ((!Array.isArray(it.equipment) || !it.equipment.length) && Array.isArray(it.requiredEquipment) && it.requiredEquipment.length) {
+    it.equipment = it.requiredEquipment.concat(it.optionalEquipment || []);
+  }
+  [['playModes', 'playModes'], ['sportTypes', 'sportTypes'], ['lessonStages', 'lessonStages'],
+   ['requiredEquipment', 'equipment'], ['optionalEquipment', 'equipment'], ['mediaNeeds', 'mediaNeeds']].forEach(([k, a]) => {
+    if (it[k] === undefined) return;
+    if (!Array.isArray(it[k])) { p.push(k + '는 배열이어야 함'); return; }
+    it[k].forEach(v => { if (ALLOWED[a].indexOf(v) < 0) p.push(k + ' 허용값 아님: ' + v); });
   });
   ['place', 'grades', 'equipment'].forEach(k => {
     if (!Array.isArray(it[k]) || !it[k].length) p.push(k + ' 비어 있음');
@@ -994,4 +1036,78 @@ function setup() {
   Object.keys(TABS).forEach(getTab_);
   LanguageApp.translate('안녕하세요', 'ko', 'en');
   UrlFetchApp.fetch('https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=IpcjL_xvkQY');
+}
+
+
+/* ----------------------------- 새 분류(2026-10) ----------------------------- */
+/*  playModes(놀이 방식) · sportTypes(종목·운동) · lessonStages(수업 단계) · requiredEquipment(필수 준비물)
+    · optionalEquipment(선택 준비물) · mediaNeeds(화면·음향) — 모두 JSON 배열 문자열로 저장. 해당 없으면 [].
+    taxonomyReview: 분류가 애매한 수업의 검토 메모(관리자용, 사이트에는 안 나감) */
+const TAX_FIELDS = ['playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'taxonomyReview'];
+const TAXONOMY_URL = 'https://goodjobman-eng.github.io/today-pe/data/taxonomy-migration.json';
+
+// 배열(또는 JSON 배열 문자열·쉼표 문자열)을 허용값만 남긴 JSON 배열 문자열로
+function jsonList_(v, allowedKey) {
+  let arr = [];
+  if (Array.isArray(v)) arr = v;
+  else if (v !== undefined && v !== null && String(v).trim()) {
+    const t = String(v).trim();
+    try { const j = JSON.parse(t); if (Array.isArray(j)) arr = j; } catch (e) { arr = t.split(','); }
+  }
+  const allow = ALLOWED[allowedKey] || null;
+  const out = [];
+  arr.map(x => String(x).trim()).filter(Boolean).forEach(x => { if ((!allow || allow.indexOf(x) >= 0) && out.indexOf(x) < 0) out.push(x); });
+  return JSON.stringify(out);
+}
+
+// 수업 탭 오른쪽 끝에 새 분류 칸이 없으면 머리글을 붙인다(기존 칸은 건드리지 않음)
+function ensureTaxonomyColumns_(sh) {
+  const h = actHeaders_(sh);
+  let last = h.length;
+  while (last > 0 && !h[last - 1]) last--;
+  const missing = TAX_FIELDS.filter(f => h.indexOf(f) < 0);
+  if (missing.length) sh.getRange(1, last + 1, 1, missing.length).setValues([missing]);
+  return missing.length;
+}
+
+/**
+ * 기존 수업에 새 분류를 채운다. url의 JSON: { "pe-00001": { playModes:[...], ..., review:"" }, ... }
+ * 기본은 '비어 있는 칸만' 채움(overwrite=true면 덮어씀). 시트에서 직접 고친 값은 지키기 위해서.
+ */
+function applyTaxonomyMigration_(url, overwrite) {
+  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) return { ok: false, error: '분류 파일을 받지 못했습니다: ' + res.getResponseCode() };
+  const data = JSON.parse(res.getContentText());
+  const map = data.items || data;
+  let filled = 0, seen = 0;
+  activityTabs_().forEach(sh => {
+    ensureTaxonomyColumns_(sh);
+    const h = actHeaders_(sh);
+    const idCol = h.indexOf('id');
+    const lastRow = sh.getLastRow();
+    if (idCol < 0 || lastRow < 2) return;
+    const ids = sh.getRange(2, idCol + 1, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    TAX_FIELDS.forEach(f => {
+      const c = h.indexOf(f);
+      const rng = sh.getRange(2, c + 1, lastRow - 1, 1);
+      const cur = rng.getValues();
+      let changed = false;
+      ids.forEach((id, i) => {
+        const it = map[id];
+        if (!it) return;
+        const v = f === 'taxonomyReview' ? String(it.review || '') : JSON.stringify(it[f] || []);
+        if (overwrite || String(cur[i][0]).trim() === '') { if (String(cur[i][0]) !== v) { cur[i][0] = v; changed = true; if (f === 'lessonStages') filled++; } }
+      });
+      if (changed) rng.setValues(cur);
+    });
+    seen += ids.filter(id => map[id]).length;
+  });
+  return { ok: true, matched: seen, filled: filled };
+}
+
+// Apps Script 편집기에서 한 번 실행: 기존 수업에 새 분류 채우기(빈 칸만)
+function runTaxonomyMigration() {
+  const r = applyTaxonomyMigration_(TAXONOMY_URL, false);
+  Logger.log(JSON.stringify(r));
+  return r;
 }

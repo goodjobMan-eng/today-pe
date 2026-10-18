@@ -22,7 +22,19 @@ const CHECK_PER_RUN = Number(process.env.CHECK_PER_RUN || 1000);
 const BUCKETS = 64;
 const LANGS = ["ko", "en", "ja"];
 const COMMON = ["id", "country", "curriculumArea", "playType", "place", "groupSize", "slotKey", "gradeGroup",
-  "equipment", "videoId", "youtubeUrl", "defaultDur", "channel", "channelUrl", "title_ko", "equip_ko"];
+  "equipment", "videoId", "youtubeUrl", "defaultDur", "channel", "channelUrl", "title_ko", "equip_ko",
+  // 새 분류(2026-10): 시트에는 JSON 배열 문자열, 목록 파일에는 쉼표로 이어 붙인 값
+  "playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds"];
+const TAX = ["playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds"];
+
+// 시트 칸 값(JSON 배열 문자열 또는 쉼표 문자열)을 배열로
+export function parseList(v) {
+  if (Array.isArray(v)) return v.map(x => String(x).trim()).filter(Boolean);
+  const s = String(v === undefined || v === null ? "" : v).trim();
+  if (!s) return [];
+  if (s[0] === "[") { try { const a = JSON.parse(s); if (Array.isArray(a)) return a.map(x => String(x).trim()).filter(Boolean); } catch (e) {} }
+  return s.split(",").map(x => x.trim()).filter(Boolean);
+}
 const DETAIL = ["caution_ko", "caution_en", "caution_ja", "tip_ko", "tip_en", "tip_ja", "source", "videoTitle",
   "evidence", "confidence", "ai_ko", "ai_en", "ai_ja", "transcriptVerified"];
 
@@ -116,6 +128,18 @@ async function main() {
   visible.forEach(o => { const st = status[String(o.videoId || "").trim()]; if (st && st.u) o.channelUrl = st.u; });
 
   const val = v => (v === null || v === undefined) ? "" : (typeof v === "string" ? v.trim() : v);
+
+  // 새 분류: 시트 칸이 비어 있으면 저장소의 분류 파일(data/taxonomy-migration.json)로 채운다(시트 값이 우선)
+  const mig = (await readJson(new URL("taxonomy-migration.json", OUT), { items: {} })).items || {};
+  let fromSheet = 0, fromMig = 0;
+  for (const o of visible) {
+    const id = String(o.id).trim();
+    const sheetHas = TAX.some(f => parseList(o[f]).length);
+    const m = !sheetHas && mig[id];
+    for (const f of TAX) o[f] = (m ? parseList(m[f]) : parseList(o[f])).join(",");
+    if (sheetHas) fromSheet++; else if (m) fromMig++;
+  }
+  console.log(`새 분류: 시트 ${fromSheet}건, 분류 파일 ${fromMig}건, 없음 ${visible.length - fromSheet - fromMig}건`);
   await rm(new URL("detail/", OUT), { recursive: true, force: true });
   await mkdir(new URL("detail/", OUT), { recursive: true });
 
