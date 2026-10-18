@@ -998,7 +998,7 @@
     .filter-panel .chip { padding: 5px 10px; font-size: 12.5px; }
     .filter-panel .equip-toolbar { flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; }
     .filter-panel #equipSelectedSummary { font-size: 12px; font-weight: 600; line-height: 1.45; }
-    .filter-panel .equip-mode-group { display: grid; grid-template-columns: 1fr 1fr; }
+    .filter-panel .equip-mode-group { display: grid; grid-template-columns: 1fr 1fr 1fr; }
     .filter-panel .equip-mode-btn { padding: 5px 4px; }
     .filter-panel .filter-line-basic > div:last-child { display: grid !important; grid-template-columns: 1fr; gap: 8px !important; }
     .filter-panel .sort-select { width: 100%; height: 38px; font-size: 13px; }
@@ -1312,6 +1312,7 @@
             <div class="equip-mode-group" role="group" aria-label="Equipment Match Mode">
               <button type="button" class="equip-mode-btn active" id="modeBtnAnd" onclick="setEquipmentMatchMode('AND')">모두 포함 (AND)</button>
               <button type="button" class="equip-mode-btn" id="modeBtnOr" onclick="setEquipmentMatchMode('OR')">하나라도 포함 (OR)</button>
+              <button type="button" class="equip-mode-btn" id="modeBtnHave" onclick="setEquipmentMatchMode('HAVE')">가진 교구로만</button>
             </div>
           </div>
           <div class="chip-group" id="equipmentChips"></div>
@@ -1836,10 +1837,11 @@
       lblEquipment: "체육교구(준비물)",
       lblEquipMultiHint: "중복 선택 가능",
       equipAllSummary: "전체 교구 표시 중 (여러 교구를 동시에 클릭해 중복 검색 가능)",
-      equipSelectedSummary: (names, n, mode) => `선택된 준비물 ${n}개 [${names}] · ${mode === 'AND' ? '모두 사용하는 수업' : '하나라도 사용하는 수업'}`,
+      equipSelectedSummary: (names, n, mode) => `선택된 준비물 ${n}개 [${names}] · ${mode === 'HAVE' ? '이 교구만으로 할 수 있는 수업(맨손 활동 포함)' : mode === 'AND' ? '모두 사용하는 수업' : '하나라도 사용하는 수업'}`,
       equipClearBtn: "교구 선택 초기화",
       equipModeAnd: "모두 포함 (AND)",
       equipModeOr: "하나라도 포함 (OR)",
+      equipModeHave: "가진 교구로만",
       lblSpaceGrade: "장소·인원·학년·차시",
       resultsCount: (n) => `검색된 체육 수업 <span>${n.toLocaleString()}</span>건`,
       proposeBtn: "새 체육 수업 제안 신청",
@@ -1937,10 +1939,11 @@
       lblEquipment: "Equipment",
       lblEquipMultiHint: "Multi-select enabled",
       equipAllSummary: "Showing all equipment (Click multiple items to combine filters)",
-      equipSelectedSummary: (names, n, mode) => `${n} Selected [${names}] · ${mode === 'AND' ? 'Uses ALL selected' : 'Uses ANY selected'}`,
+      equipSelectedSummary: (names, n, mode) => `${n} Selected [${names}] · ${mode === 'HAVE' ? 'Lessons you can run with only these (incl. no-equipment)' : mode === 'AND' ? 'Uses ALL selected' : 'Uses ANY selected'}`,
       equipClearBtn: "Clear Gear",
       equipModeAnd: "Match ALL (AND)",
       equipModeOr: "Match ANY (OR)",
+      equipModeHave: "Only what I have",
       lblSpaceGrade: "Space·Size·Grade·Time",
       resultsCount: (n) => `<span>${n.toLocaleString()}</span> PE Lessons Found`,
       proposeBtn: "Propose New PE Lesson",
@@ -2038,10 +2041,11 @@
       lblEquipment: "体育用具（準備物）",
       lblEquipMultiHint: "複数選択可能",
       equipAllSummary: "すべての用具を表示中（複数の用具を同時にクリックして組み合わせ検索可能）",
-      equipSelectedSummary: (names, n, mode) => `選択中の用具 ${n}個 [${names}] · ${mode === 'AND' ? 'すべて使用する授業' : 'いずれかを使用する授業'}`,
+      equipSelectedSummary: (names, n, mode) => `選択中の用具 ${n}個 [${names}] · ${mode === 'HAVE' ? 'この用具だけでできる授業（用具なしを含む）' : mode === 'AND' ? 'すべて使用する授業' : 'いずれかを使用する授業'}`,
       equipClearBtn: "選択解除",
       equipModeAnd: "すべて含む (AND)",
       equipModeOr: "いずれか含む (OR)",
+      equipModeHave: "手持ちだけで",
       lblSpaceGrade: "場所・人数・学年・時間",
       resultsCount: (n) => `検索された体育授業 <span>${n.toLocaleString()}</span>件`,
       proposeBtn: "新しい体育授業を提案",
@@ -3089,6 +3093,7 @@
     document.getElementById("btnClearEquip").textContent = ui.equipClearBtn;
     document.getElementById("modeBtnAnd").textContent = ui.equipModeAnd;
     document.getElementById("modeBtnOr").textContent = ui.equipModeOr;
+    document.getElementById("modeBtnHave").textContent = ui.equipModeHave;
     document.getElementById("lblSpaceGrade").textContent = ui.lblSpaceGrade;
     document.getElementById("btnProposeText").textContent = ui.proposeBtn;
 
@@ -3317,6 +3322,7 @@
     }
     document.getElementById("modeBtnAnd").classList.toggle("active", equipmentMatchMode === "AND");
     document.getElementById("modeBtnOr").classList.toggle("active", equipmentMatchMode === "OR");
+    document.getElementById("modeBtnHave").classList.toggle("active", equipmentMatchMode === "HAVE");
 
     document.getElementById("placeChips").innerHTML = PLACE_OPTIONS.map(p => {
       const on = p === "전체 장소" ? selectedPlaces.size === 0 : selectedPlaces.has(p);
@@ -3386,6 +3392,13 @@
     visibleLimit = 36;
     renderFilterChips();
     renderActivities();
+  }
+
+  // 수업에 꼭 필요한 교구: 새 분류가 있으면 필수 준비물(+화면·음향이 필요하면 음악·영상 기기), 없으면 옛 교구 목록 전체
+  function neededEquipment(act) {
+    const base = act.hasTaxonomy ? act.requiredEquipment.slice() : act.equipment.slice();
+    if (act.hasTaxonomy && act.mediaNeeds && act.mediaNeeds.length) base.push("음악·영상 기기");
+    return base.filter(eq => eq !== "없음(맨손)" && eq !== "전체");
   }
 
   function setEquipmentMatchMode(mode) {
@@ -4221,7 +4234,10 @@
 
       if (!selectedEquipments.has("전체")) {
         const selArr = Array.from(selectedEquipments);
-        if (equipmentMatchMode === "AND") {
+        if (equipmentMatchMode === "HAVE") {
+          // 가진 교구로만: 꼭 필요한 교구가 모두 선택한 교구 안에 있어야 함(맨손 활동은 항상 가능, 선택 준비물은 없어도 됨)
+          if (!neededEquipment(act).every(eq => selectedEquipments.has(eq))) return false;
+        } else if (equipmentMatchMode === "AND") {
           const hasAll = selArr.every(eq => act.equipment.includes(eq));
           if (!hasAll) return false;
         } else {
@@ -4256,7 +4272,7 @@
         const sB = matchScoreMap[b.id] || 0;
         if (sB !== sA) return sB - sA;
       }
-      if (selEqArr.length > 1 && equipmentMatchMode === "OR") {
+      if ((selEqArr.length > 1 && equipmentMatchMode === "OR") || (selEqArr.length && equipmentMatchMode === "HAVE")) {
         const mA = selEqArr.filter(eq => a.equipment.includes(eq)).length;
         const mB = selEqArr.filter(eq => b.equipment.includes(eq)).length;
         if (mB !== mA) return mB - mA;
