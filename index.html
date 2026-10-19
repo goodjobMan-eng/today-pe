@@ -1563,11 +1563,9 @@
         <div>
           <label id="lblNewCurr" style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">교육과정 영역</label>
           <select id="newCurrArea" class="input-box">
-            <option value="건강">건강 (Health / 体つくり)</option>
-            <option value="도전">도전 (Challenge / 挑戦)</option>
-            <option value="경쟁">경쟁 (Competition / 競争・ゲーム)</option>
+            <option value="운동">운동 (Exercise & Health / 運動)</option>
+            <option value="스포츠">스포츠 (Sports / スポーツ)</option>
             <option value="표현">표현 (Expression / 表現)</option>
-            <option value="안전·인성">안전·인성 (Safety & Teamwork / 安全・協同)</option>
           </select>
         </div>
       </div>
@@ -2149,8 +2147,11 @@
       "건강": { ko: "건강", en: "Health & Fitness", ja: "体つくり・健康" },
       "도전": { ko: "도전", en: "Challenge", ja: "挑戦・記録" },
       "경쟁": { ko: "경쟁", en: "Competition", ja: "競争・ゲーム" },
-      "표현": { ko: "표현", en: "Expression", ja: "表現・リズム" },
-      "안전·인성": { ko: "안전·인성", en: "Safety & Teamwork", ja: "安全・協同" }
+      "표현": { ko: "표현", en: "Expression", ja: "表現" },
+      "안전·인성": { ko: "안전·인성", en: "Safety & Teamwork", ja: "安全・協同" },
+      // 2022 개정 교육과정 영역
+      "운동": { ko: "운동", en: "Exercise & Health", ja: "運動" },
+      "스포츠": { ko: "스포츠", en: "Sports", ja: "スポーツ" }
     },
     playType: {
       "전체": { ko: "전체", en: "All", ja: "すべて" },
@@ -2743,7 +2744,7 @@
       return {
         id: "pe-" + seed.vid,
         country: seed.country || "한국",
-        curriculumArea: seed.curr,
+        curriculumArea: ({ "건강": "운동", "도전": "스포츠", "경쟁": "스포츠", "표현": "표현", "안전·인성": "운동" })[seed.curr] || seed.curr,
         playType: seed.type,
         title: i18nObj.ko.title,
         place: seed.place.slice(),
@@ -2781,7 +2782,17 @@
      4. STATE & FILTER OPTIONS
      ========================================================================= */
   const COUNTRY_OPTIONS = ["전체 국가", "한국", "일본", "미국", "캐나다", "호주", "영국", "독일", "스페인", "프랑스", "글로벌"];
-  const CURRICULUM_OPTIONS = ["전체", "건강", "도전", "경쟁", "표현", "안전·인성"];
+  // 2022 개정 교육과정 체육과 영역(운동·스포츠·표현). 옛 2015 영역 값은 시트에만 남기고 화면에서는 아래로 바꿔 보여 줌
+  const CURRICULUM_OPTIONS = ["전체", "운동", "스포츠", "표현"];
+  const CURRICULUM_2022 = ["운동", "스포츠", "표현"];
+  const CURRICULUM_FROM_2015 = { "건강": "운동", "도전": "스포츠", "경쟁": "스포츠", "표현": "표현", "안전·인성": "운동" };
+  function toCurriculum2022(o) {
+    const c = String(o.curriculum2022 || "").trim();
+    if (CURRICULUM_2022.includes(c)) return c;
+    const old = String(o.curriculumArea || "").trim();
+    if (CURRICULUM_2022.includes(old)) return old;
+    return CURRICULUM_FROM_2015[old] || "";
+  }
 
   const PLAY_TYPE_OPTIONS = [
     "전체",
@@ -4629,7 +4640,8 @@
     return {
       id: String(o.id),
       country: o.country || "한국",
-      curriculumArea: o.curriculumArea || "",
+      curriculumArea: toCurriculum2022(o),
+      curriculumOld: o.curriculumArea || "",
       playType: o.playType || "",
       title: i18n.ko.title,
       place: place.length ? place : ["강당"],
@@ -4666,7 +4678,8 @@
       id: act.id,
       status: "게시",
       country: act.country || "한국",
-      curriculumArea: act.curriculumArea,
+      curriculumArea: act.curriculumOld || "",
+      curriculum2022: act.curriculumArea || "",
       playType: act.playType,
       place: (act.place || []).join(","),
       groupSize: act.groupSize,
@@ -5278,7 +5291,7 @@
     const activity = {
       country: document.getElementById("newCountry").value,
       title,
-      curriculumArea: document.getElementById("newCurrArea").value,
+      curriculum2022: document.getElementById("newCurrArea").value,
       playModes: picked("newPlayModes"),
       sportTypes: picked("newSportTypes"),
       lessonStages: picked("newStages").length ? picked("newStages") : ["본활동"],
@@ -5468,7 +5481,7 @@
       <div class="panel-block" style="margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:8px;">
           <div>
-            <span style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(p.country)} · ${escapeHtml(p.curriculumArea)} · ${escapeHtml([...parseList(p.sportTypes), ...parseList(p.playModes)].join("·") || p.playType || "")}${parseList(p.lessonStages).length ? " · " + escapeHtml(parseList(p.lessonStages).join("·")) : ""}</span>
+            <span style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(p.country)} · ${escapeHtml(p.curriculum2022 || p.curriculumArea)} · ${escapeHtml([...parseList(p.sportTypes), ...parseList(p.playModes)].join("·") || p.playType || "")}${parseList(p.lessonStages).length ? " · " + escapeHtml(parseList(p.lessonStages).join("·")) : ""}</span>
             <h4 style="font-size:15.5px; font-weight:700; margin-top:2px;">${escapeHtml(p.title)}</h4>
           </div>
           <span style="font-size:12px; color:var(--text-muted); flex-shrink:0;">${escapeHtml(p.createdAt)}</span>
@@ -5610,7 +5623,8 @@
   let importItems = [];
 
   const IMPORT_ALLOWED = {
-    curriculumArea: CURRICULUM_OPTIONS.filter(v => v !== "전체"),
+    curriculumArea: ["건강", "도전", "경쟁", "표현", "안전·인성"],
+    curriculum2022: CURRICULUM_2022,
     playType: PLAY_TYPE_OPTIONS.filter(v => v !== "전체"),
     place: ["교실", "강당", "운동장", "수영장"],
     playModes: PLAY_MODE_OPTIONS,
@@ -5670,7 +5684,10 @@
     ["title_ko", "rules_ko", "channel", "videoTitle"].forEach(k => { if (!String(it[k] || "").trim()) p.push(`${k} 비어 있음`); });
     const quotes = Array.isArray(it.quotes) ? it.quotes.filter(q => String(q || "").trim()) : [];
     if (quotes.length < 2) p.push("자막 근거(quotes) 2개 미만");
-    ["curriculumArea", "groupSize", "country", "confidence"].forEach(k => {
+    // 교육과정 영역: 2022 값(운동·스포츠·표현) 또는 옛 2015 값 중 하나는 있어야 함
+    if (!IMPORT_ALLOWED.curriculum2022.includes(it.curriculum2022) && !IMPORT_ALLOWED.curriculumArea.includes(it.curriculumArea))
+      p.push(`curriculum2022 허용값 아님: ${it.curriculum2022 === undefined ? "(없음)" : it.curriculum2022}`);
+    ["groupSize", "country", "confidence"].forEach(k => {
       if (!IMPORT_ALLOWED[k].includes(it[k])) p.push(`${k} 허용값 아님: ${it[k] === undefined ? "(없음)" : it[k]}`);
     });
     // 새 분류(playModes·sportTypes·lessonStages·required/optionalEquipment·mediaNeeds)가 있으면 그걸 쓰고, 없으면 옛 playType 필요

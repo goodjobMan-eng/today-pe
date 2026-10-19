@@ -24,7 +24,10 @@ const LANGS = ["ko", "en", "ja"];
 const COMMON = ["id", "country", "curriculumArea", "playType", "place", "groupSize", "slotKey", "gradeGroup",
   "equipment", "videoId", "youtubeUrl", "defaultDur", "channel", "channelUrl", "title_ko", "equip_ko",
   // 새 분류(2026-10): 시트에는 JSON 배열 문자열, 목록 파일에는 쉼표로 이어 붙인 값
-  "playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds"];
+  "playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds",
+  // 2022 개정 교육과정 영역(운동·스포츠·표현)
+  "curriculum2022"];
+const CUR2022 = ["운동", "스포츠", "표현"];
 const TAX = ["playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds"];
 
 // 시트 칸 값(JSON 배열 문자열 또는 쉼표 문자열)을 배열로
@@ -138,6 +141,9 @@ async function main() {
     const m = !sheetHas && mig[id];
     for (const f of TAX) o[f] = (m ? parseList(m[f]) : parseList(o[f])).join(",");
     if (sheetHas) fromSheet++; else if (m) fromMig++;
+    // 교육과정 영역(2022): 시트 값이 맞으면 그대로, 비었으면 분류 파일 값
+    const c = String(o.curriculum2022 || "").trim();
+    o.curriculum2022 = CUR2022.includes(c) ? c : (mig[id] && CUR2022.includes(mig[id].curriculum2022) ? mig[id].curriculum2022 : "");
   }
   console.log(`새 분류: 시트 ${fromSheet}건, 분류 파일 ${fromMig}건, 없음 ${visible.length - fromSheet - fromMig}건`);
   await rm(new URL("detail/", OUT), { recursive: true, force: true });

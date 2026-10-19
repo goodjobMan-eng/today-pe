@@ -29,7 +29,9 @@ const TABS = {
       'createdAt', 'updatedAt',
       'source', 'channel', 'videoTitle', 'evidence', 'confidence', 'ai_ko', 'ai_en', 'ai_ja',
       // 새 분류(2026-10). 값은 JSON 배열 문자열. taxonomyReview는 관리자 검토용 메모(사이트에 안 나감)
-      'playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'taxonomyReview']
+      'playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'taxonomyReview',
+      // 2022 개정 교육과정 영역(운동·스포츠·표현). 옛 curriculumArea(2015)는 기록용으로 남김
+      'curriculum2022']
   },
   reviews: {
     name: '후기',
@@ -52,7 +54,7 @@ const TABS = {
     name: '새수업제안',
     headers: ['proposalId', 'status', 'createdAt', 'title', 'lang', 'country', 'curriculumArea', 'playType', 'place',
       'groupSize', 'equipment', 'equipmentDetail', 'youtubeUrl', 'rules', 'duration', 'caution', 'resultActivityId',
-      'playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds']
+      'playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'curriculum2022']
   },
   reports: {
     name: '신고',
@@ -596,6 +598,7 @@ function proposeActivity_(p) {
     lang: LANGS.indexOf(p.lang) >= 0 ? p.lang : 'ko',
     country: clean_(p.country, 20) || '한국',
     curriculumArea: clean_(p.curriculumArea, 20),
+    curriculum2022: ALLOWED.curriculum2022.indexOf(String(p.curriculum2022 || p.curriculumArea || '')) >= 0 ? String(p.curriculum2022 || p.curriculumArea) : '',
     playType: clean_(p.playType, 40),
     place: listStr_(p.place),
     groupSize: clean_(p.groupSize, 40),
@@ -632,6 +635,7 @@ function approveProposal_(proposalId) {
     status: '게시',
     country: p.country || '한국',
     curriculumArea: p.curriculumArea,
+    curriculum2022: p.curriculum2022 || '',
     playType: p.playType,
     place: p.place,
     groupSize: p.groupSize,
@@ -723,6 +727,7 @@ function approveEdit_(editId) {
 
 const ALLOWED = {
   curriculumArea: ['건강', '도전', '경쟁', '표현', '안전·인성'],
+  curriculum2022: ['운동', '스포츠', '표현'],
   playType: ['준비운동·코디네이션', '팀빌딩·협동형', '술래잡기·태그형', '피구·투척형', '축구·발구기형', '농구·핸드볼형',
     '럭비·보물탈환형', '네트·라켓형', '필드·티볼·야구형', '플라잉디스크·하키형', '줄넘기·리듬스텝형',
     '육상·릴레이·순발력형', '표적·컬링·보치아형', '전래·전통놀이형'],
@@ -782,7 +787,8 @@ function importActivities_(items) {
       id: 'pe-' + it.videoId,
       status: '게시',
       country: it.country,
-      curriculumArea: it.curriculumArea,
+      curriculumArea: it.curriculumArea || '',
+      curriculum2022: ALLOWED.curriculum2022.indexOf(it.curriculum2022) >= 0 ? it.curriculum2022 : '',
       playType: it.playType,
       place: it.place.join(','),
       groupSize: it.groupSize,
@@ -826,7 +832,9 @@ function validateImportItem_(it) {
   if (!/^[A-Za-z0-9_-]{11}$/.test(String(it.videoId || ''))) p.push('videoId 형식 오류');
   ['title_ko', 'rules_ko', 'channel', 'videoTitle'].forEach(k => { if (!String(it[k] || '').trim()) p.push(k + ' 비어 있음'); });
   if (!Array.isArray(it.quotes) || it.quotes.filter(q => String(q || '').trim()).length < 2) p.push('자막 근거(quotes) 2개 미만');
-  ['curriculumArea', 'groupSize', 'country', 'confidence'].forEach(k => {
+  // 교육과정 영역: 2022(운동·스포츠·표현) 또는 옛 2015 값 중 하나는 있어야 함
+  if (ALLOWED.curriculum2022.indexOf(it.curriculum2022) < 0 && ALLOWED.curriculumArea.indexOf(it.curriculumArea) < 0) p.push('curriculum2022 허용값 아님: ' + it.curriculum2022);
+  ['groupSize', 'country', 'confidence'].forEach(k => {
     if (ALLOWED[k].indexOf(it[k]) < 0) p.push(k + ' 허용값 아님: ' + it[k]);
   });
   // 새 분류가 있으면 그걸 쓰고(playType 없어도 됨), 없으면 옛 playType이 있어야 한다
@@ -1043,7 +1051,7 @@ function setup() {
 /*  playModes(놀이 방식) · sportTypes(종목·운동) · lessonStages(수업 단계) · requiredEquipment(필수 준비물)
     · optionalEquipment(선택 준비물) · mediaNeeds(화면·음향) — 모두 JSON 배열 문자열로 저장. 해당 없으면 [].
     taxonomyReview: 분류가 애매한 수업의 검토 메모(관리자용, 사이트에는 안 나감) */
-const TAX_FIELDS = ['playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'taxonomyReview'];
+const TAX_FIELDS = ['playModes', 'sportTypes', 'lessonStages', 'requiredEquipment', 'optionalEquipment', 'mediaNeeds', 'taxonomyReview', 'curriculum2022'];
 const TAXONOMY_URL = 'https://goodjobman-eng.github.io/today-pe/data/taxonomy-migration.json';
 
 // 배열(또는 JSON 배열 문자열·쉼표 문자열)을 허용값만 남긴 JSON 배열 문자열로
@@ -1095,7 +1103,8 @@ function applyTaxonomyMigration_(url, overwrite) {
       ids.forEach((id, i) => {
         const it = map[id];
         if (!it) return;
-        const v = f === 'taxonomyReview' ? String(it.review || '') : JSON.stringify(it[f] || []);
+        if (f === 'curriculum2022' && !it.curriculum2022) return;
+        const v = f === 'taxonomyReview' ? String(it.review || '') : f === 'curriculum2022' ? String(it.curriculum2022) : JSON.stringify(it[f] || []);
         if (overwrite || String(cur[i][0]).trim() === '') { if (String(cur[i][0]) !== v) { cur[i][0] = v; changed = true; if (f === 'lessonStages') filled++; } }
       });
       if (changed) rng.setValues(cur);
