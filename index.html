@@ -4215,7 +4215,8 @@
     const rulesText = [act.rules, ko.rules, en.rules, ja.rules, ...tags].filter(Boolean).join(" ").toLowerCase();
     act._searchIdx = {
       title: titleText.replace(/\s+/g, ""),
-      rules: rulesText.replace(/\s+/g, "")
+      rules: rulesText.replace(/\s+/g, ""),
+      channel: String(act.channel || "").toLowerCase().replace(/\s+/g, "")
     };
     return act._searchIdx;
   }
@@ -4281,6 +4282,7 @@
           let termMatched = false;
           for (const c of termCandidates[i]) {
             if (idx.title.includes(c.text)) { score += 100 * c.weight; termMatched = true; }
+            else if (idx.channel.includes(c.text)) { score += 80 * c.weight; termMatched = true; }
             else if (idx.rules.includes(c.text)) { score += 60 * c.weight; termMatched = true; }
           }
           if (!termMatched) return false;
