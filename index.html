@@ -4933,6 +4933,20 @@
   }
 
   // 마지막 발행 이후 새 후기만 시트에서 받는다(최근 500줄만 보므로 가벼움). 예전 Apps Script면 조용히 건너뜀
+  // 추천·저장 수는 발행 파일(social.json)이 아니라 시트의 지금 숫자로 덮어쓴다 (발행 전에 누른 것도 바로 보이게)
+  async function loadLiveCounts() {
+    try {
+      const data = await apiGet("counts");
+      if (!data || !data.ok) return;
+      activities.forEach(a => {
+        if (reactPending.has("like:" + a.id) || reactPending.has("save:" + a.id)) return;
+        a.likes = Number((data.likes || {})[a.id]) || 0;
+        a.saves = Number((data.saves || {})[a.id]) || 0;
+      });
+      refreshReactViews();
+    } catch (e) {}
+  }
+
   async function loadRecentReviews() {
     try {
       const data = await apiGet("recent&since=" + encodeURIComponent(staticMeta.sAt || ""));
@@ -5007,6 +5021,7 @@
           applyStaticSocial(await fetchJson(STATIC_BASE + "social.json?v=" + encodeURIComponent(staticMeta.sv)));
           refreshReactViews();
           loadRecentReviews();
+          loadLiveCounts();
           return;
         } catch (e2) { staticSocial = false; }
       }
