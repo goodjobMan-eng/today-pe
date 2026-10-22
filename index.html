@@ -1932,6 +1932,7 @@
       toastUnsave: "저장을 취소했습니다.",
       btnSave: (n) => `저장 ${n}`,
       sortSaves: "저장 많은순",
+      sortNewest: "최신순",
       savedFilterBtn: (n) => `★ 내 저장 ${n}`,
       savedEmptyTitle: "아직 저장한 수업이 없습니다.",
       savedEmptySub: "마음에 드는 수업에서 '저장'을 누르면 여기에 모입니다. 저장 목록은 이 기기에 보관됩니다.",
@@ -2034,6 +2035,7 @@
       toastUnsave: "Removed from your list.",
       btnSave: (n) => `Save ${n}`,
       sortSaves: "Most Saved",
+      sortNewest: "Newest",
       savedFilterBtn: (n) => `★ My Saved ${n}`,
       savedEmptyTitle: "You haven't saved any lessons yet.",
       savedEmptySub: "Tap 'Save' on a lesson you like and it will appear here. Your list is kept on this device.",
@@ -2136,6 +2138,7 @@
       toastUnsave: "保存を取り消しました。",
       btnSave: (n) => `保存 ${n}`,
       sortSaves: "保存が多い順",
+      sortNewest: "新着順",
       savedFilterBtn: (n) => `★ 保存リスト ${n}`,
       savedEmptyTitle: "まだ保存した授業がありません。",
       savedEmptySub: "気に入った授業で「保存」を押すとここに集まります。保存リストはこの端末に保管されます。",
@@ -3182,6 +3185,7 @@
       { v: "popular", l: xui().sortPopular },
       { v: "likes", l: ui.sortLikes },
       { v: "saves", l: ui.sortSaves },
+      { v: "newest", l: ui.sortNewest },
       { v: "fit", l: ui.sortFit },
       { v: "timeAsc", l: ui.sortTimeAsc },
       { v: "timeDesc", l: ui.sortTimeDesc }
@@ -3767,6 +3771,13 @@
     renderActivities();
   }
 
+  // ---------- 최신순 ----------
+  // 교사 제안으로 등록된 수업: id = "pe-u" + 제안 시각(밀리초). 일괄 등록 수업은 0
+  function proposalTime(a) {
+    const m = /^pe-u(\d+)$/.exec(String(a.id || ""));
+    return m ? Number(m[1]) : 0;
+  }
+
   // ---------- 인기순 ----------
   function popularityScore(a) {
     let n, avg;
@@ -4295,7 +4306,7 @@
 
     const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
     const statCache = new Map();
-    if (!["likes", "saves", "popular"].includes(sortVal)) filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
+    if (!["likes", "saves", "popular", "newest"].includes(sortVal)) filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
     filtered.sort((a, b) => {
       if (termCandidates.length > 0) {
         const sA = matchScoreMap[a.id] || 0;
@@ -4310,6 +4321,12 @@
       if (sortVal === "popular") return popularityScore(b) - popularityScore(a);
       if (sortVal === "likes") return b.likes - a.likes;
       if (sortVal === "saves") return (b.saves || 0) - (a.saves || 0);
+      if (sortVal === "newest") {
+        // 최신순: 교사 제안으로 등록된 수업(id가 pe-u+제안 시각)만 최근 제안부터. 일괄 등록 수업은 그 뒤에 인기순으로
+        const nA = proposalTime(a), nB = proposalTime(b);
+        if (nB !== nA) return nB - nA;
+        return popularityScore(b) - popularityScore(a);
+      }
       const stA = statCache.get(a.id);
       const stB = statCache.get(b.id);
       if (sortVal === "fit") return (stB.avgFit === "-" ? -1 : Number(stB.avgFit)) - (stA.avgFit === "-" ? -1 : Number(stA.avgFit));

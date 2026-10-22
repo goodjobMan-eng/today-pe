@@ -629,7 +629,9 @@ function approveProposal_(proposalId) {
 
   const lang = LANGS.indexOf(p.lang) >= 0 ? p.lang : 'ko';
   const dur = Number(p.duration) || 25;
-  const id = 'pe-u' + new Date().getTime();
+  // id = 'pe-u' + 제안 시각 → 사이트 「최신순」이 제안이 들어온 순서를 따름
+  const pm = String(p.proposalId).match(/^pr-(\d+)$/);
+  const id = 'pe-u' + (pm ? pm[1] : new Date().getTime());
   const act = {
     id: id,
     status: '게시',
