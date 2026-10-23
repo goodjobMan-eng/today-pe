@@ -16,7 +16,7 @@ const GAS_URL = process.argv[2] || process.env.GAS_URL ||
   "https://script.google.com/macros/s/AKfycbwH8ParKOTqjbi1RuDj6LX-RYWRD6aH_9_WZ7nkxICsg_6XYrhJzAKm0t1Uid4XyFq3FA/exec";
 const OUT = new URL("../data/", import.meta.url);
 const ROOT = new URL("../", import.meta.url);
-const SITE_URL = (process.env.SITE_URL || "https://goodjobman-eng.github.io/today-pe/").replace(/\/?$/, "/");
+const SITE_URL = (process.env.SITE_URL || "https://today-pe.com/").replace(/\/?$/, "/");
 const CHECK_VIDEOS = process.env.CHECK_VIDEOS !== "0";
 const CHECK_PER_RUN = Number(process.env.CHECK_PER_RUN || 1000);
 const BUCKETS = 64;

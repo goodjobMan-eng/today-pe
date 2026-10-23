@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://goodjobman-eng.github.io/today-pe/sitemap.xml
+Sitemap: https://today-pe.com/sitemap.xml
