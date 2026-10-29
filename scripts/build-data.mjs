@@ -1,6 +1,7 @@
 // 구글 시트(Apps Script)의 수업 데이터를 받아 사이트가 읽을 정적 파일로 나눠 저장한다.
 //   data/meta.json            : 버전(만든 시각)·건수
-//   data/list-{ko,en,ja}.json : 목록·검색용 (언어별 제목·활동 방법·준비물 + 분류)
+//   data/list-{ko,en,ja}.json : 목록 첫 화면용 (언어별 제목·활동 방법 앞부분·준비물 + 분류)
+//   data/rules-{ko,en,ja}.json: 활동 방법 전체 (검색할 때만 받음. 상세 화면은 detail 묶음에 든 전체 문장을 씀)
 //   data/detail/NN.json       : 상세 화면용 (유의점·팁·근거 등), 수업 id로 64묶음
 //   data/social.json          : 추천·저장 수와 활동별 후기 요약(개수·평균) — 목록 카드·인기순용
 //   data/reviews/NN.json      : 후기 본문, 활동 id로 64묶음 (상세 화면을 열 때만 받음). 활동당 최신 200개
@@ -28,6 +29,8 @@ const COMMON = ["id", "country", "curriculumArea", "playType", "place", "groupSi
   // 2022 개정 교육과정 영역(운동·스포츠·표현)
   "curriculum2022"];
 const CUR2022 = ["운동", "스포츠", "표현"];
+// 목록 카드에 보이는 활동 방법 앞부분 길이(글자). 카드는 2~3줄만 보여 준다
+const RULES_SNIPPET = { ko: 64, ja: 64, en: 130 };
 const TAX = ["playModes", "sportTypes", "lessonStages", "requiredEquipment", "optionalEquipment", "mediaNeeds"];
 
 // 시트 칸 값(JSON 배열 문자열 또는 쉼표 문자열)을 배열로
@@ -155,16 +158,30 @@ async function main() {
   await rm(new URL("detail/", OUT), { recursive: true, force: true });
   await mkdir(new URL("detail/", OUT), { recursive: true });
 
+  // 목록 파일은 첫 화면용으로 가볍게: 활동 방법은 카드에 보이는 앞부분만, 영상 주소는 영상 ID로 대신(사이트가 다시 만듦).
+  // 활동 방법 전체는 rules-{언어}.json 에 따로 두고, 검색·상세 화면을 열 때만 받는다
   for (const L of LANGS) {
     const cols = [...new Set([...COMMON, "title_" + L, "rules_" + L, "equip_" + L])];
-    const out = { h: cols, r: visible.map(o => cols.map(c => val(o[c]))) };
-    await writeFile(new URL(`list-${L}.json`, OUT), JSON.stringify(out));
+    const ri = cols.indexOf("rules_" + L), ui = cols.indexOf("youtubeUrl"), vi = cols.indexOf("videoId");
+    const cut = RULES_SNIPPET[L] || 120;
+    const full = {};
+    const r = visible.map(o => {
+      const row = cols.map(c => val(o[c]));
+      const t = String(row[ri] || "");
+      if (t.length > cut) { full[String(o.id).trim()] = t; row[ri] = t.slice(0, cut).trimEnd() + "…"; }
+      if (/^[A-Za-z0-9_-]{11}$/.test(String(row[vi] || ""))) row[ui] = "";
+      return row;
+    });
+    await writeFile(new URL(`list-${L}.json`, OUT), JSON.stringify({ h: cols, r }));
+    await writeFile(new URL(`rules-${L}.json`, OUT), JSON.stringify(full));
   }
 
   const buckets = Array.from({ length: BUCKETS }, () => ({}));
   for (const o of visible) {
     const d = {};
     for (const c of DETAIL) { const v = val(o[c]); if (v !== "") d[c] = v; }
+    // 활동 방법이 목록에서 잘렸으면 전체를 상세 묶음에도 넣는다(상세 화면은 이 묶음만 받으면 됨)
+    for (const L of LANGS) { const t = String(val(o["rules_" + L]) || ""); if (t.length > (RULES_SNIPPET[L] || 120)) d["rules_" + L] = t; }
     buckets[bucketOf(o.id)][String(o.id).trim()] = d;
   }
   for (let i = 0; i < BUCKETS; i++) {
@@ -175,7 +192,7 @@ async function main() {
   const social = await buildSocial(new Set(visible.map(o => String(o.id).trim())));
 
   // 내용이 그대로면 버전을 바꾸지 않는다(불필요한 커밋·캐시 무효화 방지). 목록과 후기는 버전을 따로 둔다
-  const sig = JSON.stringify(visible).length + ":" + visible.length + ":" + simpleHash(JSON.stringify(visible));
+  const sig = "r3:" + JSON.stringify(visible).length + ":" + visible.length + ":" + simpleHash(JSON.stringify(visible));
   let prev = null;
   try { prev = JSON.parse(await readFile(new URL("meta.json", OUT), "utf8")); } catch (e) {}
   const listSame = prev && prev.sig === sig;
@@ -183,7 +200,7 @@ async function main() {
   if (listSame && socialSame) { console.log(`수업 ${visible.length}건, 변경 없음 (버전 ${prev.v})`); return; }
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "");
   const meta = {
-    v: listSame ? prev.v : stamp, n: visible.length, at: listSame ? prev.at : (data.at || ""), buckets: BUCKETS, sig, hidden,
+    v: listSame ? prev.v : stamp, n: visible.length, rules: true, at: listSame ? prev.at : (data.at || ""), buckets: BUCKETS, sig, hidden,
     social: !!(social || (prev && prev.social)),
     sv: social ? (socialSame && prev ? prev.sv : stamp) : (prev && prev.sv) || "",
     sAt: social ? (socialSame && prev ? prev.sAt : social.since) : (prev && prev.sAt) || "",

@@ -86,7 +86,8 @@ function doGet(e) {
     if (action === 'acts') return json_(actsPage_(e.parameter));    // 데이터 발행용: 탭 하나를 나눠 받기
     if (action === 'reviewsPage') return json_(reviewsPage_(e.parameter)); // 데이터 발행용: 후기를 나눠 받기 (src=main 또는 연도)
     if (action === 'reviewSources') return json_(reviewSources_());       // 데이터 발행용: 지금 파일 + 연도별 보관 파일 목록
-    if (action === 'counts') return json_({ ok: true, at: now_(), likes: countMap_('likes'), saves: countMap_('saves') });
+    if (action === 'counts') { const visit = logVisit_(e.parameter); return json_({ ok: true, at: now_(), likes: countMap_('likes'), saves: countMap_('saves'), visit: visit }); }
+    if (action === 'visitStats') return json_(visitStats_(e.parameter));   // 날짜별 방문 기기 수
     if (action === 'recent') return json_(recentReviews_(e.parameter)); // 사이트용: 마지막 발행 이후 새 후기만
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
@@ -1208,4 +1209,45 @@ function repairVideoIds_() {
     });
   });
   return fixed;
+}
+
+/* ------------------- 방문 기록 (서버 확장 판단용) -------------------
+   사이트가 기기마다 하루 한 번 counts 요청에 visit(기기 번호)을 붙여 보낸다 → 「방문」 탭에 한 줄.
+   기기 번호는 브라우저가 만든 임의 문자열이라 개인을 알 수 없다. 이름·IP 등은 기록하지 않는다. */
+const VISIT_TAB = '방문';
+
+function logVisit_(p) {
+  try {
+    const dev = String((p && p.visit) || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+    if (!dev) return false;
+    const ss = ss_();
+    let sh = ss.getSheetByName(VISIT_TAB);
+    if (!sh) {
+      sh = ss.insertSheet(VISIT_TAB);
+      sh.getRange(1, 1, 1, 5).setValues([['날짜', '시각', '기기', '언어', '첫방문']]);
+      sh.setFrozenRows(1);
+    }
+    const now = new Date();
+    sh.appendRow(["'" + Utilities.formatDate(now, TZ, 'yyyy-MM-dd'), Utilities.formatDate(now, TZ, 'HH:mm'), dev,
+      String(p.lang || '').replace(/[^a-z]/g, '').slice(0, 5), p.first === '1' ? 'Y' : '']);
+    return true;
+  } catch (err) { return false; }
+}
+
+// 최근 n일(기본 60일) 날짜별: 방문 기기 수, 그중 첫 방문 수
+function visitStats_(p) {
+  const days = Math.min(400, Math.max(1, Number(p && p.days) || 60));
+  const sh = ss_().getSheetByName(VISIT_TAB);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, days: [] };
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getDisplayValues();
+  const since = Utilities.formatDate(new Date(Date.now() - days * 86400000), TZ, 'yyyy-MM-dd');
+  const by = {};
+  v.forEach(r => {
+    const d = String(r[0]).trim();
+    if (!d || d < since) return;
+    const o = by[d] || (by[d] = { devices: {}, first: 0 });
+    o.devices[r[2]] = 1;
+    if (r[4] === 'Y') o.first++;
+  });
+  return { ok: true, days: Object.keys(by).sort().map(d => ({ date: d, visitors: Object.keys(by[d].devices).length, first: by[d].first })) };
 }

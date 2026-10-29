@@ -4001,6 +4001,7 @@
     document.getElementById("packModal").classList.add("open");
   }
   function renderPackModal() {
+    if (!rulesReady(currentLang)) ensureRules(currentLang).then(ok => { if (ok) renderPackModal(); });
     const x = xui();
     const p = packView || pack;
     const shared = !!packView;
@@ -4256,6 +4257,7 @@
       return;
     }
     const rawQuery = document.getElementById("searchInput").value.trim();
+    if (rawQuery && !rulesReady(currentLang)) ensureRules(currentLang).then(ok => { if (ok) renderActivities(); });
     const q = rawQuery.toLowerCase();
     const sizeVal = document.getElementById("sizeSelect").value;
     const gradeVal = document.getElementById("gradeSelect").value;
@@ -4845,13 +4847,36 @@
         if (!a) return;
         const t = a.i18n[lang];
         if (o["title_" + lang]) t.title = String(o["title_" + lang]);
-        if (o["rules_" + lang]) t.rules = String(o["rules_" + lang]);
+        if (o["rules_" + lang] && !rulesDone.has(lang)) t.rules = String(o["rules_" + lang]);
         if (o["equip_" + lang]) t.equipmentDetail = String(o["equip_" + lang]);
         if (lang === "ko") { a.rules = t.rules; a.equipmentDetail = t.equipmentDetail; }
         delete a._searchIdx;
       });
     }
     loadedLists.add(lang);
+  }
+
+  // 목록 파일에는 활동 방법이 앞부분만 들어 있다(첫 화면을 가볍게). 검색·꾸러미 때 전체를 받고, 상세·수정 제안은 상세 묶음의 전체 문장을 쓴다
+  const loadedRules = new Map(), rulesDone = new Set();
+  function rulesReady(lang) { return !staticMode || !(staticMeta && staticMeta.rules) || rulesDone.has(lang); }
+  function ensureRules(lang) {
+    lang = lang || currentLang;
+    if (rulesReady(lang)) return Promise.resolve(true);
+    if (!loadedRules.has(lang)) {
+      loadedRules.set(lang, fetchJson(staticUrl(`rules-${lang}.json`)).then(map => {
+        const byId = new Map(activities.map(a => [a.id, a]));
+        Object.entries(map).forEach(([id, text]) => {
+          const a = byId.get(id);
+          if (!a) return;
+          a.i18n[lang].rules = String(text);
+          if (lang === "ko") a.rules = a.i18n.ko.rules;
+          delete a._searchIdx;
+        });
+        rulesDone.add(lang);
+        return true;
+      }).catch(() => { loadedRules.delete(lang); return false; }));
+    }
+    return loadedRules.get(lang);
   }
 
   // 상세 화면을 열 때 그 수업이 든 묶음(약 100~160건)만 받아 유의점·팁·근거를 채운다
@@ -4865,6 +4890,7 @@
           const a = byId.get(aid);
           if (!a) return;
           ["ko", "en", "ja"].forEach(l => {
+            if (d["rules_" + l] && !rulesDone.has(l)) { a.i18n[l].rules = String(d["rules_" + l]); if (l === "ko") a.rules = a.i18n.ko.rules; delete a._searchIdx; }
             a.i18n[l].caution = d["caution_" + l] || d.caution_ko || "";
             a.i18n[l].upgradeTip = d["tip_" + l] || d.tip_ko || "";
           });
@@ -4962,8 +4988,13 @@
   // 추천·저장 수는 발행 파일(social.json)이 아니라 시트의 지금 숫자로 덮어쓴다 (발행 전에 누른 것도 바로 보이게)
   async function loadLiveCounts() {
     try {
-      const data = await apiGet("counts");
+      // 하루에 한 번만 방문 기록(기기 번호·언어)을 같이 보낸다. 서버가 기록했다고 답하면 오늘 날짜를 저장
+      const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+      const lastVisit = safeGetStorage("pe_visit_day");
+      const visitQ = lastVisit === today ? "" : "&visit=" + encodeURIComponent(deviceId || "") + "&lang=" + encodeURIComponent(currentLang) + (lastVisit ? "" : "&first=1");
+      const data = await apiGet("counts" + visitQ);
       if (!data || !data.ok) return;
+      if (visitQ && data.visit) safeSetStorage("pe_visit_day", today);
       activities.forEach(a => {
         if (reactPending.has("like:" + a.id) || reactPending.has("save:" + a.id)) return;
         a.likes = Number((data.likes || {})[a.id]) || 0;
@@ -5412,6 +5443,7 @@
   function openEditModal() {
     const act = activities.find(a => a.id === activeModalId);
     if (!act) return;
+    if (staticMode && !act._detail && !act._editTried) { act._editTried = true; ensureDetail(act.id).catch(() => {}).then(() => openEditModal()); return; }
     const ui = UI_I18N[currentLang];
     document.getElementById("editModalTitle").textContent = ui.editModalTitle;
     document.getElementById("editModalSub").textContent = ui.editModalSub(getLocalizedField(act, "title"));
