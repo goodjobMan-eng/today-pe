@@ -1122,3 +1122,90 @@ function runTaxonomyMigration() {
   Logger.log(JSON.stringify(r));
   return r;
 }
+
+/* ------------------- 납품 자동 반영 (GitHub imports/ → 시트) -------------------
+   Claude가 저장소 imports/ 폴더에 납품분(JSON)을 올리면, 매시간 이 함수가 받아 마지막 수업 탭에 붙인다.
+   - 이미 시트에 있는 id·영상은 건너뛴다(같은 파일을 두 번 받아도 중복 없음).
+   - '-'로 시작하는 영상 ID가 #NAME? 이 되지 않게 글자로 넣는다. 이미 #NAME? 이 된 줄은 youtubeUrl로 고친다.
+   처음 한 번만: 편집기에서 setupAutoImport 를 실행(권한 허용) → 매시간 자동 실행. */
+const IMPORT_BASE = 'https://raw.githubusercontent.com/goodjobMan-eng/today-pe/main/imports/';
+const IMPORT_PROP = 'IMPORTED_FILES';
+
+function setupAutoImport() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'autoImport').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('autoImport').timeBased().everyHours(1).nearMinute(5).create();
+  return autoImport();
+}
+
+function autoImport() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) return 'busy';
+  try {
+    const log = [];
+    log.push('영상ID 복구 ' + repairVideoIds_() + '줄');
+    const res = UrlFetchApp.fetch(IMPORT_BASE + 'index.json?t=' + Date.now(), { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) { log.push('목록 없음 ' + res.getResponseCode()); return log.join(' / '); }
+    const files = JSON.parse(res.getContentText()) || [];
+    const props = PropertiesService.getScriptProperties();
+    const done = JSON.parse(props.getProperty(IMPORT_PROP) || '[]');
+    files.filter(f => done.indexOf(f) < 0).forEach(f => {
+      const r = UrlFetchApp.fetch(IMPORT_BASE + encodeURIComponent(f) + '?t=' + Date.now(), { muteHttpExceptions: true });
+      if (r.getResponseCode() !== 200) { log.push(f + ' 받기 실패 ' + r.getResponseCode()); return; }
+      const n = appendDelivery_(JSON.parse(r.getContentText()));
+      done.push(f);
+      props.setProperty(IMPORT_PROP, JSON.stringify(done));
+      log.push(f + ' ' + n + '줄 추가');
+    });
+    console.log(log.join(' / '));
+    return log.join(' / ');
+  } finally { lock.releaseLock(); }
+}
+
+function appendDelivery_(data) {
+  const at = readAllActs_();
+  const haveId = {}, haveVid = {};
+  at.rows.forEach(r => {
+    haveId[String(r[at.col.id] || '').trim()] = 1;
+    const v = String(r[at.col.videoId] || '').trim(); if (v) haveVid[v] = 1;
+    const m = /[?&]v=([A-Za-z0-9_-]{11})/.exec(String(r[at.col.youtubeUrl] || '')); if (m) haveVid[m[1]] = 1;
+  });
+  const tabs = activityTabs_();
+  const sh = tabs[tabs.length - 1];
+  ensureTaxonomyColumns_(sh);
+  const h = actHeaders_(sh);
+  const src = {}; (data.h || []).forEach((x, i) => { src[x] = i; });
+  const out = [];
+  (data.r || []).forEach(row => {
+    const id = String(row[src.id] || '').trim(), vid = String(row[src.videoId] || '').trim();
+    if (!id || haveId[id] || (vid && haveVid[vid])) return;
+    haveId[id] = 1; if (vid) haveVid[vid] = 1;
+    out.push(h.map(x => (x && src[x] !== undefined && row[src[x]] !== null) ? row[src[x]] : ''));
+  });
+  if (!out.length) return 0;
+  const start = sh.getLastRow() + 1;
+  const vc = h.indexOf('videoId');
+  if (vc >= 0) sh.getRange(start, vc + 1, out.length, 1).setNumberFormat('@');   // 영상 ID는 글자로
+  sh.getRange(start, 1, out.length, h.length).setValues(out.map(r => r.map((v, j) => j === vc ? String(v) : safeCell_(v))));
+  return out.length;
+}
+
+// 시트에서 #NAME? 등으로 깨진 videoId를 youtubeUrl의 ID로 되돌린다
+function repairVideoIds_() {
+  let fixed = 0;
+  activityTabs_().forEach(sh => {
+    const h = actHeaders_(sh), vc = h.indexOf('videoId'), uc = h.indexOf('youtubeUrl');
+    const last = sh.getLastRow();
+    if (vc < 0 || uc < 0 || last < 2) return;
+    const vids = sh.getRange(2, vc + 1, last - 1, 1).getDisplayValues();
+    const urls = sh.getRange(2, uc + 1, last - 1, 1).getDisplayValues();
+    vids.forEach((v, i) => {
+      if (/^[A-Za-z0-9_-]{11}$/.test(String(v[0]).trim())) return;
+      const m = /[?&]v=([A-Za-z0-9_-]{11})/.exec(String(urls[i][0]));
+      if (!m) return;
+      const cell = sh.getRange(i + 2, vc + 1);
+      cell.setNumberFormat('@'); cell.setValue(m[1]);
+      fixed++;
+    });
+  });
+  return fixed;
+}

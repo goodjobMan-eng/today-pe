@@ -98,6 +98,12 @@ async function main() {
   const rows = got.rows
     .filter(o => String(o.id || "").trim() && String(o.status || "").trim() !== "숨김")
     .filter(o => { const id = String(o.id).trim(); if (seen.has(id)) { console.log("id 중복으로 뒤의 것 제외: " + id); return false; } seen.add(id); return true; });
+  // 시트가 '-'로 시작하는 영상 ID를 수식으로 읽어 #NAME? 이 되는 경우: youtubeUrl에서 ID를 다시 꺼낸다
+  rows.forEach(o => {
+    if (/^[A-Za-z0-9_-]{11}$/.test(String(o.videoId || "").trim())) return;
+    const m = /[?&]v=([A-Za-z0-9_-]{11})/.exec(String(o.youtubeUrl || "")) || /youtu\.be\/([A-Za-z0-9_-]{11})/.exec(String(o.youtubeUrl || ""));
+    if (m) o.videoId = m[1];
+  });
   if (rows.length < 10) throw new Error("수업이 " + rows.length + "건뿐이라 발행을 멈춥니다(시트 확인 필요).");
 
   // ---- 영상 점검: 신고된 영상 → 처음 보는 영상 → 오래전에 본 영상 순으로 일부씩 확인 ----

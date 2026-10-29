@@ -1932,6 +1932,8 @@
       toastUnsave: "저장을 취소했습니다.",
       btnSave: (n) => `저장 ${n}`,
       sortSaves: "저장 많은순",
+      sortReviews: "후기 많은순",
+      sortRating: "평점순",
       sortNewest: "최신순",
       savedFilterBtn: (n) => `★ 내 저장 ${n}`,
       savedEmptyTitle: "아직 저장한 수업이 없습니다.",
@@ -2035,6 +2037,8 @@
       toastUnsave: "Removed from your list.",
       btnSave: (n) => `Save ${n}`,
       sortSaves: "Most Saved",
+      sortReviews: "Most Reviewed",
+      sortRating: "Highest Rated",
       sortNewest: "Newest",
       savedFilterBtn: (n) => `★ My Saved ${n}`,
       savedEmptyTitle: "You haven't saved any lessons yet.",
@@ -2138,6 +2142,8 @@
       toastUnsave: "保存を取り消しました。",
       btnSave: (n) => `保存 ${n}`,
       sortSaves: "保存が多い順",
+      sortReviews: "レビューが多い順",
+      sortRating: "評価が高い順",
       sortNewest: "新着順",
       savedFilterBtn: (n) => `★ 保存リスト ${n}`,
       savedEmptyTitle: "まだ保存した授業がありません。",
@@ -3185,6 +3191,8 @@
       { v: "popular", l: xui().sortPopular },
       { v: "likes", l: ui.sortLikes },
       { v: "saves", l: ui.sortSaves },
+      { v: "reviews", l: ui.sortReviews },
+      { v: "rating", l: ui.sortRating },
       { v: "newest", l: ui.sortNewest },
       { v: "fit", l: ui.sortFit },
       { v: "timeAsc", l: ui.sortTimeAsc },
@@ -3778,6 +3786,13 @@
     return m ? Number(m[1]) : 0;
   }
 
+  // ---------- 후기 수·평균 평점 (후기 많은순·평점순) ----------
+  function reviewSummary(a) {
+    if (a.rs && !a._revLoaded) { const n = a.rs[0] || 0; return { n, avg: n ? a.rs[1] / n : 0 }; }
+    const revs = a.reviews || []; const n = revs.length;
+    return { n, avg: n ? revs.reduce((s, r) => s + Number(r.rating || 0), 0) / n : 0 };
+  }
+
   // ---------- 인기순 ----------
   function popularityScore(a) {
     let n, avg;
@@ -4306,7 +4321,7 @@
 
     const selEqArr = selectedEquipments.has("전체") ? [] : Array.from(selectedEquipments);
     const statCache = new Map();
-    if (!["likes", "saves", "popular", "newest"].includes(sortVal)) filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
+    if (!["likes", "saves", "popular", "newest", "reviews", "rating"].includes(sortVal)) filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
     filtered.sort((a, b) => {
       if (termCandidates.length > 0) {
         const sA = matchScoreMap[a.id] || 0;
@@ -4321,6 +4336,17 @@
       if (sortVal === "popular") return popularityScore(b) - popularityScore(a);
       if (sortVal === "likes") return b.likes - a.likes;
       if (sortVal === "saves") return (b.saves || 0) - (a.saves || 0);
+      if (sortVal === "reviews" || sortVal === "rating") {
+        // 후기 많은순: 후기 수 → 평균 평점 → 인기순 / 평점순: 평균 평점(후기 없는 수업은 맨 뒤) → 후기 수 → 인기순
+        const rA = reviewSummary(a), rB = reviewSummary(b);
+        if (sortVal === "reviews") { if (rB.n !== rA.n) return rB.n - rA.n; if (rB.avg !== rA.avg) return rB.avg - rA.avg; }
+        else {
+          if (!!rB.n !== !!rA.n) return rB.n ? 1 : -1;
+          if (rB.avg !== rA.avg) return rB.avg - rA.avg;
+          if (rB.n !== rA.n) return rB.n - rA.n;
+        }
+        return popularityScore(b) - popularityScore(a);
+      }
       if (sortVal === "newest") {
         // 최신순: 교사 제안으로 등록된 수업(id가 pe-u+제안 시각)만 최근 제안부터. 일괄 등록 수업은 그 뒤에 인기순으로
         const nA = proposalTime(a), nB = proposalTime(b);
