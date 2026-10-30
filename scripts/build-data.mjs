@@ -98,8 +98,11 @@ async function main() {
   const got = await fetchActivities();
   const data = { at: got.at };
   const seen = new Set();
+  // imports/hidden.json 의 id 는 시트와 상관없이 사이트에서 뺀다
+  const hiddenIds = new Set(((await readJson(new URL("../imports/hidden.json", import.meta.url), {})).ids || []).map(String));
   const rows = got.rows
     .filter(o => String(o.id || "").trim() && String(o.status || "").trim() !== "숨김")
+    .filter(o => !hiddenIds.has(String(o.id).trim()))
     .filter(o => { const id = String(o.id).trim(); if (seen.has(id)) { console.log("id 중복으로 뒤의 것 제외: " + id); return false; } seen.add(id); return true; });
   // 시트가 '-'로 시작하는 영상 ID를 수식으로 읽어 #NAME? 이 되는 경우: youtubeUrl에서 ID를 다시 꺼낸다
   rows.forEach(o => {
