@@ -88,6 +88,7 @@ function doGet(e) {
     if (action === 'reviewSources') return json_(reviewSources_());       // 데이터 발행용: 지금 파일 + 연도별 보관 파일 목록
     if (action === 'counts') { const visit = logVisit_(e.parameter); return json_({ ok: true, at: now_(), likes: countMap_('likes'), saves: countMap_('saves'), visit: visit }); }
     if (action === 'visitStats') return json_(visitStats_(e.parameter));   // 날짜별 방문 기기 수
+    if (action === 'reactionMonths') return json_(reactionMonths_());       // 데이터 발행용: 월별 추천·저장 수 (기기 번호 없음)
     if (action === 'recent') return json_(recentReviews_(e.parameter)); // 사이트용: 마지막 발행 이후 새 후기만
     return json_({ ok: false, error: 'unknown action' });
   } catch (err) {
@@ -556,6 +557,32 @@ function react_(b) {
     return { ok: true, on: false, count: addCount_(countKey, activityId, -1) };
   }
   return { ok: true, on: false, count: getCount_(countKey, activityId) };
+}
+
+/* ----------------------------- 월별 추천·저장 (이달의 인기 수업) -----------------------------
+   반응기록(지금 파일 + 연도별 보관 파일)에서 '누른 달'만 세어 돌려준다. 어느 해든 같은 달끼리 합친다.
+   취소한 추천·저장은 기록이 지워지므로 세지 않는다. 기기 번호는 내보내지 않는다.
+   결과: { months: { "11": { "pe-xxx": [추천 수, 저장 수] } } } */
+function reactionMonths_() {
+  const sheets = [getTab_('reactions')].concat(getArchives_().map(a => archiveSheet_(a, 'reactions')).filter(Boolean));
+  const months = {};
+  sheets.forEach(sh => {
+    const lastRow = sh.getLastRow(), lastCol = sh.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) return;
+    const h = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+    const cAct = h.indexOf('activityId'), cKind = h.indexOf('kind'), cAt = h.indexOf('createdAt');
+    if (cAct < 0 || cKind < 0 || cAt < 0) return;
+    sh.getRange(2, 1, lastRow - 1, lastCol).getValues().forEach(r => {
+      const id = String(r[cAct] || '').trim();
+      const k = String(r[cKind] || '');
+      const mm = Number(String(cellOut_(r[cAt]) || '').slice(5, 7));
+      if (!id || !(mm >= 1 && mm <= 12) || (k !== 'like' && k !== 'save')) return;
+      const m = months[mm] || (months[mm] = {});
+      const v = m[id] || (m[id] = [0, 0]);
+      v[k === 'like' ? 0 : 1]++;
+    });
+  });
+  return { ok: true, months: months };
 }
 
 function countMap_(key) {

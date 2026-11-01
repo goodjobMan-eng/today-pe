@@ -1152,6 +1152,9 @@
     .preset-chip { padding: 7px 13px; font-size: 13px; font-weight: 600; font-family: inherit; color: var(--text-primary); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; cursor: pointer; white-space: nowrap; }
     .preset-chip:hover { border-color: var(--text-primary); }
     .preset-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .month-pick { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer;
+      background: var(--surface); color: var(--accent); border: 1px solid var(--accent); white-space: nowrap; }
+    .month-pick.on { background: var(--accent); color: #fff; }
     .btn-draw { padding: 9px 16px; font-size: 13.5px; font-weight: 700; font-family: inherit; color: #fff; background: #0f766e; border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
     .btn-draw:hover { background: #115e59; }
     .modal-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
@@ -1346,6 +1349,7 @@
   <main class="results-col">
     <div class="popular-row">
       <span class="popular-label" id="popularLabelText">추천 검색어</span>
+      <span id="monthPickWrap" hidden></span>
       <div id="popularKeywordsWrap" class="popular-wrap"></div>
     </div>
 
@@ -3002,6 +3006,8 @@
   let legacyLikedSet = new Set();
   let deviceId = "";
   let showSavedOnly = false;
+  let showMonthOnly = false; // 이달의 인기 수업만 보기
+  let monthlyMap = {};       // social.json 의 monthly: { "11": { 수업id: 점수 } }
   const reactPending = new Set();
   let pendingProposals = [];
   let pendingEdits = [];
@@ -3557,6 +3563,7 @@
     const chips = [];
     if (q) chips.push({ k: "q", label: fui.search(q) });
     if (showSavedOnly) chips.push({ k: "saved", label: fui.saved });
+    if (showMonthOnly) chips.push({ k: "month", label: xui().monthPreset(currentMonth()) });
     filters.forEach(f => chips.push(f));
     window._activeChips = chips;
 
@@ -3584,6 +3591,7 @@
     const setSel = (id, v) => { document.getElementById(id).value = v; resetPageAndRender(); };
     if (c.k === "q") { document.getElementById("searchInput").value = ""; resetPageAndRender(); }
     else if (c.k === "saved") toggleSavedOnly();
+    else if (c.k === "month") toggleMonthOnly();
     else if (c.k === "country") selectCountry("전체 국가");
     else if (c.k === "curriculum") selectCurriculum("전체");
     else if (c.k === "mode") togglePlayMode(c.v);
@@ -3608,6 +3616,7 @@
       videoReport: "영상이 안 나와요", videoReportAsk: "신고할까요? 한 번 더 누르세요", reportDone: "알려 주셔서 고마워요. 확인 후 정리할게요.",
       report: "신고", reportAsk: "신고할까요?", reportFail: "지금은 신고를 받을 수 없어요. 잠시 후 다시 해 주세요.",
       similar: "비슷한 활동", similarOther: "다른 나라", presetLabel: "상황별 바로가기",
+      monthPreset: m => `${m}월 인기 수업`,
       presets: { rain: "비 오는 날 교실", none: "준비물 없이", short: "10분 자투리", ice: "학기 초 친해지기", low: "저학년", field: "운동장에서 다 같이" },
       packTitle: "수업 꾸러미", packSharedTitle: "받은 수업 꾸러미",
       packSub: "활동을 이어 붙여 한 차시를 만들어요. 분을 고치면 합계가 바뀌어요.",
@@ -3634,6 +3643,7 @@
       videoReport: "Video not playing", videoReportAsk: "Report it? Tap again", reportDone: "Thanks for letting us know. We'll check it.",
       report: "Report", reportAsk: "Report this?", reportFail: "Reports can't be sent right now. Please try again later.",
       similar: "Similar activities", similarOther: "Other country", presetLabel: "Quick picks",
+      monthPreset: m => `Popular in ${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m - 1]}`,
       presets: { rain: "Rainy day indoors", none: "No equipment", short: "10-min filler", ice: "Back-to-school icebreakers", low: "Grades 1–2", field: "Whole class outdoors" },
       packTitle: "Lesson plan", packSharedTitle: "Shared lesson plan",
       packSub: "Chain activities into one lesson. Edit the minutes to change the total.",
@@ -3660,6 +3670,7 @@
       videoReport: "動画が再生されない", videoReportAsk: "報告しますか？もう一度押してください", reportDone: "お知らせありがとうございます。確認して対応します。",
       report: "報告", reportAsk: "報告しますか？", reportFail: "今は報告を送れません。しばらくしてからお試しください。",
       similar: "似ている活動", similarOther: "他の国", presetLabel: "場面別ショートカット",
+      monthPreset: m => `${m}月の人気授業`,
       presets: { rain: "雨の日・教室", none: "用具なし", short: "10分すきま時間", ice: "学期はじめの仲間づくり", low: "低学年", field: "運動場で全員で" },
       packTitle: "授業セット", packSharedTitle: "共有された授業セット",
       packSub: "活動をつないで1時間の授業にします。分を直すと合計が変わります。",
@@ -3747,6 +3758,30 @@
   }
 
   // ---------- 상황별 바로가기 ----------
+  // 이달의 인기 수업: 어느 해든 이번 달에 선생님들이 저장·추천·후기를 많이 남긴 수업 (점수는 발행할 때 계산)
+  function currentMonth() { return new Date(Date.now() + 9 * 3600 * 1000).getUTCMonth() + 1; } // 한국 시간 기준
+  function monthPicks() { return monthlyMap[String(currentMonth())] || {}; }
+  const MONTH_MIN = 3; // 이번 달 기록이 있는 수업이 이만큼은 돼야 바로가기를 보여 줌
+  function monthReady() {
+    const picks = monthPicks();
+    let n = 0;
+    for (const a of activities) { if (picks[a.id]) { n++; if (n >= MONTH_MIN) return true; } }
+    return false;
+  }
+
+  // 추천 검색어 줄 맨 앞의 「11월 인기 수업」 버튼. 이번 달 기록이 충분할 때만 보임
+  function renderMonthPick() {
+    const w = document.getElementById("monthPickWrap");
+    if (!w) return;
+    if (!showMonthOnly && !monthReady()) { w.hidden = true; w.innerHTML = ""; return; }
+    w.hidden = false;
+    w.innerHTML = `<button type="button" class="month-pick${showMonthOnly ? " on" : ""}" aria-pressed="${showMonthOnly}" onclick="toggleMonthOnly()">${escapeHtml(xui().monthPreset(currentMonth()))}</button>`;
+  }
+  function toggleMonthOnly() {
+    showMonthOnly = !showMonthOnly;
+    resetPageAndRender();
+  }
+
   const PRESETS = [
     { k: "rain", apply: () => { selectedPlaces = new Set(["교실"]); } , test: () => selectedPlaces.size === 1 && selectedPlaces.has("교실") },
     { k: "none", apply: () => { selectedEquipments = new Set(["없음(맨손)"]); }, test: () => selectedEquipments.size === 1 && selectedEquipments.has("없음(맨손)") },
@@ -4144,6 +4179,7 @@
 
   function resetFilters() {
     showSavedOnly = false;
+    showMonthOnly = false;
     selectedCountry = "전체 국가";
     selectedCurriculum = "전체";
     selectedPlayModes = new Set();
@@ -4275,9 +4311,11 @@
     });
 
     const matchScoreMap = {};
+    const monthScores = showMonthOnly ? monthPicks() : {};
 
     let filtered = activities.filter(act => {
       if (showSavedOnly && !savedSet.has(act.id)) return false;
+      if (showMonthOnly && !monthScores[act.id]) return false;
       if (selectedCountry !== "전체 국가" && (act.country || "한국") !== selectedCountry) return false;
       if (selectedCurriculum !== "전체" && act.curriculumArea !== selectedCurriculum) return false;
       // 서로 다른 필터는 AND, 같은 필터 안에서 여러 개를 고르면 OR
@@ -4325,6 +4363,10 @@
     const statCache = new Map();
     if (!["likes", "saves", "popular", "newest", "reviews", "rating"].includes(sortVal)) filtered.forEach(a => statCache.set(a.id, computeAiStats(a)));
     filtered.sort((a, b) => {
+      if (showMonthOnly) {
+        const d = (monthScores[b.id] || 0) - (monthScores[a.id] || 0);
+        if (d) return d;
+      }
       if (termCandidates.length > 0) {
         const sA = matchScoreMap[a.id] || 0;
         const sB = matchScoreMap[b.id] || 0;
@@ -4368,6 +4410,7 @@
     renderActiveFilters(filtered.length);
     lastFiltered = filtered;
     renderPresets();
+    renderMonthPick();
 
     const grid = document.getElementById("cardsGrid");
     const loadMoreWrap = document.getElementById("loadMoreWrap");
@@ -4944,6 +4987,7 @@
 
   function applyStaticSocial(data) {
     staticSocial = true;
+    monthlyMap = (data && data.monthly) || {};
     activities.forEach(a => {
       a.likes = Number((data.likes || {})[a.id]) || 0;
       a.saves = Number((data.saves || {})[a.id]) || 0;

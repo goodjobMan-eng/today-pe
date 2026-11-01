@@ -247,7 +247,8 @@ async function buildSocial(ids) {
   const keep = id => ids.has(id);
   const likes = Object.fromEntries(Object.entries(counts.likes || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
   const saves = Object.fromEntries(Object.entries(counts.saves || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
-  const socialJson = JSON.stringify({ likes, saves, stats });
+  const monthly = await buildMonthly(all, ids);
+  const socialJson = JSON.stringify(monthly ? { likes, saves, stats, monthly } : { likes, saves, stats });
   await writeFile(new URL("social.json", OUT), socialJson);
 
   await rm(new URL("reviews/", OUT), { recursive: true, force: true });
@@ -262,6 +263,39 @@ async function buildSocial(ids) {
   }
   console.log(`후기 ${all.length}개, 추천 ${Object.keys(likes).length}·저장 ${Object.keys(saves).length}개 활동`);
   return { sig: simpleHash(socialJson + bsig), since: kst };
+}
+
+// 이달의 인기 수업: 달마다(어느 해든 같은 달끼리) 후기 3점 · 저장 2점 · 추천 1점으로 점수를 매겨 위에서 60개.
+// 후기는 쓴 날짜, 추천·저장은 누른 날짜 기준. Apps Script가 예전 버전이면 후기만으로 센다
+export const MONTH_W = { review: 3, save: 2, like: 1 };
+export const MONTH_TOP = 60;
+export function monthlyScores(reviews, reactMonths, ids) {
+  const sc = {};
+  const add = (mm, id, pts) => {
+    if (!(mm >= 1 && mm <= 12) || !ids.has(id) || !pts) return;
+    const m = sc[mm] || (sc[mm] = {});
+    m[id] = (m[id] || 0) + pts;
+  };
+  for (const r of reviews) add(Number(String(r.createdAt || "").slice(5, 7)), String(r.activityId || "").trim(), MONTH_W.review);
+  for (const [mm, byId] of Object.entries(reactMonths || {})) {
+    for (const [id, v] of Object.entries(byId || {})) {
+      add(Number(mm), String(id).trim(), (Number(v && v[0]) || 0) * MONTH_W.like + (Number(v && v[1]) || 0) * MONTH_W.save);
+    }
+  }
+  const out = {};
+  for (const [mm, byId] of Object.entries(sc)) {
+    out[mm] = Object.fromEntries(Object.entries(byId).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, MONTH_TOP));
+  }
+  return out;
+}
+
+async function buildMonthly(reviews, ids) {
+  const rm = await getJson(gas("action=reactionMonths")).catch(() => null);
+  const months = rm && rm.ok ? rm.months : {};
+  if (!rm || !rm.ok) console.log("월별 추천·저장: Apps Script 새 버전 배포 전이라 후기만으로 셈");
+  const out = monthlyScores(reviews, months, ids);
+  console.log("이달의 인기: " + Object.entries(out).map(([m, o]) => `${m}월 ${Object.keys(o).length}개`).join(", "));
+  return out;
 }
 
 async function readJson(url, def) {
