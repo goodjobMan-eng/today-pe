@@ -3217,9 +3217,29 @@
     btn.textContent = isAdminAuthenticated && n > 0 ? `${base} (${n})` : base;
   }
 
+  // 매주 자동 갱신되는 추천 검색어(data/trending.json, 전체 선생님 반응 기준). 개인별 맞춤 아님.
+  let trendingKeywords = null;
+  function loadTrending() {
+    fetch("data/trending.json?v=" + new Date().toISOString().slice(0, 10), { cache: "no-cache" })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j && Array.isArray(j.keywords) && j.keywords.length) { trendingKeywords = j.keywords; renderPopularKeywords(); } })
+      .catch(() => {});
+  }
+  function applyTrendingKeyword(i) {
+    const k = trendingKeywords && trendingKeywords[i];
+    if (!k) return;
+    document.getElementById("searchInput").value = k[currentLang] || k.ko;
+    resetPageAndRender();
+  }
+
   function renderPopularKeywords() {
     const wrap = document.getElementById("popularKeywordsWrap");
     if (!wrap) return;
+    if (trendingKeywords && trendingKeywords.length >= 5) {
+      wrap.innerHTML = trendingKeywords.slice(0, 9).map((k, i) =>
+        `<button type="button" class="popular-tag" onclick="applyTrendingKeyword(${i})">${escapeHtml(k[currentLang] || k.ko)}</button>`).join("");
+      return;
+    }
     const sorted = Object.entries(popularSearches)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 9);
@@ -6005,6 +6025,7 @@
   }
 
   loadData();
+  loadTrending();
   setLanguage(currentLang);
   bootData();
 </script>

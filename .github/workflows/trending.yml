@@ -1,0 +1,37 @@
+name: 추천 검색어 주간 갱신
+
+on:
+  schedule:
+    - cron: "43 20 * * 0"   # 매주 월요일 05:43 (한국 시간)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-data
+  cancel-in-progress: false
+
+jobs:
+  trending:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 추천·저장·후기로 추천 검색어 계산
+        run: node scripts/build-trending.mjs
+      - name: 바뀌었으면 커밋
+        run: |
+          if [ -n "$(git status --porcelain data/trending.json)" ]; then
+            git config user.name "today-pe-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/trending.json
+            git commit -m "추천 검색어 갱신 $(date -u +%Y-%m-%d)"
+            git pull --rebase -q
+            git push
+          else
+            echo "변경 없음"
+          fi
