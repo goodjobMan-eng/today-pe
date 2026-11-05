@@ -5070,7 +5070,14 @@
 
   async function loadRecentReviews() {
     try {
-      const data = await apiGet("recent&since=" + encodeURIComponent(staticMeta.sAt || ""));
+      // 같은 기기에서 5분 안에 다시 열면 저장해 둔 결과를 쓴다(서버 부담 줄이기)
+      const rkey = "pe_recent_" + (staticMeta.sAt || "");
+      let data = null;
+      try { const c = JSON.parse(safeGetStorage(rkey) || "null"); if (c && Date.now() - c.t < 300000) data = c.d; } catch (e) {}
+      if (!data) {
+        data = await apiGet("recent&since=" + encodeURIComponent(staticMeta.sAt || ""));
+        if (data && data.ok) { try { safeSetStorage(rkey, JSON.stringify({ t: Date.now(), d: data })); } catch (e) {} }
+      }
       if (!data || !data.ok) return;
       (data.hidden || []).forEach(id => hiddenReviews.add(String(id)));
       const byId = new Map(activities.map(a => [a.id, a]));
