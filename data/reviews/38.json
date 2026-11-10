@@ -1,1 +1,1 @@
-{"h":["reviewId","activityId","teacher","grade","fitScore","rating","duration","sessionType","caution_ko","caution_en","caution_ja","tip_ko","tip_en","tip_ja","createdAt"],"acts":{}}
+{"h":["reviewId","activityId","teacher","grade","fitScore","rating","duration","sessionType","caution_ko","caution_en","caution_ja","tip_ko","tip_en","tip_ja","createdAt"],"acts":{"pe-00029":[["rv-1794282965637-631","pe-00029","1학년","1~2학년",5,5,15,"도입·자투리","스피커가 있어야함","You need speakers","スピーカーが必要です","-","-","-","2026-11-10 12:56"]]}}
