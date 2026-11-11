@@ -104,6 +104,17 @@ async function main() {
     .filter(o => String(o.id || "").trim() && String(o.status || "").trim() !== "숨김")
     .filter(o => !hiddenIds.has(String(o.id).trim()))
     .filter(o => { const id = String(o.id).trim(); if (seen.has(id)) { console.log("id 중복으로 뒤의 것 제외: " + id); return false; } seen.add(id); return true; });
+  // imports/playmode_add.json: 시트를 고치지 않고 놀이 방식(playModes)을 더한다. 예: {"ids": {"pe-00123": ["기본기 훈련"]}}
+  const pmAdd = (await readJson(new URL("../imports/playmode_add.json", import.meta.url), {})).ids || {};
+  rows.forEach(o => {
+    const add = pmAdd[String(o.id).trim()];
+    if (!add || !add.length) return;
+    let cur = [];
+    const raw = String(o.playModes || "").trim();
+    try { cur = raw.startsWith("[") ? JSON.parse(raw) : raw.split(",").map(x => x.trim()).filter(Boolean); } catch (e) { cur = []; }
+    add.forEach(v => { if (!cur.includes(v)) cur.push(v); });
+    o.playModes = JSON.stringify(cur);
+  });
   // 시트가 '-'로 시작하는 영상 ID를 수식으로 읽어 #NAME? 이 되는 경우: youtubeUrl에서 ID를 다시 꺼낸다
   rows.forEach(o => {
     if (/^[A-Za-z0-9_-]{11}$/.test(String(o.videoId || "").trim())) return;
