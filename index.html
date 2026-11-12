@@ -3841,6 +3841,11 @@
     const m = /^pe-u(\d+)$/.exec(String(a.id || ""));
     return m ? Number(m[1]) : 0;
   }
+  // 일괄 등록 수업 번호: pe-08417 → 8417 (클수록 나중에 올린 수업)
+  function bulkNo(a) {
+    const m = /^pe-(\d+)$/.exec(String(a.id || ""));
+    return m ? Number(m[1]) : 0;
+  }
 
   // ---------- 후기 수·평균 평점 (후기 많은순·평점순) ----------
   function reviewSummary(a) {
@@ -4413,9 +4418,11 @@
         return popularityScore(b) - popularityScore(a);
       }
       if (sortVal === "newest") {
-        // 최신순: 교사 제안으로 등록된 수업(id가 pe-u+제안 시각)만 최근 제안부터. 일괄 등록 수업은 그 뒤에 인기순으로
+        // 최신순: 교사 제안 수업(pe-u+제안 시각)을 최근 제안부터 맨 앞에, 그다음 일괄 등록 수업을 번호가 큰(나중에 올린) 것부터
         const nA = proposalTime(a), nB = proposalTime(b);
         if (nB !== nA) return nB - nA;
+        const kA = bulkNo(a), kB = bulkNo(b);
+        if (kB !== kA) return kB - kA;
         return popularityScore(b) - popularityScore(a);
       }
       const stA = statCache.get(a.id);
