@@ -3673,6 +3673,11 @@
       rankSub: "선생님들이 남긴 후기·저장·추천을 모아 매시간 다시 셉니다. (후기 3점 · 저장 2점 · 추천 1점)",
       rankSince: d => `${d.slice(5, 7)}월 ${d.slice(8, 10)}일부터 센 순위예요.`, rankSeasonal: (y, m) => `${y}년 ${m}월에 선생님들이 많이 저장하고 후기를 남긴 수업이에요.`,
       rankEmpty: "아직 기록이 적어요. 수업에 추천·저장·후기를 남겨 주시면 순위가 생겨요.", rankPts: n => `${n}점`,
+      rankSeasonTab: "이맘때 추천",
+      rankMode: { B: "", BC: "선생님 반응이 아직 적어서, 실제 반응(점수)에 이맘때 어울리는 수업을 섞었어요.", C: "아직 이 기간 선생님 반응이 없어서, 이맘때 어울리는 수업을 골랐어요. 추천·저장·후기가 쌓이면 실제 순위로 바뀌어요." },
+      rankSeasonMode: { A: "작년 이맘때 반응이 많았던 수업이에요.", B: "최근 한 달 반응에 이맘때 어울림을 더했어요.", C: "아직 기록이 쌓이는 중이라 이맘때 어울리는 수업을 골랐어요. 1년 뒤부터는 작년 이맘때 반응으로 골라요." },
+      rankWhy: { e: ["", "겨울·전통놀이", "설날·전통놀이", "새 학기 친해지기", "봄 달리기·줄넘기", "운동회", "여름 물놀이", "장마철·물놀이", "여름 놀이", "2학기 친해지기", "가을 운동회", "실내 뉴스포츠", "겨울·연말"],
+        s: ["", "겨울 실내", "겨울 실내", "몸풀기", "봄 운동장", "봄 운동장", "초여름 운동장", "장마철 실내", "한여름 실내", "가을 운동장", "가을 운동장", "늦가을 실내", "겨울 실내"] },
       presets: { rain: "비 오는 날 교실", none: "준비물 없이", short: "10분 자투리", ice: "학기 초 친해지기", low: "저학년", field: "운동장에서 다 같이" },
       packTitle: "수업 꾸러미", packSharedTitle: "받은 수업 꾸러미",
       packSub: "활동을 이어 붙여 한 차시를 만들어요. 분을 고치면 합계가 바뀌어요.",
@@ -3705,6 +3710,11 @@
       rankSince: d => `Counted from ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(d.slice(5, 7)) - 1]} ${Number(d.slice(8, 10))}.`,
       rankSeasonal: (y, m) => `Lessons teachers saved and reviewed most in ${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m - 1]} ${y}.`,
       rankEmpty: "Not enough records yet. Likes, saves and reviews will build this ranking.", rankPts: n => `${n} pts`,
+      rankSeasonTab: "Right now",
+      rankMode: { B: "", BC: "Few teacher reactions yet, so real scores are mixed with lessons that suit this time of year.", C: "No teacher reactions in this period yet, so these are lessons that suit this time of year. Likes, saves and reviews will turn this into a real ranking." },
+      rankSeasonMode: { A: "Lessons teachers reacted to most around this time last year.", B: "Last month's reactions plus seasonal fit.", C: "Records are still building, so these suit this time of year. From next year, last year's reactions will decide." },
+      rankWhy: { e: ["", "Winter & traditional games", "New Year traditional games", "New-term icebreakers", "Spring running & rope", "Sports day", "Summer water play", "Rainy-season & water play", "Summer games", "New-term icebreakers", "Autumn sports day", "Indoor new sports", "Winter & holidays"],
+        s: ["", "Winter indoors", "Winter indoors", "Warm-ups", "Spring outdoors", "Spring outdoors", "Early-summer outdoors", "Rainy-day indoors", "Midsummer indoors", "Autumn outdoors", "Autumn outdoors", "Late-autumn indoors", "Winter indoors"] },
       presets: { rain: "Rainy day indoors", none: "No equipment", short: "10-min filler", ice: "Back-to-school icebreakers", low: "Grades 1–2", field: "Whole class outdoors" },
       packTitle: "Lesson plan", packSharedTitle: "Shared lesson plan",
       packSub: "Chain activities into one lesson. Edit the minutes to change the total.",
@@ -3736,6 +3746,11 @@
       rankSub: "先生たちの感想・保存・おすすめを毎時集計しています（感想3点・保存2点・おすすめ1点）。",
       rankSince: d => `${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日からの集計です。`, rankSeasonal: (y, m) => `${y}年${m}月に先生たちがよく保存し、感想を残した授業です。`,
       rankEmpty: "まだ記録が少ないです。おすすめ・保存・感想が集まるとランキングができます。", rankPts: n => `${n}点`,
+      rankSeasonTab: "今ごろのおすすめ",
+      rankMode: { B: "", BC: "先生の反応がまだ少ないため、実際の反応（点数）に今の時期に合う授業を混ぜています。", C: "この期間の先生の反応がまだないため、今の時期に合う授業を選びました。おすすめ・保存・感想が集まると実際のランキングに変わります。" },
+      rankSeasonMode: { A: "昨年の今ごろ反応が多かった授業です。", B: "最近1か月の反応に季節の合い具合を加えました。", C: "記録を集めている途中なので、今の時期に合う授業を選びました。1年後からは昨年の今ごろの反応で選びます。" },
+      rankWhy: { e: ["", "冬・伝承遊び", "正月・伝承遊び", "新学期の仲間づくり", "春のかけっこ・なわとび", "運動会", "夏の水遊び", "梅雨・水遊び", "夏の遊び", "2学期の仲間づくり", "秋の運動会", "室内ニュースポーツ", "冬・年末"],
+        s: ["", "冬の室内", "冬の室内", "体ほぐし", "春の運動場", "春の運動場", "初夏の運動場", "梅雨の室内", "真夏の室内", "秋の運動場", "秋の運動場", "晩秋の室内", "冬の室内"] },
       presets: { rain: "雨の日・教室", none: "用具なし", short: "10分すきま時間", ice: "学期はじめの仲間づくり", low: "低学年", field: "運動場で全員で" },
       packTitle: "授業セット", packSharedTitle: "共有された授業セット",
       packSub: "活動をつないで1時間の授業にします。分を直すと合計が変わります。",
@@ -3852,7 +3867,7 @@
   function rankItems(tab) {
     const known = new Map(activities.map(a => [a.id, a]));
     const src = tab === "seasonal" ? (SEASONAL_ENABLED && seasonalData ? seasonalData.top : []) : (popularData && popularData[tab]) || [];
-    return src.filter(x => known.has(x[0])).slice(0, 20).map(x => ({ a: known.get(x[0]), s: x[1] }));
+    return src.filter(x => known.has(x[0])).slice(0, 20).map(x => ({ a: known.get(x[0]), s: x[1], w: x[2] || "" }));
   }
   function rankTabsAvail() { return ["day", "week", "month", "seasonal"].filter(t => t !== "seasonal" ? true : rankItems("seasonal").length > 0); }
   function renderRankPick() {
@@ -3883,14 +3898,25 @@
     document.getElementById("rankTitle").textContent = x.rankTitle;
     document.getElementById("rankSub").textContent = x.rankSub;
     document.getElementById("rankTabs").innerHTML = rankTabsAvail().map(t =>
-      `<button type="button" role="tab" class="rank-tab${t === rankTab ? " on" : ""}" aria-selected="${t === rankTab}" onclick="setRankTab('${t}')">${escapeHtml(x.rankTabs[t])}</button>`).join("");
+      `<button type="button" role="tab" class="rank-tab${t === rankTab ? " on" : ""}" aria-selected="${t === rankTab}" onclick="setRankTab('${t}')">${escapeHtml(t === "seasonal" && !seasonA() ? x.rankSeasonTab : x.rankTabs[t])}</button>`).join("");
     const items = rankItems(rankTab);
     let note = "";
-    if (rankTab === "seasonal" && seasonalData) note = x.rankSeasonal(seasonalData.year, seasonalData.month);
-    else if (popularData && popularData[rankTab + "Since"] && rankTab !== "day") note = x.rankSince(popularData[rankTab + "Since"]);
+    if (rankTab === "seasonal" && seasonalData) {
+      const md = seasonalData.mode || "A";
+      note = md.includes("A") ? x.rankSeasonal(seasonalData.year, seasonalData.month) : x.rankSeasonMode[md.includes("B") ? "B" : "C"];
+    } else if (popularData) {
+      const md = popularData[rankTab + "Mode"] || "B";
+      if (md !== "B") note = x.rankMode[md] || "";
+      else if (popularData[rankTab + "Since"] && rankTab !== "day") note = x.rankSince(popularData[rankTab + "Since"]);
+    }
     document.getElementById("rankNote").textContent = items.length ? note : x.rankEmpty;
     document.getElementById("rankList").innerHTML = items.map((it, i) =>
-      `<li><button type="button" class="rank-item" onclick="openFromRank('${escapeHtml(it.a.id)}')"><span class="rank-no">${i + 1}</span><span class="rank-name">${escapeHtml(it.a.title || "")}</span><span class="rank-pts">${escapeHtml(x.rankPts(it.s))}</span></button></li>`).join("");
+      `<li><button type="button" class="rank-item" onclick="openFromRank('${escapeHtml(it.a.id)}')"><span class="rank-no">${i + 1}</span><span class="rank-name">${escapeHtml(it.a.title || "")}</span><span class="rank-pts">${escapeHtml(it.s > 0 ? x.rankPts(it.s) : rankWhyText(it.w))}</span></button></li>`).join("");
+  }
+  function seasonA() { return !!(seasonalData && (seasonalData.mode || "A").includes("A")); }
+  function rankWhyText(w) {
+    const m = /^([es])(\d{1,2})$/.exec(w || "");
+    return m ? (xui().rankWhy[m[1]][Number(m[2])] || "") : "";
   }
   function openFromRank(id) {
     const el = document.getElementById("rankModal");

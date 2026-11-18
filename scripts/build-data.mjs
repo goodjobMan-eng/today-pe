@@ -203,7 +203,7 @@ async function main() {
   }
 
   await writeSharePages(visible, val);
-  const social = await buildSocial(new Set(visible.map(o => String(o.id).trim())));
+  const social = await buildSocial(new Set(visible.map(o => String(o.id).trim())), visible);
 
   // 내용이 그대로면 버전을 바꾸지 않는다(불필요한 커밋·캐시 무효화 방지). 목록과 후기는 버전을 따로 둔다
   const sig = "r3:" + JSON.stringify(visible).length + ":" + visible.length + ":" + simpleHash(JSON.stringify(visible));
@@ -225,7 +225,7 @@ async function main() {
 }
 
 // 추천·저장 수와 후기를 받아 요약 파일과 후기 묶음 파일을 만든다. Apps Script가 예전 버전이면 건너뜀(null)
-async function buildSocial(ids) {
+async function buildSocial(ids, rows = []) {
   const counts = await getJson(gas("action=counts")).catch(() => null);
   if (!counts || !counts.ok) { console.log("후기 요약: Apps Script 새 버전 배포 전이라 건너뜀"); return null; }
   // 발행 시작 시각(한국 시간, 시트의 createdAt과 같은 형식). 사이트는 이 시각 이후 후기만 시트에서 따로 받는다
@@ -259,7 +259,7 @@ async function buildSocial(ids) {
   const likes = Object.fromEntries(Object.entries(counts.likes || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
   const saves = Object.fromEntries(Object.entries(counts.saves || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
   const monthly = await buildMonthly(all, ids);
-  const { popular, seasonal } = await buildPopular(likes, saves, all, ids);
+  const { popular, seasonal } = await buildPopular(likes, saves, all, ids, rows);
   const sj = monthly ? { likes, saves, stats, monthly } : { likes, saves, stats };
   sj.popular = popular;
   if (seasonal) sj.seasonal = seasonal;
@@ -320,19 +320,82 @@ async function buildMonthly(reviews, ids) {
 export const POP_TOP = 20;
 function kstDate(offsetDays = 0) { return new Date(Date.now() + 9 * 3600e3 + offsetDays * 86400e3).toISOString().slice(0, 10); }
 function shiftDate(d, days) { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + days); return t.toISOString().slice(0, 10); }
-export function popularScores(cur, base, reviews, fromDate, ids) {
+// 기간 안에 늘어난 반응: { sc: {id: 점수}, n: 반응 건수(추천+저장+후기) }
+export function windowScores(cur, base, reviews, fromDate, ids) {
   const sc = {};
-  const add = (id, p) => { if (p > 0 && ids.has(id)) sc[id] = (sc[id] || 0) + p; };
+  let n = 0;
+  const add = (id, k, w) => { if (k > 0 && ids.has(id)) { sc[id] = (sc[id] || 0) + k * w; n += k; } };
   for (const [k, w] of [["l", MONTH_W.like], ["s", MONTH_W.save]]) {
-    for (const [id, n] of Object.entries(cur[k] || {})) add(id, Math.max(0, n - ((base && base[k] && base[k][id]) || 0)) * w);
+    for (const [id, v] of Object.entries(cur[k] || {})) add(id, Math.max(0, v - ((base && base[k] && base[k][id]) || 0)), w);
   }
-  for (const r of reviews) { const d = String(r.createdAt || "").slice(0, 10); if (d >= fromDate) add(String(r.activityId || "").trim(), MONTH_W.review); }
+  for (const r of reviews) { const d = String(r.createdAt || "").slice(0, 10); if (d >= fromDate) add(String(r.activityId || "").trim(), 1, MONTH_W.review); }
+  return { sc, n };
+}
+export function popularScores(cur, base, reviews, fromDate, ids) {
+  const { sc } = windowScores(cur, base, reviews, fromDate, ids);
   return Object.entries(sc).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, POP_TOP);
 }
-async function buildPopular(likes, saves, reviews, ids) {
+
+// ---------- 반응이 부족할 때: 오늘 미술 뭐하지의 「이맘때 추천」과 같은 방식 ----------
+// A 작년 같은 달 반응 · B 이 기간 반응 · C 이맘때 어울림(행사·계절). 기록이 충분한 만큼만 섞는다.
+//  · 오늘/이번 주/이번 달: 기간 반응이 RANK_B_MIN 건 이상이면 B 만, 1건 이상이면 B 0.6 · C 0.4, 없으면 C 만
+//  · 이맘때: 작년 같은 달 반응 30건 이상이면 A 0.6 · B 0.25 · C 0.15 (B 부족하면 A 0.7 · C 0.3), 아니면 B 0.6 · C 0.4, 그것도 부족하면 C 만
+// C 점수: 이번 달 행사 3 · 다음 달 행사 2 · 이번 달 계절 1.5 · 다음 달 계절 1 (가장 높은 것 하나)
+// 행사 = 제목·놀이방식·종목에 그달 어울리는 말, 계절 = 그달 날씨에 맞는 장소(겨울·장마는 실내, 봄·가을은 운동장)
+export const RANK_B_MIN = { day: 5, week: 10, month: 20 };
+export const SEASONAL_A_MIN = 30, SEASONAL_B_MIN = 10;
+const IN = /교실|강당/, OUTD = /운동장/;
+export const PE_SEASON = {
+  1: [/눈싸움|눈사람|겨울|윷|팽이|제기|투호|전통/, IN],
+  2: [/설날|윷|팽이|제기|투호|전통|겨울|눈싸움/, IN],
+  3: [/친해|아이스|새 ?학기|첫 ?만남|이름|협동 미션|팀빌딩/, /체력·기본 움직임|준비운동/],
+  4: [/줄넘기|달리기|육상|봄/, OUTD],
+  5: [/운동회|이어달리기|릴레이|줄다리기|박 ?터뜨리기|큰 ?공 굴리기|단체/, OUTD],
+  6: [/수영|물놀이|물총|생존/, OUTD],
+  7: [/수영|물놀이|물총|생존|여름/, IN],
+  8: [/수영|물놀이|물총|여름/, IN],
+  9: [/친해|아이스|협동 미션|팀빌딩|추석|강강술래|씨름/, OUTD],
+  10: [/운동회|이어달리기|릴레이|줄다리기|할로윈|핼러윈|가을/, OUTD],
+  11: [/킨볼|플로어볼|피클볼|플라잉디스크|뉴스포츠|피구|츄크볼|스포츠스태킹/, IN],
+  12: [/크리스마스|산타|눈싸움|눈사람|겨울|연말|루돌프/, IN],
+};
+function seasonText(o) { return [o.title_ko, o.title, o.playModes, o.sportTypes, o.playType].map(v => Array.isArray(v) ? v.join(",") : String(v || "")).join(" "); }
+export function peSeasonScore(o, month) {
+  const t = seasonText(o), place = String(o.place || "");
+  let best = 0, why = "";
+  for (const [m, ew, sw] of [[month, 3, 1.5], [month % 12 + 1, 2, 1]]) {
+    const [ev, se] = PE_SEASON[m];
+    if (ev.test(t) && ew > best) { best = ew; why = "e" + m; }
+    else if ((se === IN || se === OUTD ? se.test(place) : se.test(t)) && sw > best) { best = sw; why = "s" + m; }
+  }
+  return [best, why];
+}
+function hash32(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+// 결과: [[id, 실제 반응 점수, 이맘때 이유("e11"·"s11"·"")], ...] 와 방식(mode)
+export function blendRank({ A = {}, B = {}, w, rows, month, allPop = {}, seed }) {
+  const C = {};
+  if (w.c) for (const o of rows) { const [sc, why] = peSeasonScore(o, month); if (sc) C[String(o.id).trim()] = [sc, why]; }
+  const mx = m => Math.max(0, ...Object.values(m));
+  const ma = mx(A), mb = mx(B), mc = Math.max(0, ...Object.values(C).map(v => v[0]));
+  const cand = new Set([...Object.keys(A), ...Object.keys(B), ...Object.keys(C)]);
+  const out = [];
+  for (const id of cand) {
+    const pa = w.a && ma ? (A[id] || 0) / ma : 0, pb = w.b && mb ? (B[id] || 0) / mb : 0, pc = w.c && mc && C[id] ? C[id][0] / mc : 0;
+    const score = w.a * pa + w.b * pb + w.c * pc;
+    if (score <= 0) continue;
+    out.push([id, score, (B[id] || 0) + (A[id] || 0), pc ? C[id][1] : "", allPop[id] || 0, hash32(seed + id)]);
+  }
+  // 동점이면: 전체 추천·저장·후기 많은 순 → 기간마다 바뀌는 섞기(같은 기간에는 늘 같은 순서)
+  out.sort((x, y) => y[1] - x[1] || y[4] - x[4] || x[5] - y[5]);
+  return out.slice(0, POP_TOP).map(x => [x[0], x[2], x[3]]);
+}
+function modeOf(w) { return (w.a ? "A" : "") + (w.b ? "B" : "") + (w.c ? "C" : ""); }
+
+async function buildPopular(likes, saves, reviews, ids, rows = []) {
   const HIST = new URL("history/", OUT);
   await mkdir(HIST, { recursive: true });
   const today = kstDate();
+  const month = Number(today.slice(5, 7));
   const cur = { l: likes, s: saves };
   await writeFile(new URL(`${today}.json`, HIST), JSON.stringify(cur));
   let files = (await readdir(HIST)).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).map(f => f.slice(0, 10)).sort();
@@ -348,25 +411,45 @@ async function buildPopular(likes, saves, reviews, ids) {
     const before = files.filter(d => d < today);
     return before.length ? before[0] : null;
   };
+  const rowsOk = rows.filter(o => ids.has(String(o.id).trim()));
+  const allPop = {};
+  for (const [m, wt] of [[likes, 1], [saves, 2]]) for (const [i, n] of Object.entries(m)) allPop[i] = (allPop[i] || 0) + wt * n;
+  for (const r of reviews) { const i = String(r.activityId || "").trim(); if (ids.has(i)) allPop[i] = (allPop[i] || 0) + 3; }
+  const weekStart = shiftDate(today, -((new Date(today + "T00:00:00Z").getUTCDay() + 6) % 7));
+  const seeds = { day: today, week: weekStart, month: today.slice(0, 7) };
   const popular = { at: today };
+  const wins = {};
   for (const [k, days] of [["day", 1], ["week", 7], ["month", 30]]) {
     const bd = baseFor(days);
     const from = shiftDate(today, -(days - 1));
     // 비교할 지난 기록이 아직 없으면(첫날) 추천·저장은 세지 않고 후기만 센다
-    popular[k] = popularScores(cur, bd ? await snap(bd) : cur, reviews, from, ids);
+    const win = windowScores(cur, bd ? await snap(bd) : cur, reviews, from, ids);
+    wins[k] = win;
+    const w = win.n >= RANK_B_MIN[k] ? { a: 0, b: 1, c: 0 } : win.n > 0 ? { a: 0, b: 0.6, c: 0.4 } : { a: 0, b: 0, c: 1 };
+    popular[k] = blendRank({ B: win.sc, w, rows: rowsOk, month, allPop, seed: seeds[k] + k });
+    popular[k + "Mode"] = modeOf(w);
+    popular[k + "N"] = win.n;
     popular[k + "Since"] = bd ? (bd < shiftDate(today, -days) ? shiftDate(today, -(days - 1)) : shiftDate(bd, 1)) : today;
   }
-  // 작년 이맘때: 작년 이번 달 1일 → 다음 달 1일 사이에 늘어난 추천·저장 + 그달 후기. 작년 기록이 없으면 null
-  const y = Number(today.slice(0, 4)) - 1, m = Number(today.slice(5, 7));
-  const a = `${y}-${String(m).padStart(2, "0")}-01`;
-  const b = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
-  let seasonal = null;
+  popular.minB = RANK_B_MIN;
+  // 이맘때: A 작년 이번 달 1일 → 다음 달 1일 사이에 늘어난 추천·저장 + 그달 후기, B 최근 30일, C 이맘때 어울림
+  const y = Number(today.slice(0, 4)) - 1;
+  const a = `${y}-${String(month).padStart(2, "0")}-01`;
+  const b = month === 12 ? `${y + 1}-01-01` : `${y}-${String(month + 1).padStart(2, "0")}-01`;
+  let A = { sc: {}, n: 0 };
   if (files.includes(a) && files.includes(b)) {
     const revs = reviews.filter(r => String(r.createdAt || "").slice(0, 7) === a.slice(0, 7));
-    const top = popularScores(await snap(b), await snap(a), revs, "0000", ids);
-    if (top.length) seasonal = { year: y, month: m, top };
+    A = windowScores(await snap(b), await snap(a), revs, "0000", ids);
   }
-  console.log(`인기 순위: 오늘 ${popular.day.length} · 이번 주 ${popular.week.length} · 이번 달 ${popular.month.length}` + (seasonal ? ` · 작년 ${m}월 ${seasonal.top.length}` : " · 작년 이맘때 기록 없음"));
+  const useA = A.n >= SEASONAL_A_MIN, useB = wins.month.n >= SEASONAL_B_MIN;
+  let w = useA ? { a: 0.6, b: 0.25, c: 0.15 } : useB ? { a: 0, b: 0.6, c: 0.4 } : { a: 0, b: 0, c: 1 };
+  if (useA && !useB) w = { a: 0.7, b: 0, c: 0.3 };
+  const seasonal = {
+    year: y, month, mode: modeOf(w), weights: w, countA: A.n, countB: wins.month.n, minA: SEASONAL_A_MIN, minB: SEASONAL_B_MIN,
+    months: [month, month % 12 + 1],
+    top: blendRank({ A: A.sc, B: wins.month.sc, w, rows: rowsOk, month, allPop, seed: "season" + today.slice(0, 7) }),
+  };
+  console.log(`인기 순위: 오늘 ${popular.day.length}(${popular.dayMode}, 반응 ${wins.day.n}) · 이번 주 ${popular.week.length}(${popular.weekMode}, ${wins.week.n}) · 이번 달 ${popular.month.length}(${popular.monthMode}, ${wins.month.n}) · 이맘때 ${seasonal.top.length}(${seasonal.mode}, 작년 ${A.n})`);
   return { popular, seasonal };
 }
 
