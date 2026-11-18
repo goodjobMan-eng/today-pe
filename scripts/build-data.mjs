@@ -356,7 +356,7 @@ export const PE_SEASON = {
   8: [/수영|물놀이|물총|여름/, IN],
   9: [/친해|아이스|협동 미션|팀빌딩|추석|강강술래|씨름/, OUTD],
   10: [/운동회|이어달리기|릴레이|줄다리기|할로윈|핼러윈|가을/, OUTD],
-  11: [/킨볼|플로어볼|피클볼|플라잉디스크|뉴스포츠|피구|츄크볼|스포츠스태킹/, IN],
+  11: [/킨볼|플로어볼|피클볼|플라잉디스크|뉴스포츠|피구|츄크볼/, IN],
   12: [/크리스마스|산타|눈싸움|눈사람|겨울|연말|루돌프/, IN],
 };
 function seasonText(o) { return [o.title_ko, o.title, o.playModes, o.sportTypes, o.playType].map(v => Array.isArray(v) ? v.join(",") : String(v || "")).join(" "); }
