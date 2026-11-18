@@ -1155,6 +1155,16 @@
     .month-pick { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer;
       background: var(--surface); color: var(--accent); border: 1px solid var(--accent); white-space: nowrap; }
     .month-pick.on { background: var(--accent); color: #fff; }
+    .rank-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 6px; }
+    .rank-tab { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-strong); }
+    .rank-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .rank-note { font-size: 12.5px; color: var(--text-muted); margin: 4px 0 10px; }
+    .rank-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .rank-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-primary); font-family: inherit; font-size: 14px; cursor: pointer; }
+    .rank-item:hover { border-color: var(--text-primary); }
+    .rank-no { flex: 0 0 26px; font-weight: 800; color: var(--accent); text-align: center; }
+    .rank-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-pts { flex: 0 0 auto; font-size: 12px; color: var(--text-muted); }
     .btn-draw { padding: 9px 16px; font-size: 13.5px; font-weight: 700; font-family: inherit; color: #fff; background: #0f766e; border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
     .btn-draw:hover { background: #115e59; }
     .modal-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
@@ -1349,6 +1359,7 @@
   <main class="results-col">
     <div class="popular-row">
       <span class="popular-label" id="popularLabelText">추천 검색어</span>
+      <span id="rankPickWrap" hidden></span>
       <span id="monthPickWrap" hidden></span>
       <div id="popularKeywordsWrap" class="popular-wrap"></div>
     </div>
@@ -1531,6 +1542,20 @@
 <!-- 수업 꾸러미 -->
 <button type="button" class="pack-bar" id="packBar" onclick="openPackModal()" hidden></button>
 
+<div class="modal-backdrop" id="rankModal" onclick="if(event.target===this)closeRankModal()">
+  <div class="modal-box pack-box">
+    <div class="modal-top">
+      <div>
+        <h2 id="rankTitle" style="font-size:20px; font-weight:800;">인기 순위</h2>
+        <p id="rankSub" style="font-size:13px; color:var(--text-muted); margin-top:4px;"></p>
+      </div>
+      <button class="btn-close" onclick="closeRankModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="rank-tabs" id="rankTabs" role="tablist"></div>
+    <p class="rank-note" id="rankNote"></p>
+    <ol class="rank-list" id="rankList"></ol>
+  </div>
+</div>
 <div class="modal-backdrop" id="packModal">
   <div class="modal-box pack-box">
     <div class="modal-top">
@@ -3009,6 +3034,11 @@
   let showSavedOnly = false;
   let showMonthOnly = false; // 이달의 인기 수업만 보기
   let monthlyMap = {};       // social.json 의 monthly: { "11": { 수업id: 점수 } }
+  let popularData = null;    // social.json 의 popular: { day|week|month: [[수업id, 점수]...], daySince... } (발행 때 계산)
+  let seasonalData = null;   // social.json 의 seasonal: 작년 이번 달 순위. 작년 기록이 생기는 2027년부터 자동으로 생김
+  // 작년 이맘때 탭: 기록만 있으면 저절로 보인다. 끄고 싶으면 false
+  const SEASONAL_ENABLED = true;
+  let rankTab = "week";
   const reactPending = new Set();
   let pendingProposals = [];
   let pendingEdits = [];
@@ -3523,7 +3553,8 @@
   window.addEventListener("popstate", () => {
     if (_ignorePop > 0) { _ignorePop--; return; }
     const open = id => document.getElementById(id) && document.getElementById(id).classList.contains("open");
-    if (open("packModal")) closePackModal(true);
+    if (open("rankModal")) closeRankModal(true);
+    else if (open("packModal")) closePackModal(true);
     else if (open("addActivityModal")) closeAddActivityModal(true);
     else if (open("detailModal")) closeDetailModal(true);
     else if (document.body.classList.contains("filters-open")) closeFilterPanel(true);
@@ -3638,6 +3669,10 @@
       report: "신고", reportAsk: "신고할까요?", reportFail: "지금은 신고를 받을 수 없어요. 잠시 후 다시 해 주세요.",
       similar: "비슷한 활동", similarOther: "다른 나라", presetLabel: "상황별 바로가기",
       monthPreset: m => `${m}월 인기 수업`,
+      rankBtn: "🏆 인기 순위", rankTitle: "인기 순위", rankTabs: { day: "오늘", week: "이번 주", month: "이번 달", seasonal: "작년 이맘때" },
+      rankSub: "선생님들이 남긴 후기·저장·추천을 모아 매시간 다시 셉니다. (후기 3점 · 저장 2점 · 추천 1점)",
+      rankSince: d => `${d.slice(5, 7)}월 ${d.slice(8, 10)}일부터 센 순위예요.`, rankSeasonal: (y, m) => `${y}년 ${m}월에 선생님들이 많이 저장하고 후기를 남긴 수업이에요.`,
+      rankEmpty: "아직 기록이 적어요. 수업에 추천·저장·후기를 남겨 주시면 순위가 생겨요.", rankPts: n => `${n}점`,
       presets: { rain: "비 오는 날 교실", none: "준비물 없이", short: "10분 자투리", ice: "학기 초 친해지기", low: "저학년", field: "운동장에서 다 같이" },
       packTitle: "수업 꾸러미", packSharedTitle: "받은 수업 꾸러미",
       packSub: "활동을 이어 붙여 한 차시를 만들어요. 분을 고치면 합계가 바뀌어요.",
@@ -3665,6 +3700,11 @@
       report: "Report", reportAsk: "Report this?", reportFail: "Reports can't be sent right now. Please try again later.",
       similar: "Similar activities", similarOther: "Other country", presetLabel: "Quick picks",
       monthPreset: m => `Popular in ${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m - 1]}`,
+      rankBtn: "🏆 Top lessons", rankTitle: "Top lessons", rankTabs: { day: "Today", week: "This week", month: "This month", seasonal: "This time last year" },
+      rankSub: "Counted every hour from teachers' reviews, saves and likes (review 3 · save 2 · like 1).",
+      rankSince: d => `Counted from ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(d.slice(5, 7)) - 1]} ${Number(d.slice(8, 10))}.`,
+      rankSeasonal: (y, m) => `Lessons teachers saved and reviewed most in ${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m - 1]} ${y}.`,
+      rankEmpty: "Not enough records yet. Likes, saves and reviews will build this ranking.", rankPts: n => `${n} pts`,
       presets: { rain: "Rainy day indoors", none: "No equipment", short: "10-min filler", ice: "Back-to-school icebreakers", low: "Grades 1–2", field: "Whole class outdoors" },
       packTitle: "Lesson plan", packSharedTitle: "Shared lesson plan",
       packSub: "Chain activities into one lesson. Edit the minutes to change the total.",
@@ -3692,6 +3732,10 @@
       report: "報告", reportAsk: "報告しますか？", reportFail: "今は報告を送れません。しばらくしてからお試しください。",
       similar: "似ている活動", similarOther: "他の国", presetLabel: "場面別ショートカット",
       monthPreset: m => `${m}月の人気授業`,
+      rankBtn: "🏆 人気ランキング", rankTitle: "人気ランキング", rankTabs: { day: "今日", week: "今週", month: "今月", seasonal: "昨年の今ごろ" },
+      rankSub: "先生たちの感想・保存・おすすめを毎時集計しています（感想3点・保存2点・おすすめ1点）。",
+      rankSince: d => `${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日からの集計です。`, rankSeasonal: (y, m) => `${y}年${m}月に先生たちがよく保存し、感想を残した授業です。`,
+      rankEmpty: "まだ記録が少ないです。おすすめ・保存・感想が集まるとランキングができます。", rankPts: n => `${n}点`,
       presets: { rain: "雨の日・教室", none: "用具なし", short: "10分すきま時間", ice: "学期はじめの仲間づくり", low: "低学年", field: "運動場で全員で" },
       packTitle: "授業セット", packSharedTitle: "共有された授業セット",
       packSub: "活動をつないで1時間の授業にします。分を直すと合計が変わります。",
@@ -3801,6 +3845,58 @@
   function toggleMonthOnly() {
     showMonthOnly = !showMonthOnly;
     resetPageAndRender();
+  }
+
+  // ---------- 일간·주간·월간 인기 순위 (+ 작년 이맘때) ----------
+  const RANK_MIN = 3; // 이만큼 순위가 있어야 버튼을 보여 줌
+  function rankItems(tab) {
+    const known = new Map(activities.map(a => [a.id, a]));
+    const src = tab === "seasonal" ? (SEASONAL_ENABLED && seasonalData ? seasonalData.top : []) : (popularData && popularData[tab]) || [];
+    return src.filter(x => known.has(x[0])).slice(0, 20).map(x => ({ a: known.get(x[0]), s: x[1] }));
+  }
+  function rankTabsAvail() { return ["day", "week", "month", "seasonal"].filter(t => t !== "seasonal" ? true : rankItems("seasonal").length > 0); }
+  function renderRankPick() {
+    const w = document.getElementById("rankPickWrap");
+    if (!w) return;
+    const ok = ["day", "week", "month", "seasonal"].some(t => rankItems(t).length >= RANK_MIN);
+    if (!ok) { w.hidden = true; w.innerHTML = ""; return; }
+    w.hidden = false;
+    w.innerHTML = `<button type="button" class="month-pick" onclick="openRankModal()">${escapeHtml(xui().rankBtn)}</button>`;
+  }
+  function openRankModal() {
+    // 기록이 있는 가장 짧은 기간을 먼저 보여 준다 (이번 주 → 이번 달 → 오늘)
+    if (!rankItems(rankTab).length) rankTab = ["week", "month", "day", "seasonal"].find(t => rankItems(t).length) || "week";
+    renderRankModal();
+    const el = document.getElementById("rankModal");
+    if (!el.classList.contains("open")) pushOverlay("rank");
+    el.classList.add("open");
+  }
+  function closeRankModal(fromBack) {
+    const el = document.getElementById("rankModal");
+    if (!el.classList.contains("open")) return;
+    el.classList.remove("open");
+    if (fromBack !== true) popOverlayHistory("rank");
+  }
+  function setRankTab(t) { rankTab = t; renderRankModal(); }
+  function renderRankModal() {
+    const x = xui();
+    document.getElementById("rankTitle").textContent = x.rankTitle;
+    document.getElementById("rankSub").textContent = x.rankSub;
+    document.getElementById("rankTabs").innerHTML = rankTabsAvail().map(t =>
+      `<button type="button" role="tab" class="rank-tab${t === rankTab ? " on" : ""}" aria-selected="${t === rankTab}" onclick="setRankTab('${t}')">${escapeHtml(x.rankTabs[t])}</button>`).join("");
+    const items = rankItems(rankTab);
+    let note = "";
+    if (rankTab === "seasonal" && seasonalData) note = x.rankSeasonal(seasonalData.year, seasonalData.month);
+    else if (popularData && popularData[rankTab + "Since"] && rankTab !== "day") note = x.rankSince(popularData[rankTab + "Since"]);
+    document.getElementById("rankNote").textContent = items.length ? note : x.rankEmpty;
+    document.getElementById("rankList").innerHTML = items.map((it, i) =>
+      `<li><button type="button" class="rank-item" onclick="openFromRank('${escapeHtml(it.a.id)}')"><span class="rank-no">${i + 1}</span><span class="rank-name">${escapeHtml(it.a.title || "")}</span><span class="rank-pts">${escapeHtml(x.rankPts(it.s))}</span></button></li>`).join("");
+  }
+  function openFromRank(id) {
+    const el = document.getElementById("rankModal");
+    el.classList.remove("open");
+    if (history.state && history.state.ov === "rank") replaceOverlay("rank-to-detail", {});
+    openDetailModal(id);
   }
 
   const PRESETS = [
@@ -4439,6 +4535,7 @@
     lastFiltered = filtered;
     renderPresets();
     renderMonthPick();
+    renderRankPick();
 
     const grid = document.getElementById("cardsGrid");
     const loadMoreWrap = document.getElementById("loadMoreWrap");
@@ -5016,6 +5113,8 @@
   function applyStaticSocial(data) {
     staticSocial = true;
     monthlyMap = (data && data.monthly) || {};
+    popularData = (data && data.popular) || null;
+    seasonalData = (data && data.seasonal) || null;
     activities.forEach(a => {
       a.likes = Number((data.likes || {})[a.id]) || 0;
       a.saves = Number((data.saves || {})[a.id]) || 0;

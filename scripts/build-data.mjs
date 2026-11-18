@@ -11,7 +11,7 @@
 //   channelUrl                 : 영상 점검 때 받은 유튜브 채널 주소. 사이트에서 채널 이름을 누르면 채널로 이동
 // 사용: node scripts/build-data.mjs [Apps Script 주소]   (주소를 안 주면 GAS_URL 환경변수 → 기본 주소)
 //   CHECK_VIDEOS=0 이면 영상 점검을 건너뜀, CHECK_PER_RUN 으로 한 번에 점검할 개수 지정(기본 1000)
-import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
+import { mkdir, writeFile, readFile, rm, readdir } from "node:fs/promises";
 
 const GAS_URL = process.argv[2] || process.env.GAS_URL ||
   "https://script.google.com/macros/s/AKfycbwH8ParKOTqjbi1RuDj6LX-RYWRD6aH_9_WZ7nkxICsg_6XYrhJzAKm0t1Uid4XyFq3FA/exec";
@@ -259,7 +259,11 @@ async function buildSocial(ids) {
   const likes = Object.fromEntries(Object.entries(counts.likes || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
   const saves = Object.fromEntries(Object.entries(counts.saves || {}).filter(([k, v]) => keep(k) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
   const monthly = await buildMonthly(all, ids);
-  const socialJson = JSON.stringify(monthly ? { likes, saves, stats, monthly } : { likes, saves, stats });
+  const { popular, seasonal } = await buildPopular(likes, saves, all, ids);
+  const sj = monthly ? { likes, saves, stats, monthly } : { likes, saves, stats };
+  sj.popular = popular;
+  if (seasonal) sj.seasonal = seasonal;
+  const socialJson = JSON.stringify(sj);
   await writeFile(new URL("social.json", OUT), socialJson);
 
   await rm(new URL("reviews/", OUT), { recursive: true, force: true });
@@ -307,6 +311,63 @@ async function buildMonthly(reviews, ids) {
   const out = monthlyScores(reviews, months, ids);
   console.log("이달의 인기: " + Object.entries(out).map(([m, o]) => `${m}월 ${Object.keys(o).length}개`).join(", "));
   return out;
+}
+
+// ---------- 일간·주간·월간 인기 순위 + 작년 이맘때(1년 뒤 자동) ----------
+// 추천·저장은 시트에 누적 숫자만 있어서, 발행할 때마다 그날의 누적 숫자를 data/history/날짜.json 에 남기고
+// "지금 숫자 - N일 전 숫자"로 기간 안에 늘어난 만큼을 센다(취소로 줄어든 건 0). 후기는 쓴 날짜로 바로 센다.
+// 점수: 후기 3 · 저장 2 · 추천 1 (이달의 인기와 같음). 날짜 파일은 45일 지나면 지우되, 매달 1일 것은 남긴다(작년 이맘때 계산용).
+export const POP_TOP = 20;
+function kstDate(offsetDays = 0) { return new Date(Date.now() + 9 * 3600e3 + offsetDays * 86400e3).toISOString().slice(0, 10); }
+function shiftDate(d, days) { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + days); return t.toISOString().slice(0, 10); }
+export function popularScores(cur, base, reviews, fromDate, ids) {
+  const sc = {};
+  const add = (id, p) => { if (p > 0 && ids.has(id)) sc[id] = (sc[id] || 0) + p; };
+  for (const [k, w] of [["l", MONTH_W.like], ["s", MONTH_W.save]]) {
+    for (const [id, n] of Object.entries(cur[k] || {})) add(id, Math.max(0, n - ((base && base[k] && base[k][id]) || 0)) * w);
+  }
+  for (const r of reviews) { const d = String(r.createdAt || "").slice(0, 10); if (d >= fromDate) add(String(r.activityId || "").trim(), MONTH_W.review); }
+  return Object.entries(sc).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, POP_TOP);
+}
+async function buildPopular(likes, saves, reviews, ids) {
+  const HIST = new URL("history/", OUT);
+  await mkdir(HIST, { recursive: true });
+  const today = kstDate();
+  const cur = { l: likes, s: saves };
+  await writeFile(new URL(`${today}.json`, HIST), JSON.stringify(cur));
+  let files = (await readdir(HIST)).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).map(f => f.slice(0, 10)).sort();
+  const cutoff = shiftDate(today, -45);
+  for (const d of files) if (d < cutoff && !d.endsWith("-01")) await rm(new URL(`${d}.json`, HIST), { force: true });
+  files = files.filter(d => d >= cutoff || d.endsWith("-01"));
+  const snap = async d => d ? readJson(new URL(`${d}.json`, HIST), null) : null;
+  // N일 전 그날 끝 무렵의 숫자: 그 날짜 이하 가운데 가장 늦은 파일. 없으면 오늘 전 가장 이른 파일(기록이 짧을 때)
+  const baseFor = days => {
+    const target = shiftDate(today, -days);
+    const le = files.filter(d => d <= target);
+    if (le.length) return le[le.length - 1];
+    const before = files.filter(d => d < today);
+    return before.length ? before[0] : null;
+  };
+  const popular = { at: today };
+  for (const [k, days] of [["day", 1], ["week", 7], ["month", 30]]) {
+    const bd = baseFor(days);
+    const from = shiftDate(today, -(days - 1));
+    // 비교할 지난 기록이 아직 없으면(첫날) 추천·저장은 세지 않고 후기만 센다
+    popular[k] = popularScores(cur, bd ? await snap(bd) : cur, reviews, from, ids);
+    popular[k + "Since"] = bd ? (bd < shiftDate(today, -days) ? shiftDate(today, -(days - 1)) : shiftDate(bd, 1)) : today;
+  }
+  // 작년 이맘때: 작년 이번 달 1일 → 다음 달 1일 사이에 늘어난 추천·저장 + 그달 후기. 작년 기록이 없으면 null
+  const y = Number(today.slice(0, 4)) - 1, m = Number(today.slice(5, 7));
+  const a = `${y}-${String(m).padStart(2, "0")}-01`;
+  const b = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+  let seasonal = null;
+  if (files.includes(a) && files.includes(b)) {
+    const revs = reviews.filter(r => String(r.createdAt || "").slice(0, 7) === a.slice(0, 7));
+    const top = popularScores(await snap(b), await snap(a), revs, "0000", ids);
+    if (top.length) seasonal = { year: y, month: m, top };
+  }
+  console.log(`인기 순위: 오늘 ${popular.day.length} · 이번 주 ${popular.week.length} · 이번 달 ${popular.month.length}` + (seasonal ? ` · 작년 ${m}월 ${seasonal.top.length}` : " · 작년 이맘때 기록 없음"));
+  return { popular, seasonal };
 }
 
 async function readJson(url, def) {
@@ -398,4 +459,4 @@ function simpleHash(s) {
   return h.toString(36);
 }
 
-main().catch(e => { console.error(e.message || e); process.exit(1); });
+if (!process.env.NO_MAIN) main().catch(e => { console.error(e.message || e); process.exit(1); });
