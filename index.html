@@ -3256,6 +3256,46 @@
       .then(j => { if (j && Array.isArray(j.keywords) && j.keywords.length) { trendingKeywords = j.keywords; renderPopularKeywords(); } })
       .catch(() => {});
   }
+  // 선생님 후기 요약(data/review-summary.json): 후기 여러 건을 중복·군더더기 없이 묶은 핵심만 보여 줌.
+  // 요약 뒤에 새로 달린 후기는 다음 요약 전까지 정리된 원문으로 덧붙임.
+  let fbSummary = null;
+  function loadReviewSummary() {
+    fetch("data/review-summary.json?v=" + new Date().toISOString().slice(0, 13), { cache: "no-cache" })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j) fbSummary = j; })
+      .catch(() => {});
+  }
+  // 후기 원문 정리: ".", "-", "없음" 같은 빈 응답을 빼고, *·- 글머리로 나뉜 항목을 쪼개고, 같은 말은 한 번만
+  function cleanFeedback(list) {
+    const out = [], seen = new Set();
+    for (const raw of list) {
+      for (let p of String(raw || "").split(/\n+|(?:^|\s)[*•·]+\s*|(?:^|\s)-(?=\S)/)) {
+        p = p.replace(/^[\s*•·\-.]+|[\s]+$/g, "").trim();
+        if (p.length < 2 || /^(없음|없습니다|none|n\/a|na|x|-|해당 ?없음|なし|特になし)$/i.test(p)) continue;
+        const key = p.replace(/[\s.,!?~ㅎㅋ…]/g, "");
+        if (!key || seen.has(key)) continue;
+        seen.add(key); out.push(p);
+      }
+    }
+    return out;
+  }
+  function feedbackLists(act, st) {
+    const sum = fbSummary && fbSummary[act.id];
+    const L = sum && (sum[currentLang] || sum.ko);
+    if (L && st.reviewCount > 0) {
+      const extra = Math.max(0, st.reviewCount - (sum.n || 0));
+      return {
+        c: (L.c || []).concat(extra ? cleanFeedback(st.allCautions.slice(-extra)) : []),
+        t: (L.t || []).concat(extra ? cleanFeedback(st.allUpgrades.slice(-extra)) : [])
+      };
+    }
+    return { c: cleanFeedback(st.allCautions), t: cleanFeedback(st.allUpgrades) };
+  }
+  function feedbackHtml(title, items) {
+    if (!items.length) return "";
+    return `<div style="margin-bottom:8px;"><strong style="color:var(--text-primary);">${title}</strong>
+      <ul style="margin:4px 0 0; padding-left:18px;">${items.map(t => `<li style="margin-bottom:3px;">${escapeHtml(t)}</li>`).join("")}</ul></div>`;
+  }
   function applyTrendingKeyword(i) {
     const k = trendingKeywords && trendingKeywords[i];
     if (!k) return;
@@ -4779,8 +4819,7 @@
       </div>
 
       <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6;">
-        <div style="margin-bottom:6px;"><strong style="color:var(--text-primary);">${ui.aiCautionTitle}</strong> ${escapeHtml(st.allCautions.filter(Boolean).join(" / "))}</div>
-        <div><strong style="color:var(--text-primary);">${ui.aiUpgradeTitle}</strong> ${escapeHtml(st.allUpgrades.filter(Boolean).join(" / "))}</div>
+        ${(() => { const fb = feedbackLists(act, st); return feedbackHtml(ui.aiCautionTitle, fb.c) + feedbackHtml(ui.aiUpgradeTitle, fb.t); })()}
       </div>
     `;
 
@@ -6165,7 +6204,7 @@
   }
 
   loadData();
-  loadTrending();
+  loadTrending(); loadReviewSummary();
   setLanguage(currentLang);
   bootData();
 </script>
